@@ -58,7 +58,7 @@ export function helpTopics() {
       "{#before-you-launch}**Before you launch:** The section that lists a quest’s **Launch critical** tasks. These tasks must be completed before launch. See “Inside a quest”.",
       "{#bounty}**Bounty:** The amount a quest pays. This does not appear on exports. See “Quest giver and Quest links”.",
       "{#candidate-quest}**Candidate quest:** A quest you’re considering but haven’t started. See “Quests page”.",
-      "{#copy-ai-prompt}**Copy AI prompt:** Copies a prompt to paste into any AI chat. Describe your job, answer its questions, and the AI will generate a quest in JSON format. See “Quests page”.",
+      "{#copy-ai-prompt}**Copy AI prompt:** Copies a prompt to paste into any AI chat. Describe your job, answer its questions, and the AI will generate a quest in JSON format. Results may vary depending on the AI tool you use. See “Quests page”.",
       "{#decision}**Decision:** A question attached to a step. Answering it completes the step. See “Inside a quest”.",
       "{#errand}**Errand:** One item on the **Errands** page. See “Errands page”.",
       "{#errands-deck}**Errands deck:** Incomplete errands you can add to your hand to give them higher priority. See “Errands page”.",
@@ -117,7 +117,7 @@ export function helpTopics() {
       "**Completed:** This section lists completed quests.",
       "**Candidate quests:** These are quests you’re considering but aren’t working on. You can demote an active quest back to a candidate quest in the **Quest details**. Before promoting a candidate quest, you can add tasks, steps, and decisions to it.",
       ">A candidate quest keeps the links it had when it was demoted.",
-      "**New quest, Copy AI prompt, and Import quest:** These buttons appear to the right of the **Candidate quests** heading. **New quest** opens the same dialog as the **+** button. **Copy AI prompt** copies a prompt to use in any AI chat. **Import quest** loads the JSON file the AI generates and adds the quest to **Candidate quests** for review.",
+      "**New quest, Copy AI prompt, and Import quest:** These buttons appear to the right of the **Candidate quests** heading. **New quest** opens the same dialog as the **+** button. **Copy AI prompt** copies a prompt to use in any AI chat. Results may vary depending on the AI tool you use. **Import quest** loads the JSON file the AI generates and adds the quest to **Candidate quests** for review.",
       "**Pinned quests:** You can pin in progress, pending, and completed quests that are still on the **Quests** page. Pinning places a shortcut to that quest in the sidebar (or the **Main menu** on mobile). Completing a quest unpins it automatically. Reopening a formerly pinned quest restores the pin."
     ]],
     ["Inside a quest", [
