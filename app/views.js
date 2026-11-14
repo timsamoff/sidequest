@@ -34,7 +34,7 @@ export function nextUpPanel() {
     box.appendChild(el("p", { "class": "ptitle" }, nb ? "Nothing is scheduled." : (planCounted().length ? "All tasks complete!" : "No tasks yet.")));
     var emptyMeta = nb ? nb + (nb === 1 ? " item is" : " items are") + " waiting in the Backlog. Choose a " + wl() + " for one." : (planCounted().length ? "" : (candidateQuests().length || activeQuests().length ? "Start one with the + button." : "Start a candidate quest with the + button to add tasks."));
     if (emptyMeta) box.appendChild(el("p", { "class": "pmeta" }, emptyMeta));
-    if (nb) { var ba = el("div", { "class": "actions" }); ba.appendChild(on(el("button", { type: "button", "class": "primary", title: "Go to the Backlog on the Tasks page" }, "Open the Backlog"), "click", function () { go("schedule"); })); box.appendChild(ba); }
+    if (nb) { var ba = el("div", { "class": "actions" }); ba.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Go to the Tasks page" }, "View all tasks"), "click", function () { go("schedule"); })); box.appendChild(ba); }
     return box;
   }
   box.appendChild(el("p", { "class": "ptitle" }, t.what));
@@ -52,8 +52,9 @@ export function nextUpPanel() {
   var open = t.steps.filter(function (s) { return !s.done; })[0];
   if (open && t.steps.length) box.appendChild(el("p", { "class": "pline" }, "Next step: " + open.text));
   var acts = el("div", { "class": "actions" });
-  if (t.status === "Not started") acts.appendChild(on(el("button", { type: "button", "class": "primary", title: "Mark in progress" }, "Start"), "click", function () { t.status = "In progress"; changed(); }));
-  acts.appendChild(on(el("button", { type: "button", title: "View this task" }, "Open task"), "click", function () { openTask(t.id); }));
+  var canStart = t.status === "Not started";
+  if (canStart) acts.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Mark in progress" }, "Start"), "click", function () { t.status = "In progress"; changed(); }));
+  acts.appendChild(on(el("button", { type: "button", "class": canStart ? "small" : "small primary", title: "View this task" }, "Open task"), "click", function () { openTask(t.id); }));
   box.appendChild(acts);
   return box;
 }
@@ -125,14 +126,14 @@ export function welcomeBox() {
   welcomeHint.appendChild(txt(" Press ")); welcomeHint.appendChild(strong("Play tutorial")); welcomeHint.appendChild(txt(" for a short walkthrough of adding a quest, giving it a task, and starting it."));
   box.appendChild(welcomeHint);
   var acts = el("div", { "class": "actions" });
-  if (!blank) acts.appendChild(on(el("button", { type: "button", "class": "primary", id: "welcomeSettings", title: "Open Options" }, "Open Options"), "click", function () {
+  if (!blank) acts.appendChild(on(el("button", { type: "button", "class": "small primary", id: "welcomeSettings", title: "Open Options" }, "Open Options"), "click", function () {
     go("settings");
     // The welcome text sends people here for Start fresh, so land on it.
     var h = $("startFreshHeading");
     if (h) { if (typeof h.scrollIntoView === "function") h.scrollIntoView(); h.focus({ preventScroll: true }); }
   }));
-  acts.appendChild(on(el("button", { type: "button", "class": "tutorialbtn", id: "welcomePlay", title: "Play the first-run walkthrough" }, "Play tutorial"), "click", function () { go("today"); startTutorial(); }));
-  acts.appendChild(on(el("button", { type: "button", id: "welcomeDismiss", title: "Hide this welcome message" }, "Dismiss"), "click", function () { state.settings.hideWelcome = true; save(); renderView(); }));
+  acts.appendChild(on(el("button", { type: "button", "class": "small tutorialbtn", id: "welcomePlay", title: "Play the first-run walkthrough" }, "Play tutorial"), "click", function () { go("today"); startTutorial(); }));
+  acts.appendChild(on(el("button", { type: "button", "class": "small", id: "welcomeDismiss", title: "Hide this welcome message" }, "Dismiss"), "click", function () { state.settings.hideWelcome = true; save(); renderView(); }));
   box.appendChild(acts);
   return box;
 }
@@ -173,10 +174,10 @@ function versionBanner() {
   box.appendChild(el("h2", { "class": "first", style: "margin-bottom:4px" }, "Sidequest has leveled up!"));
   box.appendChild(el("p", { "class": "hint first" }, "You are now questing in version " + APP_VERSION + "."));
   var ar = el("div", { "class": "actions" });
-  ar.appendChild(on(el("button", { type: "button", "class": "primary", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"), "click", function () {
+  ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"), "click", function () {
     window.open("https://samoff.com/sidequest/patch-notes.html", "_blank", "noopener");
   }));
-  ar.appendChild(on(el("button", { type: "button", title: "Hide this notice" }, "Dismiss"), "click", function () {
+  ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Hide this notice" }, "Dismiss"), "click", function () {
     state.settings.seenVersion = APP_VERSION; save(); box.remove();
   }));
   box.appendChild(ar);
@@ -205,8 +206,8 @@ export function updateBanner() {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(promptText).then(function () { notify("Prompt copied."); }, fallback);
     else fallback();
   }
-  ar.appendChild(on(el("button", { type: "button", "class": "primary", title: "Copy the prompt" }, "Copy prompt"), "click", copyPrompt));
-  ar.appendChild(on(el("button", { type: "button", title: "Hide this notice for this version" }, "Dismiss"), "click", function () {
+  ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Copy the prompt" }, "Copy prompt"), "click", copyPrompt));
+  ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Hide this notice for this version" }, "Dismiss"), "click", function () {
     state.settings.dismissedUpdateVersion = availableUpdateVersion; save(); box.remove();
   }));
   box.appendChild(ar);
@@ -219,7 +220,7 @@ export function backupReminder() {
   box.appendChild(el("p", { "class": "first" }, state.settings.lastBackup ? "It has been " + n + " days since your last backup." : "You have used Sidequest for " + n + " days without saving a backup."));
   box.appendChild(el("p", { "class": "hint" }, "Your data is stored in this browser on this device. A backup file protects it if the browser’s data is ever cleared."));
   var msg = el("p", { "class": "msg schedulesmsg", role: "status", "aria-live": "polite" });
-  backupControls(box, msg, function () { box.remove(); notify("Backup saved."); });
+  backupControls(box, msg, function () { box.remove(); notify("Backup saved."); }, true);
   box.appendChild(msg);
   return box;
 }
@@ -369,7 +370,7 @@ export function candidatesSection(first) {
   var head = el("div", { "class": "sechead wraps" + (first ? " first" : "") });
   head.appendChild(withHelp(el("h2", { "class": "sechead-h" }, "Candidate quests"), "candidate-quest", "Candidate quest"));
   var btns = aiButtons();
-  btns.insertBefore(on(el("button", { type: "button", "class": "small", id: "newCandidateBtn", title: "Add a new candidate quest" }, "New candidate quest"), "click", function () { questDialog(); }), btns.firstChild);
+  btns.insertBefore(on(el("button", { type: "button", "class": "small primary", id: "newCandidateBtn", title: "Add a new quest" }, "New quest"), "click", function () { questDialog(); }), btns.firstChild);
   head.appendChild(btns);
   sec.appendChild(head);
   var list = el("ul", { "class": "list" });
@@ -416,7 +417,7 @@ export function pinStyle(pin) {
 
 export function renderWorkshop(root) {
   var hd = el("div", { "class": "sechead workshophead" });
-  hd.appendChild(on(el("button", { type: "button", "class": "small", title: "Add new idea" }, "Add idea"), "click", function () { ideaDialog(); })); root.appendChild(hd);
+  hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add new idea" }, "Add idea"), "click", function () { ideaDialog(); })); root.appendChild(hd);
   var pl = el("ul", { "class": "list pinboard", style: "margin-top:12px" });
   var ps = live(state.workshop);
   if (!ps.length) pl.appendChild(el("li", { "class": "hint" }, "No ideas yet. Add one with the Add idea button."));
@@ -435,7 +436,7 @@ export function renderWorkshop(root) {
     if (p.note) nm.appendChild(el("p", { "class": "hint notetext noteclamp", style: "margin-top:2px" }, p.note));
     row.appendChild(nm);
     var acts = el("div", { "class": "li-actions" });
-    acts.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Make this a candidate quest" }, "Make candidate"), "click", function () {
+    acts.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Make this a candidate quest" }, "Make quest"), "click", function () {
       if (questNameTaken(p.text)) { notify("A quest named “" + questNameTaken(p.text).name + "” already exists. Rename this idea first.", null, "problem"); return; }
       state.workshop = state.workshop.filter(function (x) { return x.id !== p.id; });
       state.quests.push(makeQuest(uid(), p.text, "candidate", { notes: p.note, start: iso(TODAY) })); changed();

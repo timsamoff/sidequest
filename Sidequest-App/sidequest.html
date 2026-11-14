@@ -904,7 +904,7 @@ html:has(.splash:not([hidden])) { overflow: hidden; }
         <div class="menuwrap">
           <button class="iconbtn primary" id="newBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="newMenu" aria-label="Add item" title="Add item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"></path></svg></button>
           <div class="menu" id="newMenu" role="menu" hidden>
-            <button type="button" role="menuitem" data-act="newQuest" title="Add a new candidate quest">New candidate quest</button>
+            <button type="button" role="menuitem" data-act="newQuest" title="Add a new quest">New quest</button>
             <button type="button" role="menuitem" data-act="newTask" title="Add a new task">New task</button>
             <button type="button" role="menuitem" data-act="newStep" title="Add a new step">New step</button>
             <button type="button" role="menuitem" data-act="newDecision" title="Add a new decision">New decision</button>
@@ -1772,7 +1772,7 @@ function findAnyTask(id) { for (var i = 0; i < state.tasks.length; i++) if (stat
 var KEY2 = "sidequest-template-v1", UIKEY = "sidequest-template-ui";
 var STATUSES = ["Not started", "In progress", "Completed"];
 var CHECKPOINTS = 7;
-var APP_VERSION = "1.2.2";
+var APP_VERSION = "1.2.3";
 var APP_NAME = "Sidequest";
 
 function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -3713,7 +3713,7 @@ function issueDialog(prefillQuestId) {
   }, (fixedQuest ? "Log an issue on this quest." : "Log an issue on any open quest.") + " No due date is required, and the issue stays out of the Backlog. Find it in the Issues section of the quest’s details.");
 }
 function questDialog() {
-  formDialog("New candidate quest", [
+  formDialog("New quest", [
     { key: "name", label: "Quest name" },
     { key: "notes", label: "Notes", type: "textarea", rows: 5 },
     { key: "giverHeading", label: "Quest giver", type: "heading", collapsible: true, help: "quest-giver", emptyText: "Add Quest giver details", summaryKeys: ["giverOrg", "giverPoc"] },
@@ -3725,8 +3725,8 @@ function questDialog() {
     { key: "giverAddress", label: "Address", type: "textarea", rows: 3 },
     { key: "giverCoin", label: "Bounty", type: "money" },
     { key: "giverPer", label: "Per", type: "select", options: [{ value: "Hour", label: "Hour" }, { value: "Quest", label: "Quest" }] }
-  ], "Add candidate quest", function (v) {
-    if (!v.name) return { field: "name", error: "Enter a title for the candidate quest." };
+  ], "Add quest", function (v) {
+    if (!v.name) return { field: "name", error: "Enter a title for the quest." };
     if (questNameTaken(v.name)) return { field: "name", error: "A quest named “" + questNameTaken(v.name).name + "” already exists. Choose another name." };
     if (v.giverEmail && !isEmail(v.giverEmail)) return { field: "giverEmail", error: "The Quest giver email isn’t an address. Enter one like name@example.com, or leave it empty." };
     var coin = parseMoney(v.giverCoin, state.settings.coinFormat);
@@ -4067,7 +4067,7 @@ function toQuest(c) {
 // **bold** in text marks an on-screen label.
 var STEPS = [
   { title: "Welcome to Sidequest", view: function () { return { text: "This takes about a minute. You will add a quest, give it a task, and start it. Skip any time, and replay it from the Field guide." }; } },
-  { title: "Add a quest", view: function () { return { target: document.getElementById("newBtn"), text: "Select the **+** button and choose **New candidate quest**. Give it a name and select **Add candidate quest**." }; },
+  { title: "Add a quest", view: function () { return { target: document.getElementById("newBtn"), text: "Select the **+** button and choose **New quest**. Give it a name and select **Add quest**." }; },
     done: function (c) { var q = state.quests.filter(function (p) { return c.baseIds.indexOf(p.id) < 0; })[0]; if (q) c.questId = q.id; return !!q; } },
   { title: "Open your quest", view: toQuest, done: function (c) { return onQuestPage(c) || hasTask(c) || promoted(c); } },
   { title: "Add a task",
@@ -4479,9 +4479,9 @@ function restoreBackupFile(file, msg) {
 }
 
 // The Save backup button, alone (the Start fresh dialog uses it); returns its row of buttons.
-function backupControls(host, msg, onDone) {
+function backupControls(host, msg, onDone, small) {
   var acts = el("div", { "class": "actions" });
-  acts.appendChild(on(el("button", { type: "button", "class": "primary", id: "saveFile", title: "Choose where to save a backup file" }, "Save backup"), "click", function () { saveBackupFile(msg, onDone); }));
+  acts.appendChild(on(el("button", { type: "button", "class": "primary" + (small ? " small" : ""), id: "saveFile", title: "Choose where to save a backup file" }, "Save backup"), "click", function () { saveBackupFile(msg, onDone); }));
   host.appendChild(acts);
   return acts;
 }
@@ -4492,9 +4492,9 @@ function backupPanel(root, hintHost) {
   (hintHost || root).appendChild(el("p", { "class": "hint" }, (isHosted() ? "Your data is saved in your account." : "Your data is saved in this browser on this device.") + " Create a backup from time to time and keep the file somewhere safe. You can restore your data from a backup at any time."));
   var msg = el("p", { "class": "msg schedulesmsg", role: "status", "aria-live": "polite" });
   var last = el("p", { "class": "hint" }, lastBackupText());
-  var acts = backupControls(root, msg, function () { last.textContent = lastBackupText(); });
+  var acts = backupControls(root, msg, function () { last.textContent = lastBackupText(); }, true);
   var file = el("input", { type: "file", id: "restoreFile", accept: ".json,application/json", hidden: "hidden", "aria-label": "Choose a backup file to restore" });
-  acts.appendChild(on(el("button", { type: "button", id: "restoreBtn", title: "Choose a backup file to restore" }, "Restore backup"), "click", function () { file.click(); }));
+  acts.appendChild(on(el("button", { type: "button", "class": "small", id: "restoreBtn", title: "Choose a backup file to restore" }, "Restore backup"), "click", function () { file.click(); }));
   on(file, "change", function () {
     var f = file.files && file.files[0]; if (!f) return;
     restoreBackupFile(f, msg); file.value = "";
@@ -4708,14 +4708,14 @@ function importTodoistFile(file, msg) {
 function importPanel(root) {
   var msg = el("p", { "class": "msg schedulesmsg", role: "status", "aria-live": "polite" });
   var trelloFile = el("input", { type: "file", id: "importTrelloFile", accept: ".json,application/json", hidden: "hidden", "aria-label": "Choose a Trello board export to import" });
-  var trelloBtn = el("button", { type: "button", id: "importTrelloBtn", title: "Choose a Trello board export (.json) to import" }, "Import from Trello");
+  var trelloBtn = el("button", { type: "button", "class": "small", id: "importTrelloBtn", title: "Choose a Trello board export (.json) to import" }, "Import from Trello");
   on(trelloBtn, "click", function () { trelloFile.click(); });
   on(trelloFile, "change", function () {
     var f = trelloFile.files && trelloFile.files[0]; if (!f) return;
     importTrelloFile(f, msg); trelloFile.value = "";
   });
   var todoistFile = el("input", { type: "file", id: "importTodoistFile", accept: ".csv,text/csv", hidden: "hidden", "aria-label": "Choose a Todoist project export to import" });
-  var todoistBtn = el("button", { type: "button", id: "importTodoistBtn", title: "Choose a Todoist project export (.csv) to import", style: "margin-left:8px" }, "Import from Todoist");
+  var todoistBtn = el("button", { type: "button", "class": "small", id: "importTodoistBtn", title: "Choose a Todoist project export (.csv) to import", style: "margin-left:8px" }, "Import from Todoist");
   on(todoistBtn, "click", function () { todoistFile.click(); });
   on(todoistFile, "change", function () {
     var f = todoistFile.files && todoistFile.files[0]; if (!f) return;
@@ -5123,7 +5123,7 @@ function helpTopics() {
       "{#in-progress}**In progress:** An active quest with at least one incomplete task that has a due date. See “Quests page”.",
       "{#issue}**Issue:** A problem associated with a quest, such as a bug. An issue doesn’t need a due date. See “Inside a quest”.",
       "{#launch-critical}**Launch critical:** A task that must be completed before launch. These tasks are grouped in the **Before you launch** section. See “Inside a quest”.",
-      "{#make-candidate}**Make candidate:** Turns an idea into a candidate quest. See “The quest lifecycle”.",
+      "{#make-candidate}**Make quest:** Turns an idea into a candidate quest. See “The quest lifecycle”.",
       "{#milestone}**Milestone:** A task with a date that appears on the **Timeline**. See “Inside a quest”.",
       "{#next-up}**Next up:** The earliest-starting incomplete task across all open quests. See “Today page”.",
       "{#pending}**Pending:** An active quest with no incomplete tasks that have due dates. See “Quests page”.",
@@ -5169,7 +5169,7 @@ function helpTopics() {
       "**Completed:** This section lists completed quests.",
       "**Candidate quests:** These are quests you’re considering but aren’t working on. You can demote an active quest back to a candidate quest in the **Quest details**. Before promoting a candidate quest, you can add tasks, steps, and decisions to it.",
       ">A candidate quest keeps the links it had when it was demoted.",
-      "**New candidate quest, Copy AI prompt, and Import quest:** These buttons appear to the right of the **Candidate quests** heading. **New candidate quest** opens the same dialog as the **+** button. **Copy AI prompt** copies a prompt to use in any AI chat. **Import quest** loads the JSON file the AI generates and adds the quest to **Candidate quests** for review.",
+      "**New quest, Copy AI prompt, and Import quest:** These buttons appear to the right of the **Candidate quests** heading. **New quest** opens the same dialog as the **+** button. **Copy AI prompt** copies a prompt to use in any AI chat. **Import quest** loads the JSON file the AI generates and adds the quest to **Candidate quests** for review.",
       "**Pinned quests:** You can pin in progress, pending, and completed quests that are still on the **Quests** page. Pinning places a shortcut to that quest in the sidebar (or the **Main menu** on mobile). Completing a quest unpins it automatically. Reopening a formerly pinned quest restores the pin."
     ]],
     ["Inside a quest", [
@@ -5225,7 +5225,7 @@ function helpTopics() {
       "**Delete forever:** Permanently deletes an errand. Select **Undo** right away to restore it."
     ]],
     ["Workshop page", [
-      "All ideas live here. Use them to think through new quests or prospects. You can either select **Make candidate** to turn an idea into a candidate quest or **Vault** it."
+      "All ideas live here. Use them to think through new quests or prospects. You can either select **Make quest** to turn an idea into a candidate quest or **Vault** it."
     ]],
     ["Vault page", [
       "The **Vault** is a place to store ideas and quests you’re no longer actively working with but may want to keep. You can use **Restore** or **Delete forever** on vaulted items. You can also choose to have the **Vault** automatically delete old items after a set period."
@@ -5391,7 +5391,7 @@ function renderJobs(root) {
   txt.setAttribute("data-focus", "job-new");
   on(txt, "keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); add(); } });
   bar.appendChild(txt); bar.appendChild(dueWrap);
-  bar.appendChild(on(el("button", { type: "button", "class": "small", title: "Add this errand" }, "Add errand"), "click", add));
+  bar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add this errand" }, "Add errand"), "click", add));
   root.appendChild(bar); root.appendChild(msg);
   stopFlip();
   var open = openJobs(), done = state.jobs.filter(function (j) { return j.done; });
@@ -6050,7 +6050,7 @@ function issuesSection(root, p) {
   var readOnly = !!p.vault;
   var items = sortTasks(questTasks(p.id).filter(function (t) { return t.issue && !t.launch; }));
   var hd = el("div", { "class": "sechead" }); hd.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-issues" }, "Issues"), "issue", "Issue"));
-  if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small", title: "Log an issue on this quest" }, "Add issue"), "click", function () { issueDialog(p.id); }));
+  if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Log an issue on this quest" }, "Add issue"), "click", function () { issueDialog(p.id); }));
   root.appendChild(hd);
   var n = items.filter(function (t) { return t.status === "Completed"; }).length;
   root.appendChild(el("p", { "class": "hint" }, items.length ? "Complete: " + n + " of " + items.length + (items.length === 1 ? " issue" : " issues") : "No issues yet."));
@@ -6122,7 +6122,7 @@ function renderQuestPage(root, id) {
   }
 
   var hd = el("div", { "class": "sechead" + (split ? " first" : "") }); hd.appendChild(el("h2", split ? { "class": "first" } : null, "Tasks"));
-  if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small", title: "Add a task" }, "Add task"), "click", function () { taskDialog(p.id); }));
+  if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add a task" }, "Add task"), "click", function () { taskDialog(p.id); }));
   root.appendChild(hd);
   // The count line on the left, the open estimated time on the right.
   var est = questEstimate(p), metaRow = el("div", { "class": "metarow" });
@@ -6441,7 +6441,7 @@ function brandmarkField() {
         var f = file.files && file.files[0]; if (!f) return;
         readBrandmarkFile(f, msg, renderPreview); file.value = "";
       });
-      preview.appendChild(on(el("button", { type: "button", "class": "small", title: "Add brandmark" }, "Add brandmark"), "click", function () { file.click(); }));
+      preview.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add brandmark" }, "Add brandmark"), "click", function () { file.click(); }));
       preview.appendChild(file);
     }
     limits.hidden = !!state.settings.brandmark;
@@ -6652,7 +6652,7 @@ function renderSettings(page) {
       installBox.appendChild(uninstallLine());
     } else if (deferredInstallPrompt) {
       installBox.appendChild(el("p", { "class": "hint first", style: "margin-bottom:12px" }, "Install Sidequest as an app on your computer or mobile device. PWA installation is not supported by all browsers or devices."));
-      installBox.appendChild(on(el("button", { type: "button", id: "installBtn" }, "Install Sidequest"), "click", triggerInstall));
+      installBox.appendChild(on(el("button", { type: "button", "class": "small", id: "installBtn" }, "Install Sidequest"), "click", triggerInstall));
     } else if (isIosDevice()) {
       // These devices have no Install button, so they get their own steps.
       var iosNote = el("p", { "class": "hint first" });
@@ -6708,7 +6708,7 @@ function renderSettings(page) {
   root.appendChild(el("h2", { id: "startFreshHeading", "class": "scrollhead", tabindex: "-1" }, "Start fresh"));
   var box = el("div", { "class": "dangerbox" });
   box.appendChild(el("p", { "class": "hint first" }, "Erase all Sidequest data stored in " + (isHosted() ? "your account" : "this browser") + " and start again (options are retained). You will receive a warning and have a chance to save a backup first."));
-  box.appendChild(on(el("button", { type: "button", "class": "danger", style: "margin-top:12px", id: "startFresh", title: "Erase everything and start over" }, "Start fresh…"), "click", startFreshDialog));
+  box.appendChild(on(el("button", { type: "button", "class": "small danger", style: "margin-top:12px", id: "startFresh", title: "Erase everything and start over" }, "Start fresh…"), "click", startFreshDialog));
   root.appendChild(box);
 
   root.appendChild(el("h2", null, "About"));
@@ -6762,7 +6762,7 @@ function nextUpPanel() {
     box.appendChild(el("p", { "class": "ptitle" }, nb ? "Nothing is scheduled." : (planCounted().length ? "All tasks complete!" : "No tasks yet.")));
     var emptyMeta = nb ? nb + (nb === 1 ? " item is" : " items are") + " waiting in the Backlog. Choose a " + wl() + " for one." : (planCounted().length ? "" : (candidateQuests().length || activeQuests().length ? "Start one with the + button." : "Start a candidate quest with the + button to add tasks."));
     if (emptyMeta) box.appendChild(el("p", { "class": "pmeta" }, emptyMeta));
-    if (nb) { var ba = el("div", { "class": "actions" }); ba.appendChild(on(el("button", { type: "button", "class": "primary", title: "Go to the Backlog on the Tasks page" }, "Open the Backlog"), "click", function () { go("schedule"); })); box.appendChild(ba); }
+    if (nb) { var ba = el("div", { "class": "actions" }); ba.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Go to the Tasks page" }, "View all tasks"), "click", function () { go("schedule"); })); box.appendChild(ba); }
     return box;
   }
   box.appendChild(el("p", { "class": "ptitle" }, t.what));
@@ -6780,8 +6780,9 @@ function nextUpPanel() {
   var open = t.steps.filter(function (s) { return !s.done; })[0];
   if (open && t.steps.length) box.appendChild(el("p", { "class": "pline" }, "Next step: " + open.text));
   var acts = el("div", { "class": "actions" });
-  if (t.status === "Not started") acts.appendChild(on(el("button", { type: "button", "class": "primary", title: "Mark in progress" }, "Start"), "click", function () { t.status = "In progress"; changed(); }));
-  acts.appendChild(on(el("button", { type: "button", title: "View this task" }, "Open task"), "click", function () { openTask(t.id); }));
+  var canStart = t.status === "Not started";
+  if (canStart) acts.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Mark in progress" }, "Start"), "click", function () { t.status = "In progress"; changed(); }));
+  acts.appendChild(on(el("button", { type: "button", "class": canStart ? "small" : "small primary", title: "View this task" }, "Open task"), "click", function () { openTask(t.id); }));
   box.appendChild(acts);
   return box;
 }
@@ -6853,14 +6854,14 @@ function welcomeBox() {
   welcomeHint.appendChild(txt(" Press ")); welcomeHint.appendChild(strong("Play tutorial")); welcomeHint.appendChild(txt(" for a short walkthrough of adding a quest, giving it a task, and starting it."));
   box.appendChild(welcomeHint);
   var acts = el("div", { "class": "actions" });
-  if (!blank) acts.appendChild(on(el("button", { type: "button", "class": "primary", id: "welcomeSettings", title: "Open Options" }, "Open Options"), "click", function () {
+  if (!blank) acts.appendChild(on(el("button", { type: "button", "class": "small primary", id: "welcomeSettings", title: "Open Options" }, "Open Options"), "click", function () {
     go("settings");
     // The welcome text sends people here for Start fresh, so land on it.
     var h = $("startFreshHeading");
     if (h) { if (typeof h.scrollIntoView === "function") h.scrollIntoView(); h.focus({ preventScroll: true }); }
   }));
-  acts.appendChild(on(el("button", { type: "button", "class": "tutorialbtn", id: "welcomePlay", title: "Play the first-run walkthrough" }, "Play tutorial"), "click", function () { go("today"); startTutorial(); }));
-  acts.appendChild(on(el("button", { type: "button", id: "welcomeDismiss", title: "Hide this welcome message" }, "Dismiss"), "click", function () { state.settings.hideWelcome = true; save(); renderView(); }));
+  acts.appendChild(on(el("button", { type: "button", "class": "small tutorialbtn", id: "welcomePlay", title: "Play the first-run walkthrough" }, "Play tutorial"), "click", function () { go("today"); startTutorial(); }));
+  acts.appendChild(on(el("button", { type: "button", "class": "small", id: "welcomeDismiss", title: "Hide this welcome message" }, "Dismiss"), "click", function () { state.settings.hideWelcome = true; save(); renderView(); }));
   box.appendChild(acts);
   return box;
 }
@@ -6901,10 +6902,10 @@ function versionBanner() {
   box.appendChild(el("h2", { "class": "first", style: "margin-bottom:4px" }, "Sidequest has leveled up!"));
   box.appendChild(el("p", { "class": "hint first" }, "You are now questing in version " + APP_VERSION + "."));
   var ar = el("div", { "class": "actions" });
-  ar.appendChild(on(el("button", { type: "button", "class": "primary", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"), "click", function () {
+  ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"), "click", function () {
     window.open("https://samoff.com/sidequest/patch-notes.html", "_blank", "noopener");
   }));
-  ar.appendChild(on(el("button", { type: "button", title: "Hide this notice" }, "Dismiss"), "click", function () {
+  ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Hide this notice" }, "Dismiss"), "click", function () {
     state.settings.seenVersion = APP_VERSION; save(); box.remove();
   }));
   box.appendChild(ar);
@@ -6933,8 +6934,8 @@ function updateBanner() {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(promptText).then(function () { notify("Prompt copied."); }, fallback);
     else fallback();
   }
-  ar.appendChild(on(el("button", { type: "button", "class": "primary", title: "Copy the prompt" }, "Copy prompt"), "click", copyPrompt));
-  ar.appendChild(on(el("button", { type: "button", title: "Hide this notice for this version" }, "Dismiss"), "click", function () {
+  ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Copy the prompt" }, "Copy prompt"), "click", copyPrompt));
+  ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Hide this notice for this version" }, "Dismiss"), "click", function () {
     state.settings.dismissedUpdateVersion = availableUpdateVersion; save(); box.remove();
   }));
   box.appendChild(ar);
@@ -6947,7 +6948,7 @@ function backupReminder() {
   box.appendChild(el("p", { "class": "first" }, state.settings.lastBackup ? "It has been " + n + " days since your last backup." : "You have used Sidequest for " + n + " days without saving a backup."));
   box.appendChild(el("p", { "class": "hint" }, "Your data is stored in this browser on this device. A backup file protects it if the browser’s data is ever cleared."));
   var msg = el("p", { "class": "msg schedulesmsg", role: "status", "aria-live": "polite" });
-  backupControls(box, msg, function () { box.remove(); notify("Backup saved."); });
+  backupControls(box, msg, function () { box.remove(); notify("Backup saved."); }, true);
   box.appendChild(msg);
   return box;
 }
@@ -7097,7 +7098,7 @@ function candidatesSection(first) {
   var head = el("div", { "class": "sechead wraps" + (first ? " first" : "") });
   head.appendChild(withHelp(el("h2", { "class": "sechead-h" }, "Candidate quests"), "candidate-quest", "Candidate quest"));
   var btns = aiButtons();
-  btns.insertBefore(on(el("button", { type: "button", "class": "small", id: "newCandidateBtn", title: "Add a new candidate quest" }, "New candidate quest"), "click", function () { questDialog(); }), btns.firstChild);
+  btns.insertBefore(on(el("button", { type: "button", "class": "small primary", id: "newCandidateBtn", title: "Add a new quest" }, "New quest"), "click", function () { questDialog(); }), btns.firstChild);
   head.appendChild(btns);
   sec.appendChild(head);
   var list = el("ul", { "class": "list" });
@@ -7144,7 +7145,7 @@ function pinStyle(pin) {
 
 function renderWorkshop(root) {
   var hd = el("div", { "class": "sechead workshophead" });
-  hd.appendChild(on(el("button", { type: "button", "class": "small", title: "Add new idea" }, "Add idea"), "click", function () { ideaDialog(); })); root.appendChild(hd);
+  hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add new idea" }, "Add idea"), "click", function () { ideaDialog(); })); root.appendChild(hd);
   var pl = el("ul", { "class": "list pinboard", style: "margin-top:12px" });
   var ps = live(state.workshop);
   if (!ps.length) pl.appendChild(el("li", { "class": "hint" }, "No ideas yet. Add one with the Add idea button."));
@@ -7163,7 +7164,7 @@ function renderWorkshop(root) {
     if (p.note) nm.appendChild(el("p", { "class": "hint notetext noteclamp", style: "margin-top:2px" }, p.note));
     row.appendChild(nm);
     var acts = el("div", { "class": "li-actions" });
-    acts.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Make this a candidate quest" }, "Make candidate"), "click", function () {
+    acts.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Make this a candidate quest" }, "Make quest"), "click", function () {
       if (questNameTaken(p.text)) { notify("A quest named “" + questNameTaken(p.text).name + "” already exists. Rename this idea first.", null, "problem"); return; }
       state.workshop = state.workshop.filter(function (x) { return x.id !== p.id; });
       state.quests.push(makeQuest(uid(), p.text, "candidate", { notes: p.note, start: iso(TODAY) })); changed();

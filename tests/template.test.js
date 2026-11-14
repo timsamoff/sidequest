@@ -76,7 +76,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.2.2"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.2.3"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -291,7 +291,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   ok(!helpText.includes("Mark done") && !helpText.includes("archive completed tasks") && !helpText.includes("View beside its name") && !helpText.includes("with its circle"), "Help no longer describes buttons and settings that were removed");
   const staleHelp = ["default start date", "Show backup text", "Restore from text", "copy your data as text", "Sprint 1", "Where things stand", "Next slot", "what used to be called", "used to be called a project", "Completion FX"];
   ok(staleHelp.every(ph => !helpText.includes(ph)), "Help does not describe things that were removed (" + staleHelp.filter(ph => helpText.includes(ph)).join(", ") + ")");
-  const coveredHelp = ["Quest details", "Quest giver export", "Bounty", "Slip schedule", "Forecast", "Ideal", "Actual", "Gathering dust", "Make milestone", "Launch critical", "Coin format", "Completion effects", "Sound effects", "Refresh", "stretch of work", "Backup and restore", "Start fresh", "Link quest", "Make candidate", "Splash screen on open", "Main menu"];
+  const coveredHelp = ["Quest details", "Quest giver export", "Bounty", "Slip schedule", "Forecast", "Ideal", "Actual", "Gathering dust", "Make milestone", "Launch critical", "Coin format", "Completion effects", "Sound effects", "Refresh", "stretch of work", "Backup and restore", "Start fresh", "Link quest", "Make quest", "Splash screen on open", "Main menu"];
   ok(coveredHelp.every(ph => helpText.includes(ph)), "the guide covers the features it should (missing: " + coveredHelp.filter(ph => !helpText.includes(ph)).join(", ") + ")");
   ok(!/—/.test(helpText) && !helpText.includes("--"), "Help has no em dashes, real or double-hyphen");
   ok(!/[A-Za-z]'[A-Za-z]/.test(helpText), "Help uses smart apostrophes, not straight ones, in contractions and possessives");
@@ -334,7 +334,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   ok(k.saved().quests.length === 0 && k.saved().pins.length === 0, "no quests and no pins after a fresh start");
   ok(Object.keys(k.saved().hist).length === 0, "a blank slate keeps none of the sample burndown history");
   // add own quest from scratch: a task needs an active quest to attach to
-  k.menuAct("newBtn", "newQuest"); k.setField("name", "My App"); k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.menuAct("newBtn", "newQuest"); k.setField("name", "My App"); k.click(k.btn(k.$("modalBody"), "Add quest"));
   k.tab("projects"); k.click(k.btn(k.$("view"), "Promote"));
   k.menuAct("newBtn", "newTask"); k.setField("what", "First task"); k.click(k.btn(k.$("modalBody"), "Add task"));
   ok(k.saved().tasks.some(t => t.what === "First task"), "can add a task right away, once a quest exists");
@@ -377,10 +377,10 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   k.tab("workshop");
   const row = [...k.d.querySelectorAll("#view .list li")].find(li => li.textContent.includes("Dated idea"));
   ok(row && /· Created on \w+ \d+, \d{4}/.test(row.textContent), "the Workshop row shows when the idea was added");
-  k.click(k.btn(row, "Make candidate"));
+  k.click(k.btn(row, "Make quest"));
   const q = k.saved().quests.find(x => x.name === "Dated idea");
-  ok(q && q.start === iso, "Make candidate uses today as the candidate's Start date");
-  ok(/is now a candidate quest/.test(k.$("toast").textContent) && /Candidate quests/.test(k.$("toast").textContent), "Make candidate says where the idea went");
+  ok(q && q.start === iso, "Make quest uses today as the candidate's Start date");
+  ok(/is now a candidate quest/.test(k.$("toast").textContent) && /Candidate quests/.test(k.$("toast").textContent), "Make quest says where the idea went");
   ok(k.saved().workshop.filter(p => !p.vault).every(p => p.created), "sample ideas carry created dates");
 }
 
@@ -731,7 +731,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   k.menuAct("newBtn", "newQuest");
   ok(!!k.$("f-giverOrg") && !!k.$("f-giverAddress"), "the New quest dialog has Quest giver fields too");
   k.setField("name", "Brand New Quest"); k.setField("giverOrg", "New Client LLC");
-  k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.click(k.btn(k.$("modalBody"), "Add quest"));
   const nq = k.saved().quests.find(p => p.name === "Brand New Quest");
   ok(nq.client.org === "New Client LLC" && nq.client.poc === "", "a quest created with Quest giver info saves it from the start");
 }
@@ -765,9 +765,9 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   k.click(k.btn(k.$("modalBody"), "Workshop it"));
   const irow = [...k.d.querySelectorAll("#view .list li")].find(li => li.textContent.includes("A fresh idea"));
   ok(!!irow.querySelector(".noteclamp"), "an idea's note in the Workshop is clamped to two lines");
-  k.click(k.btn(irow, "Make candidate"));
+  k.click(k.btn(irow, "Make quest"));
   const quest = k.saved().quests.find(p => p.name === "A fresh idea" && p.status === "candidate");
-  ok(quest && quest.notes === "Some notes on it" && !("note" in quest), "Make candidate puts the idea's note in the quest's Notes, with no separate note field");
+  ok(quest && quest.notes === "Some notes on it" && !("note" in quest), "Make quest puts the idea's note in the quest's Notes, with no separate note field");
 }
 {
   // a vaulted candidate's page is read-only like any vaulted quest's
@@ -2418,7 +2418,7 @@ async function exportClick(k, projectName) {
   k.menuAct("newBtn", "newTask"); ok(k.$("toast").textContent === "Tasks can only be added to a quest.", "adding a task with no quests explains the rule");
   k.menuAct("newBtn", "newStep"); ok(k.$("toast").textContent === "Steps can only be added to a task.", "adding a step with no tasks explains the rule");
   k.menuAct("newBtn", "newDecision"); ok(k.$("toast").textContent === "A decision can only be added to a step.", "adding a decision with no steps explains the rule");
-  k.menuAct("newBtn", "newQuest"); k.setField("name", "Test Quest"); k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.menuAct("newBtn", "newQuest"); k.setField("name", "Test Quest"); k.click(k.btn(k.$("modalBody"), "Add quest"));
   ok(k.$("toast").textContent === "“Test Quest” has been added as a candidate quest to Quests.", "the new-quest confirmation says it is a candidate and how to open it");
   ok(k.saved().quests.find(q => q.name === "Test Quest").start === new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0") + "-" + String(new Date().getDate()).padStart(2, "0"), "a new candidate quest starts today by default");
   k.tab("projects");
@@ -2506,9 +2506,9 @@ async function exportClick(k, projectName) {
   // Bounty in the New Quest dialog, and old whole-number values on load
   const k = kit(await mk());
   k.click(k.$("welcomeDismiss"));
-  k.menuAct("newBtn", "newQuest"); k.setField("name", "Money Quest"); k.setField("giverCoin", "1,234.5"); k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.menuAct("newBtn", "newQuest"); k.setField("name", "Money Quest"); k.setField("giverCoin", "1,234.5"); k.click(k.btn(k.$("modalBody"), "Add quest"));
   ok(k.saved().quests.find(q => q.name === "Money Quest").client.coin === 1234.5, "the New Quest dialog reads a typed amount with a comma and a decimal point");
-  k.menuAct("newBtn", "newQuest"); k.setField("name", "Bad Money"); k.setField("giverCoin", "abc"); k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.menuAct("newBtn", "newQuest"); k.setField("name", "Bad Money"); k.setField("giverCoin", "abc"); k.click(k.btn(k.$("modalBody"), "Add quest"));
   ok(k.saved().quests.find(q => q.name === "Bad Money").client.coin === "", "and treats non-numeric text as no bounty");
   const old = kit(await mk({ quests: [{ id: "q1", name: "Old", status: "active", start: "2026-08-03", days: 7, client: { coin: 1500, per: "Hour" } }, { id: "q2", name: "Zero", status: "active", start: "2026-08-03", days: 7, client: { coin: 0, per: "Hour" } }, { id: "q3", name: "Huge", status: "active", start: "2026-08-03", days: 7, client: { coin: 5000000, per: "Hour" } }], tasks: [] }));
   const qs = old.saved().quests;
@@ -2881,14 +2881,14 @@ async function exportClick(k, projectName) {
   k.click(k.$("modalBody").querySelector("[data-term=\"quest-giver\"]"));
   ok(k.$("modalTitle").textContent === "Quest giver" && !k.$("modalBody").querySelector("#f-name"), "the ? opens the Quest giver help over the dialog");
   k.click(k.$("modalClose"));
-  ok(k.$("modalTitle").textContent === "New candidate quest" && k.$("f-name").value === "Keep me" && !k.$("overlay").hidden, "closing the help returns to the New quest dialog with what was typed");
+  ok(k.$("modalTitle").textContent === "New quest" && k.$("f-name").value === "Keep me" && !k.$("overlay").hidden, "closing the help returns to the New quest dialog with what was typed");
   k.setField("name", "");
   k.click(tg);
   ok(!grp.hidden && tg.getAttribute("aria-expanded") === "true" && !!grp.querySelector("#f-giverOrg"), "Quest giver opens to show its fields");
   k.click(tg);
   ok(grp.hidden, "and closes again");
   k.click(tg); k.setField("name", "Giver Quest"); k.setField("giverOrg", "Acme");
-  k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.click(k.btn(k.$("modalBody"), "Add quest"));
   ok(k.saved().quests.find(q => q.name === "Giver Quest").client.org === "Acme", "fields inside the collapsible group still save");
 }
 // Hosted launch quotes: the shuffled bucket lives in its own db document, so it survives a relaunch with cleared local storage and never moves the sync stamp.
@@ -3100,9 +3100,9 @@ async function exportClick(k, projectName) {
 /* ---- 1.2.0: candidate button, search checkbox, alphabetical pickers, deck moves ---- */
 {
   const k = kit(await mk()); k.tab("projects");
-  ok(!!k.btn(k.$("view"), "New candidate quest"), "Candidate quests has a New candidate quest button");
-  k.click(k.btn(k.$("view"), "New candidate quest"));
-  ok(k.$("modalTitle").textContent === "New candidate quest", "New candidate quest opens the same dialog as the + menu");
+  ok(!!k.btn(k.$("view"), "New quest"), "Candidate quests has a New quest button");
+  k.click(k.btn(k.$("view"), "New quest"));
+  ok(k.$("modalTitle").textContent === "New quest", "New quest opens the same dialog as the + menu");
   k.click(k.btn(k.$("overlay"), "Cancel") || k.$("modalClose"));
   k.click(k.$("newBtn"));
   k.click(k.d.querySelector("[data-act=newTask]"));
@@ -3159,7 +3159,7 @@ async function exportClick(k, projectName) {
   const k = kit(await mk({ settings: { hideWelcome: true } }));
   const enter = e => e.dispatchEvent(new k.w.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
   const named = n => k.saved().quests.filter(q => q.name === n).length;
-  k.menuAct("newBtn", "newQuest"); k.setField("name", "First one"); k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.menuAct("newBtn", "newQuest"); k.setField("name", "First one"); k.click(k.btn(k.$("modalBody"), "Add quest"));
   k.menuAct("newBtn", "newQuest"); k.setField("name", "Second one"); enter(k.$("f-name"));
   ok(named("First one") === 1 && named("Second one") === 1 && k.$("overlay").hidden, "Enter in a later dialog does not resubmit an earlier one");
   k.menuAct("newBtn", "newQuest"); k.setField("name", "Third one");
@@ -3283,9 +3283,9 @@ async function exportClick(k, projectName) {
   se.value = "ada@example.com"; k.fire(se, "input");
   ok(k.saved().settings.contact.email === "ada@example.com", "and saves a good one");
   k.menuAct("newBtn", "newQuest"); k.setField("name", "Needs email"); k.setField("giverEmail", "oops");
-  k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.click(k.btn(k.$("modalBody"), "Add quest"));
   ok(!k.$("overlay").hidden && k.$("modalBody").textContent.includes("Quest giver email isn’t an address") && !k.saved().quests.some(q => q.name === "Needs email"), "the New quest dialog refuses a bad Quest giver email and says which field");
-  k.setField("giverEmail", "ok@example.com"); k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.setField("giverEmail", "ok@example.com"); k.click(k.btn(k.$("modalBody"), "Add quest"));
   ok(k.$("overlay").hidden && k.saved().quests.find(q => q.name === "Needs email").client.email === "ok@example.com", "a good one goes through");
   const ex = await exportClick(kit(await mk({ settings: { contact: { company: "Acme Co.", name: "", phone: "", email: "not an address", address: "", website: "" } }, quests: [{ id: "pE2", name: "Old Email Quest", status: "active", start: "2026-08-03", days: 7 }], tasks: [] })), "Old Email Quest");
   ok(ex.html.includes("<div>not an address</div>") && !ex.html.includes("mailto:not"), "an older, invalid email prints in the export as plain text, not a mailto link");
@@ -3335,10 +3335,10 @@ async function exportClick(k, projectName) {
 {
   // Duplicate quest names are refused where a name is chosen, ignoring case; imports number themselves.
   const k = kit(await mk({ settings: { hideWelcome: true } }));
-  k.menuAct("newBtn", "newQuest"); k.setField("name", "  sample app "); k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.menuAct("newBtn", "newQuest"); k.setField("name", "  sample app "); k.click(k.btn(k.$("modalBody"), "Add quest"));
   ok(!k.$("overlay").hidden && k.$("modalBody").textContent.includes("A quest named “Sample App” already exists") && k.saved().quests.filter(q => q.name.toLowerCase().trim() === "sample app").length === 1, "the New quest dialog refuses a name that is taken, ignoring case and spaces");
   { const nf = k.$("f-name").closest(".field").nextSibling; ok(!!nf && nf.getAttribute("role") === "alert" && nf.textContent === "A quest named “Sample App” already exists. Choose another name.", "and the message sits directly under the name field, with the new wording"); }
-  k.setField("name", "Brand new"); k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.setField("name", "Brand new"); k.click(k.btn(k.$("modalBody"), "Add quest"));
   ok(k.$("overlay").hidden && k.saved().quests.some(q => q.name === "Brand new"), "a free name goes through");
   k.tab("projects"); k.click(k.btn(k.$("view"), "Brand new"));
   editTitle(k, "Sample Website");
@@ -3346,8 +3346,8 @@ async function exportClick(k, projectName) {
   editTitle(k, "Brand newer");
   ok(k.saved().quests.some(q => q.name === "Brand newer"), "renaming to a free name works");
   k.menuAct("newBtn", "newIdea"); k.setField("text", "sample game"); k.click(k.btn(k.$("modalBody"), "Workshop it"));
-  k.tab("workshop"); k.click(k.btn([...k.d.querySelectorAll("#view .list li")].find(li => li.textContent.includes("sample game")), "Make candidate"));
-  ok(!k.saved().quests.some(q => q.name === "sample game") && /already exists/.test(k.$("toast").textContent) && k.saved().workshop.some(p => p.text === "sample game"), "Make candidate refuses a taken name and keeps the idea");
+  k.tab("workshop"); k.click(k.btn([...k.d.querySelectorAll("#view .list li")].find(li => li.textContent.includes("sample game")), "Make quest"));
+  ok(!k.saved().quests.some(q => q.name === "sample game") && /already exists/.test(k.$("toast").textContent) && k.saved().workshop.some(p => p.text === "sample game"), "Make quest refuses a taken name and keeps the idea");
 }
 {
   // A vaulted quest's name is free to reuse, but restoring it onto a live clash is refused.
@@ -3355,7 +3355,7 @@ async function exportClick(k, projectName) {
     { id: "pV", name: "Twin", status: "active", start: "2026-08-03", days: 7, vault: { at: "2026-08-01", why: "removed" } },
     { id: "pL", name: "Other", status: "active", start: "2026-08-03", days: 7 }], tasks: [] };
   const k = kit(await mk(saved));
-  k.menuAct("newBtn", "newQuest"); k.setField("name", "Twin"); k.click(k.btn(k.$("modalBody"), "Add candidate quest"));
+  k.menuAct("newBtn", "newQuest"); k.setField("name", "Twin"); k.click(k.btn(k.$("modalBody"), "Add quest"));
   ok(k.$("overlay").hidden && k.saved().quests.filter(q => q.name === "Twin").length === 2, "a name used only by a vaulted quest can be reused");
   k.tab("vault"); k.click(k.btn([...k.d.querySelectorAll("#view li")].find(li => li.textContent.includes("Twin")), "Twin"));
   k.click(k.btn(k.$("view"), "Restore"));

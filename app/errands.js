@@ -24,7 +24,7 @@ export function renderJobs(root) {
   txt.setAttribute("data-focus", "job-new");
   on(txt, "keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); add(); } });
   bar.appendChild(txt); bar.appendChild(dueWrap);
-  bar.appendChild(on(el("button", { type: "button", "class": "small", title: "Add this errand" }, "Add errand"), "click", add));
+  bar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add this errand" }, "Add errand"), "click", add));
   root.appendChild(bar); root.appendChild(msg);
   stopFlip();
   var open = openJobs(), done = state.jobs.filter(function (j) { return j.done; });

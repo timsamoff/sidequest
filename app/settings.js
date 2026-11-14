@@ -94,7 +94,7 @@ export function brandmarkField() {
         var f = file.files && file.files[0]; if (!f) return;
         readBrandmarkFile(f, msg, renderPreview); file.value = "";
       });
-      preview.appendChild(on(el("button", { type: "button", "class": "small", title: "Add brandmark" }, "Add brandmark"), "click", function () { file.click(); }));
+      preview.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add brandmark" }, "Add brandmark"), "click", function () { file.click(); }));
       preview.appendChild(file);
     }
     limits.hidden = !!state.settings.brandmark;
@@ -305,7 +305,7 @@ export function renderSettings(page) {
       installBox.appendChild(uninstallLine());
     } else if (deferredInstallPrompt) {
       installBox.appendChild(el("p", { "class": "hint first", style: "margin-bottom:12px" }, "Install Sidequest as an app on your computer or mobile device. PWA installation is not supported by all browsers or devices."));
-      installBox.appendChild(on(el("button", { type: "button", id: "installBtn" }, "Install Sidequest"), "click", triggerInstall));
+      installBox.appendChild(on(el("button", { type: "button", "class": "small", id: "installBtn" }, "Install Sidequest"), "click", triggerInstall));
     } else if (isIosDevice()) {
       // These devices have no Install button, so they get their own steps.
       var iosNote = el("p", { "class": "hint first" });
@@ -361,7 +361,7 @@ export function renderSettings(page) {
   root.appendChild(el("h2", { id: "startFreshHeading", "class": "scrollhead", tabindex: "-1" }, "Start fresh"));
   var box = el("div", { "class": "dangerbox" });
   box.appendChild(el("p", { "class": "hint first" }, "Erase all Sidequest data stored in " + (isHosted() ? "your account" : "this browser") + " and start again (options are retained). You will receive a warning and have a chance to save a backup first."));
-  box.appendChild(on(el("button", { type: "button", "class": "danger", style: "margin-top:12px", id: "startFresh", title: "Erase everything and start over" }, "Start fresh…"), "click", startFreshDialog));
+  box.appendChild(on(el("button", { type: "button", "class": "small danger", style: "margin-top:12px", id: "startFresh", title: "Erase everything and start over" }, "Start fresh…"), "click", startFreshDialog));
   root.appendChild(box);
 
   root.appendChild(el("h2", null, "About"));

@@ -71,7 +71,7 @@ export function helpTopics() {
       "{#in-progress}**In progress:** An active quest with at least one incomplete task that has a due date. See “Quests page”.",
       "{#issue}**Issue:** A problem associated with a quest, such as a bug. An issue doesn’t need a due date. See “Inside a quest”.",
       "{#launch-critical}**Launch critical:** A task that must be completed before launch. These tasks are grouped in the **Before you launch** section. See “Inside a quest”.",
-      "{#make-candidate}**Make candidate:** Turns an idea into a candidate quest. See “The quest lifecycle”.",
+      "{#make-candidate}**Make quest:** Turns an idea into a candidate quest. See “The quest lifecycle”.",
       "{#milestone}**Milestone:** A task with a date that appears on the **Timeline**. See “Inside a quest”.",
       "{#next-up}**Next up:** The earliest-starting incomplete task across all open quests. See “Today page”.",
       "{#pending}**Pending:** An active quest with no incomplete tasks that have due dates. See “Quests page”.",
@@ -117,7 +117,7 @@ export function helpTopics() {
       "**Completed:** This section lists completed quests.",
       "**Candidate quests:** These are quests you’re considering but aren’t working on. You can demote an active quest back to a candidate quest in the **Quest details**. Before promoting a candidate quest, you can add tasks, steps, and decisions to it.",
       ">A candidate quest keeps the links it had when it was demoted.",
-      "**New candidate quest, Copy AI prompt, and Import quest:** These buttons appear to the right of the **Candidate quests** heading. **New candidate quest** opens the same dialog as the **+** button. **Copy AI prompt** copies a prompt to use in any AI chat. **Import quest** loads the JSON file the AI generates and adds the quest to **Candidate quests** for review.",
+      "**New quest, Copy AI prompt, and Import quest:** These buttons appear to the right of the **Candidate quests** heading. **New quest** opens the same dialog as the **+** button. **Copy AI prompt** copies a prompt to use in any AI chat. **Import quest** loads the JSON file the AI generates and adds the quest to **Candidate quests** for review.",
       "**Pinned quests:** You can pin in progress, pending, and completed quests that are still on the **Quests** page. Pinning places a shortcut to that quest in the sidebar (or the **Main menu** on mobile). Completing a quest unpins it automatically. Reopening a formerly pinned quest restores the pin."
     ]],
     ["Inside a quest", [
@@ -173,7 +173,7 @@ export function helpTopics() {
       "**Delete forever:** Permanently deletes an errand. Select **Undo** right away to restore it."
     ]],
     ["Workshop page", [
-      "All ideas live here. Use them to think through new quests or prospects. You can either select **Make candidate** to turn an idea into a candidate quest or **Vault** it."
+      "All ideas live here. Use them to think through new quests or prospects. You can either select **Make quest** to turn an idea into a candidate quest or **Vault** it."
     ]],
     ["Vault page", [
       "The **Vault** is a place to store ideas and quests you’re no longer actively working with but may want to keep. You can use **Restore** or **Delete forever** on vaulted items. You can also choose to have the **Vault** automatically delete old items after a set period."

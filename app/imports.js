@@ -203,14 +203,14 @@ export function importTodoistFile(file, msg) {
 export function importPanel(root) {
   var msg = el("p", { "class": "msg schedulesmsg", role: "status", "aria-live": "polite" });
   var trelloFile = el("input", { type: "file", id: "importTrelloFile", accept: ".json,application/json", hidden: "hidden", "aria-label": "Choose a Trello board export to import" });
-  var trelloBtn = el("button", { type: "button", id: "importTrelloBtn", title: "Choose a Trello board export (.json) to import" }, "Import from Trello");
+  var trelloBtn = el("button", { type: "button", "class": "small", id: "importTrelloBtn", title: "Choose a Trello board export (.json) to import" }, "Import from Trello");
   on(trelloBtn, "click", function () { trelloFile.click(); });
   on(trelloFile, "change", function () {
     var f = trelloFile.files && trelloFile.files[0]; if (!f) return;
     importTrelloFile(f, msg); trelloFile.value = "";
   });
   var todoistFile = el("input", { type: "file", id: "importTodoistFile", accept: ".csv,text/csv", hidden: "hidden", "aria-label": "Choose a Todoist project export to import" });
-  var todoistBtn = el("button", { type: "button", id: "importTodoistBtn", title: "Choose a Todoist project export (.csv) to import", style: "margin-left:8px" }, "Import from Todoist");
+  var todoistBtn = el("button", { type: "button", "class": "small", id: "importTodoistBtn", title: "Choose a Todoist project export (.csv) to import", style: "margin-left:8px" }, "Import from Todoist");
   on(todoistBtn, "click", function () { todoistFile.click(); });
   on(todoistFile, "change", function () {
     var f = todoistFile.files && todoistFile.files[0]; if (!f) return;

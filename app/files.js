@@ -170,9 +170,9 @@ export function restoreBackupFile(file, msg) {
 }
 
 // The Save backup button, alone (the Start fresh dialog uses it); returns its row of buttons.
-export function backupControls(host, msg, onDone) {
+export function backupControls(host, msg, onDone, small) {
   var acts = el("div", { "class": "actions" });
-  acts.appendChild(on(el("button", { type: "button", "class": "primary", id: "saveFile", title: "Choose where to save a backup file" }, "Save backup"), "click", function () { saveBackupFile(msg, onDone); }));
+  acts.appendChild(on(el("button", { type: "button", "class": "primary" + (small ? " small" : ""), id: "saveFile", title: "Choose where to save a backup file" }, "Save backup"), "click", function () { saveBackupFile(msg, onDone); }));
   host.appendChild(acts);
   return acts;
 }
@@ -183,9 +183,9 @@ export function backupPanel(root, hintHost) {
   (hintHost || root).appendChild(el("p", { "class": "hint" }, (isHosted() ? "Your data is saved in your account." : "Your data is saved in this browser on this device.") + " Create a backup from time to time and keep the file somewhere safe. You can restore your data from a backup at any time."));
   var msg = el("p", { "class": "msg schedulesmsg", role: "status", "aria-live": "polite" });
   var last = el("p", { "class": "hint" }, lastBackupText());
-  var acts = backupControls(root, msg, function () { last.textContent = lastBackupText(); });
+  var acts = backupControls(root, msg, function () { last.textContent = lastBackupText(); }, true);
   var file = el("input", { type: "file", id: "restoreFile", accept: ".json,application/json", hidden: "hidden", "aria-label": "Choose a backup file to restore" });
-  acts.appendChild(on(el("button", { type: "button", id: "restoreBtn", title: "Choose a backup file to restore" }, "Restore backup"), "click", function () { file.click(); }));
+  acts.appendChild(on(el("button", { type: "button", "class": "small", id: "restoreBtn", title: "Choose a backup file to restore" }, "Restore backup"), "click", function () { file.click(); }));
   on(file, "change", function () {
     var f = file.files && file.files[0]; if (!f) return;
     restoreBackupFile(f, msg); file.value = "";

@@ -31,7 +31,7 @@ function toQuest(c) {
 // **bold** in text marks an on-screen label.
 var STEPS = [
   { title: "Welcome to Sidequest", view: function () { return { text: "This takes about a minute. You will add a quest, give it a task, and start it. Skip any time, and replay it from the Field guide." }; } },
-  { title: "Add a quest", view: function () { return { target: document.getElementById("newBtn"), text: "Select the **+** button and choose **New candidate quest**. Give it a name and select **Add candidate quest**." }; },
+  { title: "Add a quest", view: function () { return { target: document.getElementById("newBtn"), text: "Select the **+** button and choose **New quest**. Give it a name and select **Add quest**." }; },
     done: function (c) { var q = state.quests.filter(function (p) { return c.baseIds.indexOf(p.id) < 0; })[0]; if (q) c.questId = q.id; return !!q; } },
   { title: "Open your quest", view: toQuest, done: function (c) { return onQuestPage(c) || hasTask(c) || promoted(c); } },
   { title: "Add a task",

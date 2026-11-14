@@ -248,7 +248,7 @@ export function issueDialog(prefillQuestId) {
   }, (fixedQuest ? "Log an issue on this quest." : "Log an issue on any open quest.") + " No due date is required, and the issue stays out of the Backlog. Find it in the Issues section of the quest’s details.");
 }
 export function questDialog() {
-  formDialog("New candidate quest", [
+  formDialog("New quest", [
     { key: "name", label: "Quest name" },
     { key: "notes", label: "Notes", type: "textarea", rows: 5 },
     { key: "giverHeading", label: "Quest giver", type: "heading", collapsible: true, help: "quest-giver", emptyText: "Add Quest giver details", summaryKeys: ["giverOrg", "giverPoc"] },
@@ -260,8 +260,8 @@ export function questDialog() {
     { key: "giverAddress", label: "Address", type: "textarea", rows: 3 },
     { key: "giverCoin", label: "Bounty", type: "money" },
     { key: "giverPer", label: "Per", type: "select", options: [{ value: "Hour", label: "Hour" }, { value: "Quest", label: "Quest" }] }
-  ], "Add candidate quest", function (v) {
-    if (!v.name) return { field: "name", error: "Enter a title for the candidate quest." };
+  ], "Add quest", function (v) {
+    if (!v.name) return { field: "name", error: "Enter a title for the quest." };
     if (questNameTaken(v.name)) return { field: "name", error: "A quest named “" + questNameTaken(v.name).name + "” already exists. Choose another name." };
     if (v.giverEmail && !isEmail(v.giverEmail)) return { field: "giverEmail", error: "The Quest giver email isn’t an address. Enter one like name@example.com, or leave it empty." };
     var coin = parseMoney(v.giverCoin, state.settings.coinFormat);
