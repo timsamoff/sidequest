@@ -10,18 +10,19 @@ export var IMPORT_LIMITS = { name: 120, org: 200, notes: 5000, what: 400, done: 
 
 // The prompt a user pastes into any AI chat. {{TODAY}} is filled in when it is copied.
 var PROMPT_TEMPLATE = [
-  "I want you to build a quest for Sidequest, a project planner. Read everything below, then do the job it describes.",
+  "I want you to build a quest for Sidequest, a project planner. Read everything below, then run the interview it describes.",
   "",
   "THE JOB",
   "[Describe the job here: what it is, who it is for, and any deadline or limits.]",
   "",
   "HOW TO WORK",
   "Work in this order, one step at a time, and wait for my answer after each question.",
+  "This is an interview, not a search. Everything I type until you deliver the JSON is an answer to your last question, even if it looks like a topic or a title. Never explain or research the subject. Do not leave this order until step 5 is done.",
   "1. Your first reply must be only the greeting below, with nothing before or after it. Wait for my answer. If I give a name, use it as the quest’s name. If I say I haven’t decided, move on, and when you ask the question in step 4, suggest a short name based on the job and use it unless I give another.",
   "   Greeting: “Welcome, adventurer! Let’s create a new quest for Sidequest.” Then, on a new line: “What shall we call your quest? If you haven’t decided yet, just say so, and we’ll move on to the next step.”",
   "   If this conversation already has an earlier Sidequest quest request from me, use this greeting instead: “Welcome back, adventurer! Let’s create another new quest for Sidequest.” Then the same question on a new line.",
   "2. If the job above is still the bracketed placeholder, ask me what the job is, and wait for my answer.",
-  "3. If the job is missing details you need to plan it well, such as the goal, the deadline, or limits, ask me up to five short questions about it. Also ask whether the job is for a company or organization, and if so, its name. If it is already clear, skip the questions I have already answered.",
+  "3. Ask me up to five short questions about the job, one at a time. Always include these two: when it is due, if at all, and how much time I expect it to take. Also ask whether the job is for a company or organization, and if so, its name. Skip any question the job description already answers.",
   "4. Then ask me this: do I want you to add the typical tasks, steps, and decisions for this kind of job, or do I want to define my own? If I define my own, ask me for them, or for an outline, and build the quest around what I give you.",
   "5. Once I have answered, reply with the quest as one JSON object and nothing else: no introduction, no explanation, no commentary after it. Put it in a single code block, or, if you can create files, give it to me as a file named after the quest, such as Paint the spare room.json.",
   "Today is {{TODAY}}.",
@@ -76,7 +77,7 @@ var PROMPT_TEMPLATE = [
   "",
   "RULES",
   "Use only the fields above and do not invent others. Write valid JSON: double quotes, no trailing commas, no comments. Leave a field out rather than filling it with a guess.",
-  "Do not set any dates unless I ask for a schedule. If I do, use today’s date and the deadline I give you to choose them.",
+  "Set dates only if I gave you a due date or asked for a schedule. If I did, use today’s date and my due date to choose them. If I said it has no deadline, leave all dates out.",
   "Text is plain text, not Markdown or HTML."
 ].join("\n");
 
