@@ -102,7 +102,7 @@ async function main() {
   ok(p.indexOf("Today is 2030-05-06.") >= 0 && p.indexOf("{{TODAY}}") < 0, "the prompt carries today's date");
   ok(/[–—]/.test(p) === false, "the prompt has no dashes");
   ok(p.indexOf("typical tasks, steps, and decisions") >= 0 && p.indexOf("define my own") >= 0 && p.indexOf("what the job is") < p.indexOf("typical tasks"), "the prompt asks whether to add typical tasks or use the user's own");
-  ok(p.indexOf("This is an interview, not a search.") >= 0 && p.indexOf("when it is due, if at all, and how much time I expect it to take") >= 0 && p.indexOf("Set dates only if I gave you a due date") >= 0, "the prompt keeps the AI in the interview and always asks about the due date and time");
+  ok(p.indexOf("This is an interview, not a search.") >= 0 && p.indexOf("when it is due, if at all, and how much time I expect it to take") >= 0 && p.indexOf("Set dates only if I gave you a due date") >= 0 && p.indexOf("do not search the web") >= 0 && p.indexOf("If, and only if, you have already delivered a finished quest JSON") >= 0 && p.indexOf("never a new request") >= 0, "the prompt keeps the AI in the interview and always asks about the due date and time");
   const example = p.slice(p.indexOf("{\n  \"sidequest\""), p.indexOf("\n}\n", p.indexOf("{\n  \"sidequest\"")) + 2);
   let exampleOk = false;
   try { exampleOk = ai.validateQuestImport(JSON.parse(example)).errors.length === 0; } catch (e) { exampleOk = false; }
