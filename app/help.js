@@ -34,7 +34,7 @@ export function openTermHelp(id) {
   openModalOver(t.name, function (body) {
     var tp = el("p", { "class": "first" }); tp.appendChild(helpMarkup(t.text)); body.appendChild(tp);
     var acts = el("div", { "class": "actions" });
-    acts.appendChild(on(el("button", { type: "button", "class": "primary", id: "termMore", title: "Open “" + t.topic + "” in the Field guide" }, "Read more in the Field guide"), "click", function () { closeAllModals(); ui.helpTopic = t.topic; go("help"); }));
+    acts.appendChild(on(el("button", { type: "button", "class": "small primary", id: "termMore", title: "Open “" + t.topic + "” in the Field guide" }, "Read more in the Field guide"), "click", function () { closeAllModals(); ui.helpTopic = t.topic; go("help"); }));
     body.appendChild(acts);
   });
 }

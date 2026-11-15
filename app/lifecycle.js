@@ -52,8 +52,8 @@ export function completionDialog(p) {
     var oi = openIssues(p.id).length;
     if (oi) body.appendChild(el("p", { "class": "hint" }, oi + (oi === 1 ? " issue is" : " issues are") + " still open."));
     var acts = el("div", { "class": "actions" });
-    var leave = el("button", { type: "button", title: "Keep visible on Quests" }, "Leave in Quests");
-    var vault = el("button", { type: "button", "class": "dangerfill", title: "Send to the Vault right now" }, "Vault now");
+    var leave = el("button", { type: "button", "class": "small", title: "Keep visible on Quests" }, "Leave in Quests");
+    var vault = el("button", { type: "button", "class": "small dangerfill", title: "Send to the Vault right now" }, "Vault now");
     on(leave, "click", closeModal);
     on(vault, "click", function () { closeModal(); vaultQuest(p); });
     acts.appendChild(leave); acts.appendChild(vault); body.appendChild(acts);

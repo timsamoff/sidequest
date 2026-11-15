@@ -68,8 +68,8 @@ export function importTrelloFile(file, msg) {
       if (summary.droppedCount) lines.push("Labels, members, comments, and attachments on this board are not imported.");
       lines.forEach(function (t, i) { body.appendChild(el("p", { "class": i === 0 ? "first" : "" }, t)); });
       var acts = el("div", { "class": "actions" });
-      var no = el("button", { type: "button", title: "Cancel this import" }, "Cancel");
-      var yes = el("button", { type: "button", "class": "primary", title: "Create a new quest from this board" }, "Import");
+      var no = el("button", { type: "button", "class": "small", title: "Cancel this import" }, "Cancel");
+      var yes = el("button", { type: "button", "class": "small primary", title: "Create a new quest from this board" }, "Import");
       on(no, "click", closeModal);
       on(yes, "click", function () {
         closeModal();
@@ -183,8 +183,8 @@ export function importTodoistFile(file, msg) {
       lines.push("Labels and other Todoist-only details are not imported.");
       lines.forEach(function (t, i) { body.appendChild(el("p", { "class": i === 0 ? "first" : "" }, t)); });
       var acts = el("div", { "class": "actions" });
-      var no = el("button", { type: "button", title: "Cancel this import" }, "Cancel");
-      var yes = el("button", { type: "button", "class": "primary", title: "Create a new quest from this project" }, "Import");
+      var no = el("button", { type: "button", "class": "small", title: "Cancel this import" }, "Cancel");
+      var yes = el("button", { type: "button", "class": "small primary", title: "Create a new quest from this project" }, "Import");
       on(no, "click", closeModal);
       on(yes, "click", function () {
         closeModal();

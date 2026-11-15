@@ -170,7 +170,7 @@ export function formDialog(title, fields, submitLabel, onSubmit, intro, extra) {
     var err = el("p", { "class": "msg", role: "alert" }); body.appendChild(err);
     var fieldErr = {};
     var acts = el("div", { "class": "actions", style: "margin-top:6px" });
-    var ok = el("button", { type: "button", "class": "primary", title: "Save and close" }, submitLabel), cancel = el("button", { type: "button", title: "Close without saving" }, "Cancel");
+    var ok = el("button", { type: "button", "class": "small primary", title: "Save and close" }, submitLabel), cancel = el("button", { type: "button", "class": "small", title: "Close without saving" }, "Cancel");
     function submit() {
       var vals = {}; Object.keys(inputs).forEach(function (k) { vals[k] = inputs[k].type === "checkbox" ? (inputs[k].checked ? "1" : "") : inputs[k].value.trim(); });
       Object.keys(fieldErr).forEach(function (k) { setMsg(fieldErr[k], "", ""); });
@@ -189,7 +189,7 @@ export function formDialog(title, fields, submitLabel, onSubmit, intro, extra) {
     formSubmit = submit;
     acts.appendChild(ok); acts.appendChild(cancel);
     if (extra) {
-      var xb = el("button", { type: "button", "class": "danger", style: "margin-left:auto", title: extra.title }, extra.label);
+      var xb = el("button", { type: "button", "class": "small danger", style: "margin-left:auto", title: extra.title }, extra.label);
       on(xb, "click", function () { closeModal(); extra.onClick(); });
       acts.appendChild(xb);
     }
@@ -422,7 +422,7 @@ export function slipDialog(p) {
     var err = el("p", { "class": "msg", role: "alert" }); body.appendChild(err);
     var acts = el("div", { "class": "actions", style: "margin-top:6px" });
     var warnedFor = null;
-    acts.appendChild(on(el("button", { type: "button", "class": "primary", id: "slipGo", title: "Push dates later" }, "Push dates later"), "click", function () {
+    acts.appendChild(on(el("button", { type: "button", "class": "small primary", id: "slipGo", title: "Push dates later" }, "Push dates later"), "click", function () {
       var n = parseInt(inp.value, 10);
       if (isNaN(n) || n < 1 || n > 90) { setMsg(err, "Enter a number of days from 1 to 90.", "error"); return; }
       var targets = state.tasks.filter(function (t) { return t.questId === p.id && t.block > 0 && t.status !== "Completed" && !t.vault; });
@@ -446,12 +446,12 @@ export function slipDialog(p) {
       changed(); closeModal();
       notify(targets.length + (targets.length === 1 ? " task" : " tasks") + " in " + p.name + " moved back " + n + (n === 1 ? " day" : " days") + ".");
     }));
-    if (p.lastSlip) acts.appendChild(on(el("button", { type: "button", id: "slipUndo", title: "Reverse the last slip" }, "Undo last slip (" + p.lastSlip.days + " days)"), "click", function () {
+    if (p.lastSlip) acts.appendChild(on(el("button", { type: "button", "class": "small", id: "slipUndo", title: "Reverse the last slip" }, "Undo last slip (" + p.lastSlip.days + " days)"), "click", function () {
       p.lastSlip.snap.forEach(function (s) { var t = findTask(s.id); if (t) { t.block = s.block; t.start = s.start || ""; t.due = s.due || ""; } });
       p.lastSlip = null; changed(); closeModal();
       notify("Slip undone.");
     }));
-    acts.appendChild(on(el("button", { type: "button", title: "Cancel" }, "Cancel"), "click", closeModal));
+    acts.appendChild(on(el("button", { type: "button", "class": "small", title: "Cancel" }, "Cancel"), "click", closeModal));
     body.appendChild(acts);
   });
 }
@@ -460,7 +460,7 @@ export function confirmDialog(title, text, label, onConfirm) {
   openModal(title, function (body) {
     body.appendChild(el("p", { "class": "first" }, text));
     var acts = el("div", { "class": "actions" });
-    var no = el("button", { type: "button", title: "Cancel this action" }, "Cancel"), yes = el("button", { type: "button", "class": "dangerfill", id: "confirmYes", title: "Confirm this action" }, label);
+    var no = el("button", { type: "button", "class": "small", title: "Cancel this action" }, "Cancel"), yes = el("button", { type: "button", "class": "small dangerfill", id: "confirmYes", title: "Confirm this action" }, label);
     on(no, "click", closeModal); on(yes, "click", function () { closeModal(); onConfirm(); });
     acts.appendChild(no); acts.appendChild(yes); body.appendChild(acts);
   });

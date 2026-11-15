@@ -35,7 +35,7 @@ export function startFreshDialog() {
     var ack = el("label", { "class": "radiorow" }); var cb = el("input", { type: "checkbox", id: "freshAck" });
     ack.appendChild(cb); ack.appendChild(el("span", null, "I understand that this will erase everything.")); body.appendChild(ack);
     var acts = el("div", { "class": "actions" });
-    var go1 = el("button", { type: "button", "class": "dangerfill", id: "freshGo", title: "Erase everything and start over" }, "Erase everything"); go1.disabled = true;
+    var go1 = el("button", { type: "button", "class": "small dangerfill", id: "freshGo", title: "Erase everything and start over" }, "Erase everything"); go1.disabled = true;
     on(cb, "change", function () { go1.disabled = !cb.checked; });
     on(go1, "click", function () {
       var keep = state.settings; keep.hideWelcome = false;
@@ -44,7 +44,7 @@ export function startFreshDialog() {
       ui.sel = null; ui.detail = false; ui.vaultFilter = "all"; applyTheme(); save(); closeModal(); go("today"); notify("Started fresh.");
       if (state.settings.audio) playSfx("../assets/sfx/startFresh.mp3");
     });
-    acts.appendChild(on(el("button", { type: "button", title: "Cancel" }, "Cancel"), "click", closeModal)); acts.appendChild(go1); body.appendChild(acts);
+    acts.appendChild(on(el("button", { type: "button", "class": "small", title: "Cancel" }, "Cancel"), "click", closeModal)); acts.appendChild(go1); body.appendChild(acts);
   });
 }
 

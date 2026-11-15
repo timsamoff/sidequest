@@ -273,8 +273,8 @@ export function openHandEditor() {
   openModal(HAND.editorTitle, function (body) {
     body.appendChild(el("p", { "class": "first hint" }, HAND.editorHint));
     var list = el("ul", { "class": "handpick" }), foot = el("div", { "class": "handfoot" }), count = el("span", { "class": "hint handcount" });
-    var doneBtn = el("button", { type: "button", "class": "primary" }, HAND.done);
-    var clear = on(el("button", { type: "button" }, HAND.empty), "click", emptyHand);
+    var doneBtn = el("button", { type: "button", "class": "small primary" }, HAND.done);
+    var clear = on(el("button", { type: "button", "class": "small" }, HAND.empty), "click", emptyHand);
     var paint = function (focusSels) {
       list.innerHTML = "";
       var hand = handJobs(), full = hand.length >= HAND_MAX;

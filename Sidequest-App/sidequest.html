@@ -1772,7 +1772,7 @@ function findAnyTask(id) { for (var i = 0; i < state.tasks.length; i++) if (stat
 var KEY2 = "sidequest-template-v1", UIKEY = "sidequest-template-ui";
 var STATUSES = ["Not started", "In progress", "Completed"];
 var CHECKPOINTS = 7;
-var APP_VERSION = "1.2.7";
+var APP_VERSION = "1.2.8";
 var APP_NAME = "Sidequest";
 
 function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -3635,7 +3635,7 @@ function formDialog(title, fields, submitLabel, onSubmit, intro, extra) {
     var err = el("p", { "class": "msg", role: "alert" }); body.appendChild(err);
     var fieldErr = {};
     var acts = el("div", { "class": "actions", style: "margin-top:6px" });
-    var ok = el("button", { type: "button", "class": "primary", title: "Save and close" }, submitLabel), cancel = el("button", { type: "button", title: "Close without saving" }, "Cancel");
+    var ok = el("button", { type: "button", "class": "small primary", title: "Save and close" }, submitLabel), cancel = el("button", { type: "button", "class": "small", title: "Close without saving" }, "Cancel");
     function submit() {
       var vals = {}; Object.keys(inputs).forEach(function (k) { vals[k] = inputs[k].type === "checkbox" ? (inputs[k].checked ? "1" : "") : inputs[k].value.trim(); });
       Object.keys(fieldErr).forEach(function (k) { setMsg(fieldErr[k], "", ""); });
@@ -3654,7 +3654,7 @@ function formDialog(title, fields, submitLabel, onSubmit, intro, extra) {
     formSubmit = submit;
     acts.appendChild(ok); acts.appendChild(cancel);
     if (extra) {
-      var xb = el("button", { type: "button", "class": "danger", style: "margin-left:auto", title: extra.title }, extra.label);
+      var xb = el("button", { type: "button", "class": "small danger", style: "margin-left:auto", title: extra.title }, extra.label);
       on(xb, "click", function () { closeModal(); extra.onClick(); });
       acts.appendChild(xb);
     }
@@ -3887,7 +3887,7 @@ function slipDialog(p) {
     var err = el("p", { "class": "msg", role: "alert" }); body.appendChild(err);
     var acts = el("div", { "class": "actions", style: "margin-top:6px" });
     var warnedFor = null;
-    acts.appendChild(on(el("button", { type: "button", "class": "primary", id: "slipGo", title: "Push dates later" }, "Push dates later"), "click", function () {
+    acts.appendChild(on(el("button", { type: "button", "class": "small primary", id: "slipGo", title: "Push dates later" }, "Push dates later"), "click", function () {
       var n = parseInt(inp.value, 10);
       if (isNaN(n) || n < 1 || n > 90) { setMsg(err, "Enter a number of days from 1 to 90.", "error"); return; }
       var targets = state.tasks.filter(function (t) { return t.questId === p.id && t.block > 0 && t.status !== "Completed" && !t.vault; });
@@ -3911,12 +3911,12 @@ function slipDialog(p) {
       changed(); closeModal();
       notify(targets.length + (targets.length === 1 ? " task" : " tasks") + " in " + p.name + " moved back " + n + (n === 1 ? " day" : " days") + ".");
     }));
-    if (p.lastSlip) acts.appendChild(on(el("button", { type: "button", id: "slipUndo", title: "Reverse the last slip" }, "Undo last slip (" + p.lastSlip.days + " days)"), "click", function () {
+    if (p.lastSlip) acts.appendChild(on(el("button", { type: "button", "class": "small", id: "slipUndo", title: "Reverse the last slip" }, "Undo last slip (" + p.lastSlip.days + " days)"), "click", function () {
       p.lastSlip.snap.forEach(function (s) { var t = findTask(s.id); if (t) { t.block = s.block; t.start = s.start || ""; t.due = s.due || ""; } });
       p.lastSlip = null; changed(); closeModal();
       notify("Slip undone.");
     }));
-    acts.appendChild(on(el("button", { type: "button", title: "Cancel" }, "Cancel"), "click", closeModal));
+    acts.appendChild(on(el("button", { type: "button", "class": "small", title: "Cancel" }, "Cancel"), "click", closeModal));
     body.appendChild(acts);
   });
 }
@@ -3925,7 +3925,7 @@ function confirmDialog(title, text, label, onConfirm) {
   openModal(title, function (body) {
     body.appendChild(el("p", { "class": "first" }, text));
     var acts = el("div", { "class": "actions" });
-    var no = el("button", { type: "button", title: "Cancel this action" }, "Cancel"), yes = el("button", { type: "button", "class": "dangerfill", id: "confirmYes", title: "Confirm this action" }, label);
+    var no = el("button", { type: "button", "class": "small", title: "Cancel this action" }, "Cancel"), yes = el("button", { type: "button", "class": "small dangerfill", id: "confirmYes", title: "Confirm this action" }, label);
     on(no, "click", closeModal); on(yes, "click", function () { closeModal(); onConfirm(); });
     acts.appendChild(no); acts.appendChild(yes); body.appendChild(acts);
   });
@@ -4215,8 +4215,8 @@ function completionDialog(p) {
     var oi = openIssues(p.id).length;
     if (oi) body.appendChild(el("p", { "class": "hint" }, oi + (oi === 1 ? " issue is" : " issues are") + " still open."));
     var acts = el("div", { "class": "actions" });
-    var leave = el("button", { type: "button", title: "Keep visible on Quests" }, "Leave in Quests");
-    var vault = el("button", { type: "button", "class": "dangerfill", title: "Send to the Vault right now" }, "Vault now");
+    var leave = el("button", { type: "button", "class": "small", title: "Keep visible on Quests" }, "Leave in Quests");
+    var vault = el("button", { type: "button", "class": "small dangerfill", title: "Send to the Vault right now" }, "Vault now");
     on(leave, "click", closeModal);
     on(vault, "click", function () { closeModal(); vaultQuest(p); });
     acts.appendChild(leave); acts.appendChild(vault); body.appendChild(acts);
@@ -4352,7 +4352,7 @@ function manualSaveDialog(name, text, mime, onSaved, capability) {
     body.appendChild(el("p", { "class": "hint first" }, "Choose " + label + " to save " + name + ". If nothing happens, open the copy option below."));
     var note = el("p", { "class": "hint" }, "");
     function copyInstead(why) { setMsg(note, why + " Copy the text below instead.", "note"); }
-    var main = on(el("button", { type: "button", "class": "primary" }, label), "click", function () {
+    var main = on(el("button", { type: "button", "class": "small primary" }, label), "click", function () {
       if (capability) {
         capability.save({ filename: name, data: text }).then(function () { closeModal(); if (onSaved) onSaved(); }, function (err) {
           if (cancelled(err)) setMsg(note, "Save canceled.", "");
@@ -4381,7 +4381,7 @@ function manualSaveDialog(name, text, mime, onSaved, capability) {
     box.value = text; more.appendChild(box);
     var copyNote = el("p", { "class": "hint" }, "");
     var copyActs = el("div", { "class": "actions" });
-    copyActs.appendChild(on(el("button", { type: "button" }, "Copy"), "click", function () {
+    copyActs.appendChild(on(el("button", { type: "button", "class": "small" }, "Copy"), "click", function () {
       function done(ok) { setMsg(copyNote, ok ? "Copied." : "Select the text and copy it.", ok ? "" : "note"); }
       box.focus(); box.select();
       try {
@@ -4573,8 +4573,8 @@ function importTrelloFile(file, msg) {
       if (summary.droppedCount) lines.push("Labels, members, comments, and attachments on this board are not imported.");
       lines.forEach(function (t, i) { body.appendChild(el("p", { "class": i === 0 ? "first" : "" }, t)); });
       var acts = el("div", { "class": "actions" });
-      var no = el("button", { type: "button", title: "Cancel this import" }, "Cancel");
-      var yes = el("button", { type: "button", "class": "primary", title: "Create a new quest from this board" }, "Import");
+      var no = el("button", { type: "button", "class": "small", title: "Cancel this import" }, "Cancel");
+      var yes = el("button", { type: "button", "class": "small primary", title: "Create a new quest from this board" }, "Import");
       on(no, "click", closeModal);
       on(yes, "click", function () {
         closeModal();
@@ -4688,8 +4688,8 @@ function importTodoistFile(file, msg) {
       lines.push("Labels and other Todoist-only details are not imported.");
       lines.forEach(function (t, i) { body.appendChild(el("p", { "class": i === 0 ? "first" : "" }, t)); });
       var acts = el("div", { "class": "actions" });
-      var no = el("button", { type: "button", title: "Cancel this import" }, "Cancel");
-      var yes = el("button", { type: "button", "class": "primary", title: "Create a new quest from this project" }, "Import");
+      var no = el("button", { type: "button", "class": "small", title: "Cancel this import" }, "Cancel");
+      var yes = el("button", { type: "button", "class": "small primary", title: "Create a new quest from this project" }, "Import");
       on(no, "click", closeModal);
       on(yes, "click", function () {
         closeModal();
@@ -4974,7 +4974,7 @@ function copyAiPrompt() {
       on(box, "focus", function () { box.select(); });
       body.appendChild(box);
       var acts = el("div", { "class": "actions" });
-      acts.appendChild(on(el("button", { type: "button", "class": "primary", title: "Close" }, "Done"), "click", closeModal));
+      acts.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Close" }, "Done"), "click", closeModal));
       body.appendChild(acts);
     });
   });
@@ -4986,7 +4986,7 @@ function importQuestDialog() {
   openModal("Import a quest", function (body) {
     body.appendChild(el("p", { "class": "first" }, "Choose the quest file generated by an AI, or paste its contents. Imported quests are added to Candidate quests. Nothing is added until you review and confirm the import."));
     var file = el("input", { type: "file", accept: ".json,application/json,text/plain", hidden: "hidden", "aria-label": "Choose a quest file to import" });
-    var pick = el("button", { type: "button", title: "Choose a quest file (.json)" }, "Choose file");
+    var pick = el("button", { type: "button", "class": "small", title: "Choose a quest file (.json)" }, "Choose file");
     var area = el("textarea", { rows: "8", "aria-label": "Quest JSON", placeholder: "Or paste the quest JSON here", spellcheck: "false", style: "margin-top:var(--space-14)" });
     var result = el("div", { role: "status", "aria-live": "polite" });
     function list(items) { var ul = el("ul", { "class": "importlist" }); items.forEach(function (t) { ul.appendChild(el("li", null, t)); }); return ul; }
@@ -5000,7 +5000,7 @@ function importQuestDialog() {
         result.appendChild(el("p", { "class": "msg errmsg" }, plural(r.errors.length, "problem", "problems") + " found. Nothing was imported."));
         result.appendChild(list(r.errors));
         var ra = el("div", { "class": "actions" });
-        var cp = on(el("button", { type: "button", title: "Copy these problems to send back to the AI" }, "Copy problems"), "click", function () {
+        var cp = on(el("button", { type: "button", "class": "small", title: "Copy these problems to send back to the AI" }, "Copy problems"), "click", function () {
           copyText("Sidequest could not import the quest JSON you gave me. Please fix these problems and send the whole JSON again, with nothing else:\n" + r.errors.map(function (e) { return "- " + e; }).join("\n"), function (ok) { notify(ok ? "Problems copied. Paste them back to the AI." : "Select the problems and copy them.", null, ok ? "" : "problem"); });
         });
         ra.appendChild(cp); result.appendChild(ra);
@@ -5011,8 +5011,8 @@ function importQuestDialog() {
       result.appendChild(el("p", { "class": "first" }, "“" + name + "” has " + plural(c.tasks.length, "task", "tasks") + " (" + dated + " scheduled, " + (c.tasks.length - dated) + " in the Backlog) and " + plural(steps, "step", "steps") + (decs ? " (" + decs + (decs === 1 ? " with a decision)" : " with decisions)") : "") + ". It will be added to Candidate quests, and your existing quests are not changed." + (name !== c.quest.name ? " A quest called “" + c.quest.name + "” already exists, so a number is added." : "")));
       if (r.warnings.length) { result.appendChild(el("p", { "class": "msg notemsg" }, "Adjusted to fit:")); result.appendChild(list(r.warnings)); }
       var ya = el("div", { "class": "actions" });
-      ya.appendChild(on(el("button", { type: "button", title: "Cancel this import" }, "Cancel"), "click", closeModal));
-      ya.appendChild(on(el("button", { type: "button", "class": "primary", title: "Add this quest to Candidate quests" }, "Import quest"), "click", function () {
+      ya.appendChild(on(el("button", { type: "button", "class": "small", title: "Cancel this import" }, "Cancel"), "click", closeModal));
+      ya.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add this quest to Candidate quests" }, "Import quest"), "click", function () {
         var built = buildQuestFromImport(c);
         state.quests.push(built.quest);
         built.tasks.forEach(function (t) { state.tasks.push(t); });
@@ -5086,7 +5086,7 @@ function openTermHelp(id) {
   openModalOver(t.name, function (body) {
     var tp = el("p", { "class": "first" }); tp.appendChild(helpMarkup(t.text)); body.appendChild(tp);
     var acts = el("div", { "class": "actions" });
-    acts.appendChild(on(el("button", { type: "button", "class": "primary", id: "termMore", title: "Open “" + t.topic + "” in the Field guide" }, "Read more in the Field guide"), "click", function () { closeAllModals(); ui.helpTopic = t.topic; go("help"); }));
+    acts.appendChild(on(el("button", { type: "button", "class": "small primary", id: "termMore", title: "Open “" + t.topic + "” in the Field guide" }, "Read more in the Field guide"), "click", function () { closeAllModals(); ui.helpTopic = t.topic; go("help"); }));
     body.appendChild(acts);
   });
 }
@@ -5640,8 +5640,8 @@ function openHandEditor() {
   openModal(HAND.editorTitle, function (body) {
     body.appendChild(el("p", { "class": "first hint" }, HAND.editorHint));
     var list = el("ul", { "class": "handpick" }), foot = el("div", { "class": "handfoot" }), count = el("span", { "class": "hint handcount" });
-    var doneBtn = el("button", { type: "button", "class": "primary" }, HAND.done);
-    var clear = on(el("button", { type: "button" }, HAND.empty), "click", emptyHand);
+    var doneBtn = el("button", { type: "button", "class": "small primary" }, HAND.done);
+    var clear = on(el("button", { type: "button", "class": "small" }, HAND.empty), "click", emptyHand);
     var paint = function (focusSels) {
       list.innerHTML = "";
       var hand = handJobs(), full = hand.length >= HAND_MAX;
@@ -6386,7 +6386,7 @@ function startFreshDialog() {
     var ack = el("label", { "class": "radiorow" }); var cb = el("input", { type: "checkbox", id: "freshAck" });
     ack.appendChild(cb); ack.appendChild(el("span", null, "I understand that this will erase everything.")); body.appendChild(ack);
     var acts = el("div", { "class": "actions" });
-    var go1 = el("button", { type: "button", "class": "dangerfill", id: "freshGo", title: "Erase everything and start over" }, "Erase everything"); go1.disabled = true;
+    var go1 = el("button", { type: "button", "class": "small dangerfill", id: "freshGo", title: "Erase everything and start over" }, "Erase everything"); go1.disabled = true;
     on(cb, "change", function () { go1.disabled = !cb.checked; });
     on(go1, "click", function () {
       var keep = state.settings; keep.hideWelcome = false;
@@ -6395,7 +6395,7 @@ function startFreshDialog() {
       ui.sel = null; ui.detail = false; ui.vaultFilter = "all"; applyTheme(); save(); closeModal(); go("today"); notify("Started fresh.");
       if (state.settings.audio) playSfx(SFX_START_FRESH);
     });
-    acts.appendChild(on(el("button", { type: "button", title: "Cancel" }, "Cancel"), "click", closeModal)); acts.appendChild(go1); body.appendChild(acts);
+    acts.appendChild(on(el("button", { type: "button", "class": "small", title: "Cancel" }, "Cancel"), "click", closeModal)); acts.appendChild(go1); body.appendChild(acts);
   });
 }
 
@@ -7267,7 +7267,7 @@ function renderVault(root) {
     row.appendChild(acts); li.appendChild(row); ul.appendChild(li);
   });
   root.appendChild(ul);
-  root.appendChild(on(el("button", { type: "button", "class": "danger", style: "margin-top:16px" }, "Empty vault"), "click", emptyVault));
+  root.appendChild(on(el("button", { type: "button", "class": "small danger", style: "margin-top:16px" }, "Empty vault"), "click", emptyVault));
 }
 
 // Set by app.js after checkForAppUpdate() resolves; null unless a newer

@@ -43,7 +43,7 @@ export function manualSaveDialog(name, text, mime, onSaved, capability) {
     body.appendChild(el("p", { "class": "hint first" }, "Choose " + label + " to save " + name + ". If nothing happens, open the copy option below."));
     var note = el("p", { "class": "hint" }, "");
     function copyInstead(why) { setMsg(note, why + " Copy the text below instead.", "note"); }
-    var main = on(el("button", { type: "button", "class": "primary" }, label), "click", function () {
+    var main = on(el("button", { type: "button", "class": "small primary" }, label), "click", function () {
       if (capability) {
         capability.save({ filename: name, data: text }).then(function () { closeModal(); if (onSaved) onSaved(); }, function (err) {
           if (cancelled(err)) setMsg(note, "Save canceled.", "");
@@ -72,7 +72,7 @@ export function manualSaveDialog(name, text, mime, onSaved, capability) {
     box.value = text; more.appendChild(box);
     var copyNote = el("p", { "class": "hint" }, "");
     var copyActs = el("div", { "class": "actions" });
-    copyActs.appendChild(on(el("button", { type: "button" }, "Copy"), "click", function () {
+    copyActs.appendChild(on(el("button", { type: "button", "class": "small" }, "Copy"), "click", function () {
       function done(ok) { setMsg(copyNote, ok ? "Copied." : "Select the text and copy it.", ok ? "" : "note"); }
       box.focus(); box.select();
       try {

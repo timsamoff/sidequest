@@ -535,7 +535,7 @@ export function renderVault(root) {
     row.appendChild(acts); li.appendChild(row); ul.appendChild(li);
   });
   root.appendChild(ul);
-  root.appendChild(on(el("button", { type: "button", "class": "danger", style: "margin-top:16px" }, "Empty vault"), "click", emptyVault));
+  root.appendChild(on(el("button", { type: "button", "class": "small danger", style: "margin-top:16px" }, "Empty vault"), "click", emptyVault));
 }
 
 // Set by app.js after checkForAppUpdate() resolves; null unless a newer
