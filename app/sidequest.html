@@ -1772,7 +1772,7 @@ function findAnyTask(id) { for (var i = 0; i < state.tasks.length; i++) if (stat
 var KEY2 = "sidequest-template-v1", UIKEY = "sidequest-template-ui";
 var STATUSES = ["Not started", "In progress", "Completed"];
 var CHECKPOINTS = 7;
-var APP_VERSION = "1.2.6";
+var APP_VERSION = "1.2.7";
 var APP_NAME = "Sidequest";
 
 function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -5754,17 +5754,21 @@ function addRowControls(li, t) {
   on(sel, "change", function () { setStatus(t, sel.value); if (!byPointer) setFocusKey("status-" + t.id); changed(); });
   li.classList.add("hasstatus"); li.appendChild(sel);
 }
-// Opens or closes a row in place. Closing the row that was open above shifts the page, so the clicked row is put back where it was.
-function toggleRow(p, t, open, li) {
-  var before = li.getBoundingClientRect().top;
-  ui.questOpen[p.id] = open ? null : t.id; renderView();
-  var row = document.getElementById(li.id), shift = row ? row.getBoundingClientRect().top - before : 0;
-  if (Math.abs(shift) < 1) return;
-  // A framed copy (Muse) scrolls the host page, so window.scrollBy does nothing there; keep the row in view instead.
-  var y = window.pageYOffset || 0;
-  window.scrollBy(0, shift);
-  var pin = row && (row.querySelector(".item") || row);
-  if ((window.pageYOffset || 0) === y && pin && typeof pin.scrollIntoView === "function") { try { pin.scrollIntoView({ block: "nearest" }); } catch (e) { /* ignore */ } }
+// Shows or hides one row's detail without a redraw, so no scroll correction is needed. Keeps one row open per quest.
+function setRowOpen(li, t, open, readOnly) {
+  var b = li.querySelector(".item"), d = li.querySelector(".detail");
+  if (b) b.setAttribute("aria-expanded", open ? "true" : "false");
+  if (open && !d) li.appendChild(buildDetail(t, true, readOnly));
+  else if (!open && d) li.removeChild(d);
+}
+function toggleRow(p, t, li, readOnly) {
+  var open = ui.questOpen[p.id] !== t.id, prev = ui.questOpen[p.id];
+  ui.questOpen[p.id] = open ? t.id : null;
+  if (open && prev) {
+    var pt = state.tasks.filter(function (x) { return x.id === prev; })[0], pli = document.getElementById("ptask-" + prev) || document.getElementById("ltask-" + prev) || document.getElementById("itask-" + prev);
+    if (pt && pli) setRowOpen(pli, pt, false, !!p.vault || (pli.id.charAt(0) === "l" && !!pt.vault));
+  }
+  setRowOpen(li, t, open, readOnly);
 }
 // A long date line can wrap, so a title is not always at the same height; this reads each row's line positions, then hands them to the CSS.
 function alignStatuses(root) {
@@ -6036,7 +6040,7 @@ function launchSection(root, p) {
     stepsAndEst(l3, t);
     if (isLate(t)) l3.appendChild(el("span", { "class": "badge" }, "Overdue"));
     if (l3.childNodes.length) b.appendChild(l3);
-    on(b, "click", function () { toggleRow(p, t, open, li); });
+    on(b, "click", function () { toggleRow(p, t, li, taskReadOnly); });
     li.appendChild(b);
     if (!taskReadOnly) addRowControls(li, t);
     if (open) li.appendChild(buildDetail(t, true, taskReadOnly));
@@ -6073,7 +6077,7 @@ function issuesSection(root, p) {
     stepsAndEst(l3, t);
     if (isLate(t)) l3.appendChild(el("span", { "class": "badge" }, "Overdue"));
     if (l3.childNodes.length) b.appendChild(l3);
-    on(b, "click", function () { toggleRow(p, t, open, li); });
+    on(b, "click", function () { toggleRow(p, t, li, readOnly); });
     li.appendChild(b);
     if (!readOnly) addRowControls(li, t);
     if (open) li.appendChild(buildDetail(t, true, readOnly));
@@ -6151,7 +6155,7 @@ function renderQuestPage(root, id) {
       stepsAndEst(l3, t);
       if (isLate(t)) l3.appendChild(el("span", { "class": "badge" }, "Overdue"));
       if (l3.childNodes.length) b.appendChild(l3);
-      on(b, "click", function () { toggleRow(p, t, open, li); });
+      on(b, "click", function () { toggleRow(p, t, li, readOnly); });
       li.appendChild(b);
       if (!readOnly) addRowControls(li, t);
       if (open) li.appendChild(buildDetail(t, true, readOnly));
