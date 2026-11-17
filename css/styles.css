@@ -103,6 +103,8 @@ kbd { font: inherit; font-size: .9em; border: 1px solid var(--line); border-bott
 .qlink { text-decoration: none; }
 .qlink:hover, .qlink:focus-visible { text-decoration: underline; }
 .snext { margin-top: var(--space-2); color: var(--muted); font-size: var(--text-sm); }
+.snext .sdetail::before { content: " · "; }
+@media (max-width: 639px) { .snext .sdetail { display: block; } .snext .sdetail::before { content: none; } }
 .tbleft { display: flex; align-items: center; gap: var(--space-10); min-width: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .searchwrap { padding: 0 var(--space-4) var(--space-12); }
@@ -201,6 +203,7 @@ body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 
 .chip[data-v="Not started"] { background: var(--badge-pending-bg); color: var(--badge-pending); }
 .chip[data-v="In progress"] { background: var(--badge-active-bg); color: var(--badge-active); }
 .chip[data-v="Completed"], .chip.questcomplete { background: var(--badge-done-bg); color: var(--badge-done); }
+.chip[data-v="Unpursued"] { background: var(--line); color: var(--ink); }
 .chip.dust { background: var(--badge-attention-bg); color: var(--badge-attention); }
 .chip.added { background: var(--badge-info-bg); color: var(--badge-info); }
 .chip.launchcrit { background: var(--badge-priority-bg); color: var(--badge-priority); }
@@ -272,6 +275,7 @@ button.rowpencil { position: absolute; z-index: 1; top: calc(var(--row-l2, 40px)
 select.status[data-v="Not started"] { background: var(--badge-pending-bg); color: var(--badge-pending); }
 select.status[data-v="In progress"] { background: var(--badge-active-bg); color: var(--badge-active); }
 select.status[data-v="Completed"] { background: var(--badge-done-bg); color: var(--badge-done); }
+select.status[data-v="Unpursued"] { background: var(--line); color: var(--ink); }
 .steps { list-style: none; margin: var(--space-8) 0 0; padding: 0; }
 .steps li { display: flex; flex-wrap: wrap; gap: 0 var(--space-10); align-items: flex-start; padding: var(--space-5) 0; border-bottom: 0; }
 .steps li label { display: flex; gap: var(--space-10); align-items: flex-start; flex: 1 1 auto; cursor: pointer; }
@@ -460,7 +464,8 @@ svg.chart.nofocusring { outline: none; }
 .charttip, .todaytip { position: absolute; z-index: 3; max-width: 300px; padding: var(--space-8) var(--space-10); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-control); box-shadow: 0 4px 14px rgba(0, 0, 0, .18); font-size: var(--text-sm); line-height: 1.35; white-space: pre-line; pointer-events: none; }
 .charttip[hidden], .todaytip[hidden] { display: none; }
 /* A task's bar takes its status color, with a faint edge so a pale bar still reads on the gray track. */
-.bar.new, .bar.work, .bar.done { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-ink) 28%, transparent); }
+.bar.unp { background: var(--line); }
+.bar.new, .bar.work, .bar.unp, .bar.done { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-ink) 28%, transparent); }
 .bar.new { background: var(--bar-pending); }
 .bar.work { background: var(--bar-active); }
 .bar.done { background: var(--bar-done); }

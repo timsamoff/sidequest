@@ -132,6 +132,8 @@ export function helpTopics() {
       "**Issues:** Use the **+** button to log a problem on a quest, such as a bug. Issues appear in the **Issues** section of the quest’s details. Like tasks, they have steps, notes, and a status, but don’t require a due date or display a **Backlog** badge.",
       ">Issues without due dates stay in the quest’s details and don’t appear on the **Tasks** page, the **Timeline**, or the **Burndown**. Add a due date to schedule an issue like any other task. Scheduled issues display an **Issue** badge.",
       ">Select **Launch critical** to move an issue to the **Before you launch** section.",
+      ">Select **Make task** to turn an issue into a task, or **Make issue** to turn a task into an issue. An issue can’t be a milestone, so a task that becomes an issue stops being one.",
+      ">Set an issue’s status to **Unpursued** when you decide not to fix it. An unpursued issue counts as resolved, so it doesn’t keep a quest open. A scheduled one leaves the **Burndown** as a scope change.",
       "**Notes:** Use **Notes** for any additional information about the quest. An idea’s note carries over when the idea becomes a candidate quest."
     ]],
     ["Quest giver and Quest links", [

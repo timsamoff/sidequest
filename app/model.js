@@ -1,4 +1,4 @@
-import { state, changed, CHECKPOINTS } from "./state.js";
+import { state, changed, CHECKPOINTS, UNPURSUED } from "./state.js";
 import { notify, isHosted } from "./dom.js";
 import { DAY, iso, addDays, parseISO, TODAY, weekStart, fmtY } from "./dates.js";
 
@@ -62,7 +62,9 @@ export function isHiddenComplete(t) { var p = findQuest(t.questId); return !!p &
 // An issue with no due date is only logged on its quest's page: it is not Backlog and appears in no cross-quest list.
 export function isLooseIssue(t) { return !!t.issue && t.block === 0; }
 // A quest's issues that are still open, dated or not.
-export function openIssues(questId) { return questTasks(questId).filter(function (t) { return t.issue && t.status !== "Completed"; }); }
+export function openIssues(questId) { return questTasks(questId).filter(function (t) { return t.issue && !isClosed(t); }); }
+// Resolved one way or the other: Completed, or an issue set to Unpursued.
+export function isClosed(t) { return t.status === "Completed" || t.status === UNPURSUED; }
 // Searches every quest, vaulted or not -- a vaulted quest's page
 // must stay reachable, read-only, until restored.
 export function findQuest(id) { for (var i = 0; i < state.quests.length; i++) if (state.quests[i].id === id) return state.quests[i]; return null; }
@@ -84,7 +86,7 @@ export function uniqueQuestName(base) {
 // them is Completed -- an empty task list must never read as "done."
 export function questTasksAllDone(p) {
   var ts = counted().filter(function (t) { return t.questId === p.id && !(isLooseIssue(t) && !t.launch); });
-  return ts.length > 0 && ts.every(function (t) { return t.status === "Completed"; });
+  return ts.length > 0 && ts.every(isClosed);
 }
 // Direct links only, one hop -- a linked quest may itself have further
 // links, but this never walks past the first one.
@@ -155,7 +157,7 @@ export function questEstimate(p) {
   var total = 0, left = 0;
   questTasks(p.id).forEach(function (t) {
     if (!(t.est > 0)) return;
-    total += t.est; if (t.status !== "Completed") left += t.est;
+    total += t.est; if (!isClosed(t)) left += t.est;
   });
   return { total: total, left: left };
 }
@@ -211,17 +213,19 @@ export function questTasks(questId) { return state.tasks.filter(function (t) { r
 export function chosen() { var a = activeQuests(); for (var i = 0; i < a.length; i++) if (!counted().some(function (t) { return t.questId === a[i].id && !isLooseIssue(t); })) return a[i]; return null; }
 export function dispQuest(t) { var p = findQuest(t.questId); return p ? p.name : ""; }
 // The burndown counts tasks, one each.
-function isOpen(t) { return t.status !== "Completed"; }
+function isOpen(t) { return !isClosed(t); }
 export function totalUnits() { return burnTasks().length; }
 export function remainingUnits() { return burnTasks().filter(isOpen).length; }
 export function planned(ms) { var d = 0; burnTasks().forEach(function (t) { if (taskEnd(t) <= ms) d++; }); return totalUnits() - d; }
+function rank(t) { return t.status === "Completed" ? 1 : t.status === UNPURSUED ? 2 : 0; }
 export function sortTasks(list) {
   // Completed tasks sink to the bottom. Scheduled tasks go by start, then due date, then creation order;
   // Backlog tasks follow in creation order.
   var order = new Map();
   state.tasks.forEach(function (t, i) { order.set(t, i); });
   return list.map(function (t) { return { t: t, i: order.has(t) ? order.get(t) : -1 }; }).sort(function (a, b) {
-    var aDone = a.t.status === "Completed" ? 1 : 0, bDone = b.t.status === "Completed" ? 1 : 0;
+    // Open first, then Completed, then Unpursued.
+    var aDone = rank(a.t), bDone = rank(b.t);
     if (aDone !== bDone) return aDone - bDone;
     var aBack = a.t.block > 0 ? 0 : 1, bBack = b.t.block > 0 ? 0 : 1;
     if (aBack !== bBack) return aBack - bBack;
@@ -232,7 +236,8 @@ export function sortTasks(list) {
 export function ordered() { return sortTasks(live(state.tasks).filter(function (t) { return t.block > 0 && !isHiddenFromPlan(t); })); }
 export function orderedAll() { return sortTasks(live(state.tasks)); }
 export function backlogTasks() { return sortTasks(live(state.tasks).filter(function (t) { return t.block === 0 && !t.issue && !isHiddenFromPlan(t); })); }
-export function burnTasks() { return counted().filter(function (t) { return t.block > 0 && !isHiddenFromPlan(t); }); }
+// An Unpursued issue leaves the scope, so the Scope line calls it out and it is never shown as progress.
+export function burnTasks() { return counted().filter(function (t) { return t.block > 0 && !isHiddenFromPlan(t) && t.status !== UNPURSUED; }); }
 // Tasks that count for the empty-state wording on Today and Tasks: everything but a Candidate quest's.
 export function planCounted() { return counted().filter(function (t) { return !isCandidateTask(t) && !isLooseIssue(t); }); }
 // Projects a finish from the tasks completed in the last four blocks (four
@@ -250,7 +255,7 @@ export function velocityForecast(tasks, blockDays, sinceMs) {
 }
 // --- One quest's burndown ---
 // Uses counted(), so a Complete quest's page keeps its burndown while its tasks are hidden elsewhere.
-export function questBurnTasks(p) { return counted().filter(function (t) { return t.block > 0 && t.questId === p.id; }); }
+export function questBurnTasks(p) { return counted().filter(function (t) { return t.block > 0 && t.questId === p.id && t.status !== UNPURSUED; }); }
 export function questTotalUnits(p) { return questBurnTasks(p).length; }
 export function questRemainingUnits(p) { return questBurnTasks(p).filter(isOpen).length; }
 // Points are daily for a short/near-term schedule, otherwise weekly Mondays
@@ -279,16 +284,17 @@ export function questBurn(p) {
   return { cps: cps, planned: planned, actual: actual, scope: scope, total: total, tasks: ts, stepDays: unit * step };
 }
 export function orderedCounted() { return sortTasks(counted()); }
-export function isLate(t) { return t.block > 0 && t.status !== "Completed" && taskEnd(t) < TODAY; }
+export function isLate(t) { return t.block > 0 && !isClosed(t) && taskEnd(t) < TODAY; }
 export function lateTasks() { return ordered().filter(isLate); }
 export function setStatus(t, v) { t.status = v; if (v === "Completed") t.steps.forEach(function (s) { s.done = true; }); }
 export function syncFromSteps(t) {
+  if (t.status === UNPURSUED) return;
   var n = t.steps.filter(function (s) { return s.done; }).length;
   if (t.steps.length && n === t.steps.length) t.status = "Completed";
   else if (n > 0 && t.status === "Not started") t.status = "In progress";
   else if (t.status === "Completed" && n < t.steps.length) t.status = "In progress";
 }
-export function nextTask() { var o = ordered(); for (var i = 0; i < o.length; i++) if (o[i].status !== "Completed") return o[i]; return null; }
+export function nextTask() { var o = ordered(); for (var i = 0; i < o.length; i++) if (!isClosed(o[i])) return o[i]; return null; }
 export function isCore(v) { return CORE.some(function (c) { return c[0] === v; }); }
 // "quest:" + id routes to a quest's page -- id-based, not name-based, so
 // renaming a quest never breaks its pin or an in-flight link to it.
@@ -313,7 +319,7 @@ export function questMeta(p) {
   var parts = [];
   if (ts.length) {
     var bk = ts.filter(function (t) { return t.block === 0; }).length;
-    var dn = ts.filter(function (t) { return t.status === "Completed"; }).length;
+    var dn = ts.filter(isClosed).length;
     parts.push("Complete: " + dn + " of " + ts.length + (ts.length === 1 ? " task" : " tasks") + (bk ? " | Backlog: " + bk + " unscheduled " + (bk === 1 ? "task" : "tasks") : ""));
   }
   var oi = openIssues(p.id).length;

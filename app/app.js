@@ -17,7 +17,7 @@ import { stopTutorial } from "./tutorial.js";
 
 /* navigation */
 export function leaveSearch() { if (ui.view === "search") { ui.query = ""; var b = $("searchBox"); if (b) b.value = ""; } }
-export function go(view) { leaveSearch(); ui.view = view; ui.detail = false; renderAll(); scrollTop(); }
+export function go(view) { leaveSearch(); ui.view = view; ui.detail = false; if (view === "schedule") ui.sel = null; renderAll(); scrollTop(); }
 export function openTask(id) {
   var at = findAnyTask(id);
   if (at && at.vault) { go("vault"); notify("That task is in the Vault. Restore it to work on it.", null, "problem"); return; }

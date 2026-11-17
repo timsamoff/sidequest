@@ -377,7 +377,7 @@ export function questRangeBlock(p) {
     if (a < first) first = a;
     if (bandB > maxEnd) maxEnd = bandB;
     if (b > maxEnd) maxEnd = b;
-    return { name: short(t.what, 60), bars: [{ a: bandA, b: bandB, cls: "blk" }, { a: a, b: b, cls: t.status === "Completed" ? "done" : t.status === "In progress" ? "work" : "new" }], dates: fmt(a) + " to " + fmt(b) };
+    return { name: short(t.what, 60), bars: [{ a: bandA, b: bandB, cls: "blk" }, { a: a, b: b, cls: t.status === "Completed" ? "done" : t.status === "In progress" ? "work" : t.status === "Unpursued" ? "unp" : "new" }], dates: fmt(a) + " to " + fmt(b) };
   });
   mss.forEach(function (m) { if (m.date < first) first = m.date; });
   var f0 = new Date(first), rs = Date.UTC(f0.getUTCFullYear(), f0.getUTCMonth(), 1);

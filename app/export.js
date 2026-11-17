@@ -3,7 +3,7 @@ import { fmt, fmtY, iso, parseISO, TODAY } from "./dates.js";
 import {
   wl, pset, linkedQuests, questBurn, questBurnTasks, isLate,
   taskStart, taskEnd, questEstimate, fmtHours, fmtHoursLong, live,
-  blockForDate, blockStartFor, blockEndFor, milestoneTasks
+  blockForDate, blockStartFor, blockEndFor, milestoneTasks, isClosed
 } from "./model.js";
 import { scopeSteps } from "./chart.js";
 import { phoneHref } from "./phone.js";
@@ -27,7 +27,7 @@ function snapshotTasks(p) {
 function questBurnTasksOrdered(p) {
   var ts = live(state.tasks).filter(function (t) { return t.questId === p.id; });
   return ts.slice().sort(function (a, b) {
-    var aDone = a.status === "Completed" ? 1 : 0, bDone = b.status === "Completed" ? 1 : 0;
+    var aDone = a.status === "Unpursued" ? 2 : isClosed(a) ? 1 : 0, bDone = b.status === "Unpursued" ? 2 : isClosed(b) ? 1 : 0;
     return aDone - bDone || (a.block || 99) - (b.block || 99);
   });
 }
@@ -224,7 +224,7 @@ function renderTasks(node) {
 
 function renderIssues(node) {
   var rows = node.issues.map(function (t) {
-    return '<li class="etask' + (t.status === "Completed" ? " done" : "") + '">' + (t.start ? '<div class="el1">' + escHtml(t.start) + "</div>" : "") +
+    return '<li class="etask' + (t.status === "Completed" || t.status === "Unpursued" ? " done" : "") + '">' + (t.start ? '<div class="el1">' + escHtml(t.start) + "</div>" : "") +
       '<div class="el2">' + (t.launch ? '<span class="chip launchcrit" style="margin-right:8px">Launch critical</span>' : "") + escHtml(t.what) + '</div><div class="el3"><span>' + escHtml(t.status) + "</span></div>" +
       (t.notes ? '<p class="enotes">' + escHtml(t.notes) + "</p>" : "") + "</li>";
   });

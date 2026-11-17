@@ -6,7 +6,7 @@ import { ideaDialog, questDialog } from "./dialogs.js";
 import { $, el, helpLink, isHosted, notify, on, scrollTop, uid } from "./dom.js";
 import { backupControls, backupReminderDue, daysSinceBackup } from "./files.js";
 import { deleteForever, emptyVault, promoteToActive, removeToVault, restoreEntry, vaultEntries } from "./lifecycle.js";
-import { questNameTaken, activeQuests, backlogTasks, candidateQuests, checkpointStep, checkpoints, counted, dispQuest, findQuest, findTask, fmtHours, globalActual, isDusty, isLate, isPinned, lateTasks, live, liveQuests, nextTask, openIssues, ordered, pinPage, planCounted, planned, pset, questMeta, questRemainingUnits, questTotalUnits, remainingUnits, short, taskEnd, taskStart, totalUnits, unpinPage, validPage, wl } from "./model.js";
+import { questNameTaken, activeQuests, backlogTasks, candidateQuests, checkpointStep, checkpoints, counted, dispQuest, findQuest, findTask, fmtHours, globalActual, isClosed, isDusty, isLate, isPinned, lateTasks, live, liveQuests, nextTask, openIssues, ordered, pinPage, planCounted, planned, pset, questMeta, questRemainingUnits, questTotalUnits, remainingUnits, short, taskEnd, taskStart, totalUnits, unpinPage, validPage, wl } from "./model.js";
 import { addRowControls, buildDetail } from "./quest-page.js";
 import { APP_VERSION, changed, makeQuest, quest, releaseFileUrl, save, state, ui } from "./state.js";
 import { startTutorial } from "./tutorial.js";
@@ -227,7 +227,7 @@ export function backupReminder() {
 
 export function taskRow(t) {
   var li = el("li");
-  var b = el("button", { type: "button", "class": "item" + (t.status === "Completed" ? " done" : ""), title: "View this task" });
+  var b = el("button", { type: "button", "class": "item" + (isClosed(t) ? " done" : ""), title: "View this task" });
   if (t.id === ui.sel) b.setAttribute("aria-current", "true");
   var l1 = el("div", { "class": "l1 split" }), l1t = el("span"); l1t.appendChild(el("b", null, dispQuest(t)));
   if (t.block !== 0) l1t.appendChild(document.createTextNode(" · " + fmt(taskStart(t)) + " to " + fmt(taskEnd(t))));
@@ -333,7 +333,7 @@ export function completedSection(rows, first) { return questListSection("Complet
 export function standingBlock() {
   var groups = {}, order = [];
   ordered().forEach(function (t) {
-    if (t.status === "Completed") return;
+    if (isClosed(t)) return;
     var quest = findQuest(t.questId);
     if (!quest || quest.status !== "active") return;
     var g = groups[t.questId]; if (!g) { g = groups[t.questId] = { questId: t.questId, name: dispQuest(t), open: 0, first: t }; order.push(g); }
@@ -356,8 +356,10 @@ export function standingBlock() {
     var nx = el("div", { "class": "snext" }), oi = openIssues(g.questId).length; nx.appendChild(document.createTextNode("Next up: "));
     var tl = el("button", { type: "button", "class": "textbtn", title: "View this task" }, short(g.first.what, 90));
     on(tl, "click", function () { openTask(g.first.id); });
-    nx.appendChild(tl); nx.appendChild(document.createTextNode(" · " + fmt(taskStart(g.first)) + " · " + g.open + " open " + (g.open === 1 ? "task" : "tasks") + (oi ? " · " + oi + " open " + (oi === 1 ? "issue" : "issues") : "")));
+    nx.appendChild(tl);
     textWrap.appendChild(nx);
+    // The date and counts follow Next up on a wide screen and take their own line on a narrow one (styles.css).
+    nx.appendChild(el("span", { "class": "sdetail" }, fmt(taskStart(g.first)) + " · " + g.open + " open " + (g.open === 1 ? "task" : "tasks") + (oi ? " · " + oi + " open " + (oi === 1 ? "issue" : "issues") : "")));
     row.appendChild(textWrap); row.appendChild(questPinButton("quest:" + g.questId, g.name));
     li.appendChild(row); ul.appendChild(li);
   });

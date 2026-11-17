@@ -3,7 +3,7 @@ import { iso, addDays, fmtY, TODAY } from "./dates.js";
 import {
   wpC, questNameTaken, questDueLimit, liveQuests, findQuest, dispQuest, nextTask, findTask,
   orderedAll, taskOptions, stepOptions, stepOptionsForTask, syncFromSteps, findStep, decisionFor,
-  blockForDate, taskStart, taskEnd, linkQuests
+  blockForDate, taskStart, taskEnd, linkQuests, isClosed
 } from "./model.js";
 import { $, autosize, el, on, uid, newPin, notify, moneyInput, parseMoney, helpLink, setMsg, isEmail } from "./dom.js";
 import { closeMenus } from "./app.js";
@@ -425,7 +425,7 @@ export function slipDialog(p) {
     acts.appendChild(on(el("button", { type: "button", "class": "small primary", id: "slipGo", title: "Push dates later" }, "Push dates later"), "click", function () {
       var n = parseInt(inp.value, 10);
       if (isNaN(n) || n < 1 || n > 90) { setMsg(err, "Enter a number of days from 1 to 90.", "error"); return; }
-      var targets = state.tasks.filter(function (t) { return t.questId === p.id && t.block > 0 && t.status !== "Completed" && !t.vault; });
+      var targets = state.tasks.filter(function (t) { return t.questId === p.id && t.block > 0 && !isClosed(t) && !t.vault; });
       if (!targets.length) { setMsg(err, "Nothing incomplete is scheduled to slip.", "error"); return; }
       // Warns once for this number of days; choosing the button again goes ahead.
       var limit = questDueLimit(p.id), past = limit === null ? 0 : targets.filter(function (t) { return addDays(taskEnd(t), n) > limit; }).length;

@@ -7,8 +7,10 @@ import { isDialCode, setPhoneMemory } from "./phone.js";
 
 export var KEY2 = "sidequest-template-v1", UIKEY = "sidequest-template-ui";
 export var STATUSES = ["Not started", "In progress", "Completed"];
+// An extra status only an issue can have: closed without being fixed.
+export var UNPURSUED = "Unpursued";
 export var CHECKPOINTS = 7;
-export var APP_VERSION = "1.2.8";
+export var APP_VERSION = "1.3.0";
 export var APP_NAME = "Sidequest";
 
 export function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -262,7 +264,7 @@ export function normalize(s) {
       var wasStepLaunch = Array.isArray(t.steps) && t.steps.some(function (x) { return x && x.launch === true; });
       ts.push({
         id: S(t.id, 40), block: b, questId: pid, what: S(t.what, 400), done: S(t.done, 200) === "It’s finished" ? "" : S(t.done, 200), start: tstart, due: tdue, est: test, added: b > 0 && isISO(t.added) ? t.added : "",
-        status: STATUSES.indexOf(t.status) >= 0 ? t.status : "Not started", notes: S(t.notes, 5000), steps: steps,
+        status: STATUSES.indexOf(t.status) >= 0 || (t.status === UNPURSUED && t.issue === true) ? t.status : "Not started", notes: S(t.notes, 5000), steps: steps,
         custom: t.custom === true, launch: t.launch === true || wasStepLaunch, issue: t.issue === true,
         // A milestone needs a real due date to plot on the chart -- a Backlog
         // task (block 0) can never be one, even if saved data says otherwise.

@@ -4,12 +4,12 @@ import { questRangeBlock } from "./chart.js";
 import { TODAY, fmt, fmtY, iso, parseISO } from "./dates.js";
 import { decisionDialog, decisionEditDialog, formDialog, issueDialog, linkQuestDialog, openModal, slipDialog, taskDialog } from "./dialogs.js";
 import { phoneField } from "./phone.js";
-import { autosize, emailField, editInline, el, formatMoney, helpLink, moneyInput, notify, on, pencilButton, playSfx, setFocusKey, uid, setMsg } from "./dom.js";
+import { autosize, emailField, editInline, el, formatMoney, helpLink, moneyInput, notify, on, pencilButton, playSfx, scrollToRow, setFocusKey, uid, setMsg } from "./dom.js";
 import { buildExportSnapshot, exportFileName, exportHasIssues, exportSides, renderExportDocument } from "./export.js";
 import { saveFile } from "./files.js";
 import { completionDialog, demoteToCandidate, promoteToActive, removeNow, removeToVault, restoreEntry, vaultQuest } from "./lifecycle.js";
-import { blockForDate, dateProblems, decisionFor, dispQuest, estimateWarning, findQuest, fmtHoursLong, isDusty, isLate, isPinned, launchItems, linkedQuests, liveQuests, pset, questEstimate, questMeta, questTasks, setStatus, short, sortTasks, syncFromSteps, taskEnd, taskStart, unlinkQuests, wd, wl } from "./model.js";
-import { STATUSES, changed, isISO, save, state, ui } from "./state.js";
+import { blockForDate, dateProblems, decisionFor, dispQuest, estimateWarning, findQuest, fmtHoursLong, isClosed, isDusty, isLate, isPinned, launchItems, linkedQuests, liveQuests, pset, questEstimate, questMeta, questTasks, setStatus, short, sortTasks, syncFromSteps, taskEnd, taskStart, unlinkQuests, wd, wl } from "./model.js";
+import { STATUSES, UNPURSUED, changed, isISO, save, state, ui } from "./state.js";
 import { addedChip, burnParts, stepsAndEst, wireMilestoneDiamonds, withHelp } from "./views.js";
 
 // A vaulted quest’s tasks carry the vault mark, which the export’s task queries skip, so it is lifted while one runs.
@@ -60,7 +60,8 @@ export function addRowControls(li, t) {
   var pen = pencilButton("Rename " + (t.issue ? "issue: " : "task: ") + short(t.what, 40), t.issue ? "Rename this issue" : "Rename this task", function () { renameTaskDialog(t); });
   pen.classList.add("rowpencil"); pen.setAttribute("data-task", t.id); li.appendChild(pen);
   var sel = el("select", { "class": "status rowstatus", "aria-label": "Status of " + short(t.what, 40), title: "Change this task’s status", "data-task": t.id, "data-focus": "status-" + t.id });
-  STATUSES.forEach(function (s) { var o = el("option", { value: s }, s); if (s === t.status) o.selected = true; sel.appendChild(o); });
+  // Unpursued is for issues only.
+  (t.issue ? STATUSES.concat([UNPURSUED]) : STATUSES).forEach(function (s) { var o = el("option", { value: s }, s); if (s === t.status) o.selected = true; sel.appendChild(o); });
   sel.setAttribute("data-v", t.status);
   // Focus returns to the select only for keyboard use; after a tap or click it would look still open.
   var byPointer = false;
@@ -274,6 +275,15 @@ export function buildDetail(t, inline, readOnly) {
         ar.appendChild(on(el("button", { type: "button", "class": "small", "aria-pressed": "false", title: "Mark this task as a milestone" }, "Make milestone"), "click", function () { t.milestone = true; changed(); }));
       }
       var kind = t.issue ? "issue" : "task";
+      // Task and issue are one record with a flag; an issue is never a milestone, and an undated one is not Backlog.
+      ar.appendChild(on(el("button", { type: "button", "class": "small", title: t.issue ? "Turn this issue into a task" : "Turn this task into an issue" }, t.issue ? "Make task" : "Make issue"), "click", function () {
+        var wasMilestone = t.milestone, undated = t.block === 0;
+        t.issue = !t.issue; if (t.issue) t.milestone = false; else if (t.status === UNPURSUED) t.status = "Not started";
+        changed();
+        // The row moves to the other section, so bring it to the top of the screen.
+        window.setTimeout(function () { scrollToRow(document.getElementById((t.launch ? "ltask-" : t.issue ? "itask-" : "ptask-") + t.id)); }, 80);
+        notify(t.issue ? "Now an issue." + (wasMilestone ? " It is no longer a milestone." : "") + (undated ? " It is out of the Backlog until it has a due date." : "") : "Now a task." + (undated ? " It is in the Backlog." : ""));
+      }));
       if (t.launch) ar.appendChild(on(el("button", { type: "button", "class": "small on", "aria-pressed": "true", title: "Unmark this " + kind + " as launch critical" }, "Skip launch"), "click", function () { t.launch = false; changed(); }));
       else ar.appendChild(on(el("button", { type: "button", "class": "small", "aria-pressed": "false", title: "Mark this " + kind + " as launch critical" }, "Launch critical"), "click", function () { t.launch = true; changed(); }));
       ar.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Delete this " + kind + " (can be undone)" }, "Delete"), "click", function () { ui.detail = false; removeNow(t, "tasks", t.issue ? "Issue" : "Task"); }));
@@ -328,14 +338,14 @@ export function launchSection(root, p) {
   var ha = el("div", { "class": "sechead" }); ha.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-checks" }, "Before you launch"), "before-you-launch", "Before you launch"));
   root.appendChild(ha);
   var items = launchItems(p.id);
-  var n = items.filter(function (t) { return t.status === "Completed"; }).length;
+  var n = items.filter(isClosed).length;
   var total = items.length;
   // "items" once an issue is on the list, since an issue is not called a task anywhere else.
   var unit = items.some(function (t) { return t.issue; }) ? ["item", "items"] : ["task", "tasks"];
   root.appendChild(el("p", { "class": "hint" }, total ? "Complete: " + n + " of " + total + " launch-critical " + (total === 1 ? unit[0] : unit[1]) : "No tasks have been marked as launch critical yet."));
   var ul = el("ul", { "class": "tlist check", "aria-labelledby": "h-checks" });
   items.forEach(function (t) {
-    var done = t.status === "Completed";
+    var done = isClosed(t);
     // A vaulted quest, or an individually vaulted task, still opens in place -- read-only, not redirected away.
     var taskReadOnly = readOnly || !!t.vault;
     var open = ui.questOpen[p.id] === t.id;
@@ -371,13 +381,13 @@ export function issuesSection(root, p) {
   var hd = el("div", { "class": "sechead" }); hd.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-issues" }, "Issues"), "issue", "Issue"));
   if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Log an issue on this quest" }, "Add issue"), "click", function () { issueDialog(p.id); }));
   root.appendChild(hd);
-  var n = items.filter(function (t) { return t.status === "Completed"; }).length;
+  var n = items.filter(isClosed).length;
   root.appendChild(el("p", { "class": "hint" }, items.length ? "Complete: " + n + " of " + items.length + (items.length === 1 ? " issue" : " issues") : "No issues yet."));
   if (!items.length) return;
   var ul = el("ul", { "class": "tlist", "aria-labelledby": "h-issues" });
   items.forEach(function (t) {
     var open = ui.questOpen[p.id] === t.id;
-    var li = el("li", { id: "itask-" + t.id }), b = el("button", { type: "button", "class": "item" + (t.status === "Completed" ? " done" : ""), title: "View this issue" });
+    var li = el("li", { id: "itask-" + t.id }), b = el("button", { type: "button", "class": "item" + (isClosed(t) ? " done" : ""), title: "View this issue" });
     b.setAttribute("aria-expanded", open ? "true" : "false");
     // An issue with no due date has no first line: it is not Backlog.
     if (t.block !== 0) {

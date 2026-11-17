@@ -331,6 +331,8 @@ kbd { font: inherit; font-size: .9em; border: 1px solid var(--line); border-bott
 .qlink { text-decoration: none; }
 .qlink:hover, .qlink:focus-visible { text-decoration: underline; }
 .snext { margin-top: var(--space-2); color: var(--muted); font-size: var(--text-sm); }
+.snext .sdetail::before { content: " · "; }
+@media (max-width: 639px) { .snext .sdetail { display: block; } .snext .sdetail::before { content: none; } }
 .tbleft { display: flex; align-items: center; gap: var(--space-10); min-width: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .searchwrap { padding: 0 var(--space-4) var(--space-12); }
@@ -429,6 +431,7 @@ body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 
 .chip[data-v="Not started"] { background: var(--badge-pending-bg); color: var(--badge-pending); }
 .chip[data-v="In progress"] { background: var(--badge-active-bg); color: var(--badge-active); }
 .chip[data-v="Completed"], .chip.questcomplete { background: var(--badge-done-bg); color: var(--badge-done); }
+.chip[data-v="Unpursued"] { background: var(--line); color: var(--ink); }
 .chip.dust { background: var(--badge-attention-bg); color: var(--badge-attention); }
 .chip.added { background: var(--badge-info-bg); color: var(--badge-info); }
 .chip.launchcrit { background: var(--badge-priority-bg); color: var(--badge-priority); }
@@ -500,6 +503,7 @@ button.rowpencil { position: absolute; z-index: 1; top: calc(var(--row-l2, 40px)
 select.status[data-v="Not started"] { background: var(--badge-pending-bg); color: var(--badge-pending); }
 select.status[data-v="In progress"] { background: var(--badge-active-bg); color: var(--badge-active); }
 select.status[data-v="Completed"] { background: var(--badge-done-bg); color: var(--badge-done); }
+select.status[data-v="Unpursued"] { background: var(--line); color: var(--ink); }
 .steps { list-style: none; margin: var(--space-8) 0 0; padding: 0; }
 .steps li { display: flex; flex-wrap: wrap; gap: 0 var(--space-10); align-items: flex-start; padding: var(--space-5) 0; border-bottom: 0; }
 .steps li label { display: flex; gap: var(--space-10); align-items: flex-start; flex: 1 1 auto; cursor: pointer; }
@@ -688,7 +692,8 @@ svg.chart.nofocusring { outline: none; }
 .charttip, .todaytip { position: absolute; z-index: 3; max-width: 300px; padding: var(--space-8) var(--space-10); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-control); box-shadow: 0 4px 14px rgba(0, 0, 0, .18); font-size: var(--text-sm); line-height: 1.35; white-space: pre-line; pointer-events: none; }
 .charttip[hidden], .todaytip[hidden] { display: none; }
 /* A task's bar takes its status color, with a faint edge so a pale bar still reads on the gray track. */
-.bar.new, .bar.work, .bar.done { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-ink) 28%, transparent); }
+.bar.unp { background: var(--line); }
+.bar.new, .bar.work, .bar.unp, .bar.done { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-ink) 28%, transparent); }
 .bar.new { background: var(--bar-pending); }
 .bar.work { background: var(--bar-active); }
 .bar.done { background: var(--bar-done); }
@@ -1455,7 +1460,9 @@ function isHiddenComplete(t) { var p = findQuest(t.questId); return !!p && p.sta
 // An issue with no due date is only logged on its quest's page: it is not Backlog and appears in no cross-quest list.
 function isLooseIssue(t) { return !!t.issue && t.block === 0; }
 // A quest's issues that are still open, dated or not.
-function openIssues(questId) { return questTasks(questId).filter(function (t) { return t.issue && t.status !== "Completed"; }); }
+function openIssues(questId) { return questTasks(questId).filter(function (t) { return t.issue && !isClosed(t); }); }
+// Resolved one way or the other: Completed, or an issue set to Unpursued.
+function isClosed(t) { return t.status === "Completed" || t.status === UNPURSUED; }
 // Searches every quest, vaulted or not -- a vaulted quest's page
 // must stay reachable, read-only, until restored.
 function findQuest(id) { for (var i = 0; i < state.quests.length; i++) if (state.quests[i].id === id) return state.quests[i]; return null; }
@@ -1477,7 +1484,7 @@ function uniqueQuestName(base) {
 // them is Completed -- an empty task list must never read as "done."
 function questTasksAllDone(p) {
   var ts = counted().filter(function (t) { return t.questId === p.id && !(isLooseIssue(t) && !t.launch); });
-  return ts.length > 0 && ts.every(function (t) { return t.status === "Completed"; });
+  return ts.length > 0 && ts.every(isClosed);
 }
 // Direct links only, one hop -- a linked quest may itself have further
 // links, but this never walks past the first one.
@@ -1548,7 +1555,7 @@ function questEstimate(p) {
   var total = 0, left = 0;
   questTasks(p.id).forEach(function (t) {
     if (!(t.est > 0)) return;
-    total += t.est; if (t.status !== "Completed") left += t.est;
+    total += t.est; if (!isClosed(t)) left += t.est;
   });
   return { total: total, left: left };
 }
@@ -1604,17 +1611,19 @@ function questTasks(questId) { return state.tasks.filter(function (t) { return t
 function chosen() { var a = activeQuests(); for (var i = 0; i < a.length; i++) if (!counted().some(function (t) { return t.questId === a[i].id && !isLooseIssue(t); })) return a[i]; return null; }
 function dispQuest(t) { var p = findQuest(t.questId); return p ? p.name : ""; }
 // The burndown counts tasks, one each.
-function isOpen(t) { return t.status !== "Completed"; }
+function isOpen(t) { return !isClosed(t); }
 function totalUnits() { return burnTasks().length; }
 function remainingUnits() { return burnTasks().filter(isOpen).length; }
 function planned(ms) { var d = 0; burnTasks().forEach(function (t) { if (taskEnd(t) <= ms) d++; }); return totalUnits() - d; }
+function rank(t) { return t.status === "Completed" ? 1 : t.status === UNPURSUED ? 2 : 0; }
 function sortTasks(list) {
   // Completed tasks sink to the bottom. Scheduled tasks go by start, then due date, then creation order;
   // Backlog tasks follow in creation order.
   var order = new Map();
   state.tasks.forEach(function (t, i) { order.set(t, i); });
   return list.map(function (t) { return { t: t, i: order.has(t) ? order.get(t) : -1 }; }).sort(function (a, b) {
-    var aDone = a.t.status === "Completed" ? 1 : 0, bDone = b.t.status === "Completed" ? 1 : 0;
+    // Open first, then Completed, then Unpursued.
+    var aDone = rank(a.t), bDone = rank(b.t);
     if (aDone !== bDone) return aDone - bDone;
     var aBack = a.t.block > 0 ? 0 : 1, bBack = b.t.block > 0 ? 0 : 1;
     if (aBack !== bBack) return aBack - bBack;
@@ -1625,7 +1634,8 @@ function sortTasks(list) {
 function ordered() { return sortTasks(live(state.tasks).filter(function (t) { return t.block > 0 && !isHiddenFromPlan(t); })); }
 function orderedAll() { return sortTasks(live(state.tasks)); }
 function backlogTasks() { return sortTasks(live(state.tasks).filter(function (t) { return t.block === 0 && !t.issue && !isHiddenFromPlan(t); })); }
-function burnTasks() { return counted().filter(function (t) { return t.block > 0 && !isHiddenFromPlan(t); }); }
+// An Unpursued issue leaves the scope, so the Scope line calls it out and it is never shown as progress.
+function burnTasks() { return counted().filter(function (t) { return t.block > 0 && !isHiddenFromPlan(t) && t.status !== UNPURSUED; }); }
 // Tasks that count for the empty-state wording on Today and Tasks: everything but a Candidate quest's.
 function planCounted() { return counted().filter(function (t) { return !isCandidateTask(t) && !isLooseIssue(t); }); }
 // Projects a finish from the tasks completed in the last four blocks (four
@@ -1643,7 +1653,7 @@ function velocityForecast(tasks, blockDays, sinceMs) {
 }
 // --- One quest's burndown ---
 // Uses counted(), so a Complete quest's page keeps its burndown while its tasks are hidden elsewhere.
-function questBurnTasks(p) { return counted().filter(function (t) { return t.block > 0 && t.questId === p.id; }); }
+function questBurnTasks(p) { return counted().filter(function (t) { return t.block > 0 && t.questId === p.id && t.status !== UNPURSUED; }); }
 function questTotalUnits(p) { return questBurnTasks(p).length; }
 function questRemainingUnits(p) { return questBurnTasks(p).filter(isOpen).length; }
 // Points are daily for a short/near-term schedule, otherwise weekly Mondays
@@ -1672,16 +1682,17 @@ function questBurn(p) {
   return { cps: cps, planned: planned, actual: actual, scope: scope, total: total, tasks: ts, stepDays: unit * step };
 }
 function orderedCounted() { return sortTasks(counted()); }
-function isLate(t) { return t.block > 0 && t.status !== "Completed" && taskEnd(t) < TODAY; }
+function isLate(t) { return t.block > 0 && !isClosed(t) && taskEnd(t) < TODAY; }
 function lateTasks() { return ordered().filter(isLate); }
 function setStatus(t, v) { t.status = v; if (v === "Completed") t.steps.forEach(function (s) { s.done = true; }); }
 function syncFromSteps(t) {
+  if (t.status === UNPURSUED) return;
   var n = t.steps.filter(function (s) { return s.done; }).length;
   if (t.steps.length && n === t.steps.length) t.status = "Completed";
   else if (n > 0 && t.status === "Not started") t.status = "In progress";
   else if (t.status === "Completed" && n < t.steps.length) t.status = "In progress";
 }
-function nextTask() { var o = ordered(); for (var i = 0; i < o.length; i++) if (o[i].status !== "Completed") return o[i]; return null; }
+function nextTask() { var o = ordered(); for (var i = 0; i < o.length; i++) if (!isClosed(o[i])) return o[i]; return null; }
 function isCore(v) { return CORE.some(function (c) { return c[0] === v; }); }
 // "quest:" + id routes to a quest's page -- id-based, not name-based, so
 // renaming a quest never breaks its pin or an in-flight link to it.
@@ -1706,7 +1717,7 @@ function questMeta(p) {
   var parts = [];
   if (ts.length) {
     var bk = ts.filter(function (t) { return t.block === 0; }).length;
-    var dn = ts.filter(function (t) { return t.status === "Completed"; }).length;
+    var dn = ts.filter(isClosed).length;
     parts.push("Complete: " + dn + " of " + ts.length + (ts.length === 1 ? " task" : " tasks") + (bk ? " | Backlog: " + bk + " unscheduled " + (bk === 1 ? "task" : "tasks") : ""));
   }
   var oi = openIssues(p.id).length;
@@ -1771,8 +1782,10 @@ function findAnyTask(id) { for (var i = 0; i < state.tasks.length; i++) if (stat
 
 var KEY2 = "sidequest-template-v1", UIKEY = "sidequest-template-ui";
 var STATUSES = ["Not started", "In progress", "Completed"];
+// An extra status only an issue can have: closed without being fixed.
+var UNPURSUED = "Unpursued";
 var CHECKPOINTS = 7;
-var APP_VERSION = "1.2.8";
+var APP_VERSION = "1.3.0";
 var APP_NAME = "Sidequest";
 
 function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -2026,7 +2039,7 @@ function normalize(s) {
       var wasStepLaunch = Array.isArray(t.steps) && t.steps.some(function (x) { return x && x.launch === true; });
       ts.push({
         id: S(t.id, 40), block: b, questId: pid, what: S(t.what, 400), done: S(t.done, 200) === "It’s finished" ? "" : S(t.done, 200), start: tstart, due: tdue, est: test, added: b > 0 && isISO(t.added) ? t.added : "",
-        status: STATUSES.indexOf(t.status) >= 0 ? t.status : "Not started", notes: S(t.notes, 5000), steps: steps,
+        status: STATUSES.indexOf(t.status) >= 0 || (t.status === UNPURSUED && t.issue === true) ? t.status : "Not started", notes: S(t.notes, 5000), steps: steps,
         custom: t.custom === true, launch: t.launch === true || wasStepLaunch, issue: t.issue === true,
         // A milestone needs a real due date to plot on the chart -- a Backlog
         // task (block 0) can never be one, even if saved data says otherwise.
@@ -2752,7 +2765,7 @@ function questRangeBlock(p) {
     if (a < first) first = a;
     if (bandB > maxEnd) maxEnd = bandB;
     if (b > maxEnd) maxEnd = b;
-    return { name: short(t.what, 60), bars: [{ a: bandA, b: bandB, cls: "blk" }, { a: a, b: b, cls: t.status === "Completed" ? "done" : t.status === "In progress" ? "work" : "new" }], dates: fmt(a) + " to " + fmt(b) };
+    return { name: short(t.what, 60), bars: [{ a: bandA, b: bandB, cls: "blk" }, { a: a, b: b, cls: t.status === "Completed" ? "done" : t.status === "In progress" ? "work" : t.status === "Unpursued" ? "unp" : "new" }], dates: fmt(a) + " to " + fmt(b) };
   });
   mss.forEach(function (m) { if (m.date < first) first = m.date; });
   var f0 = new Date(first), rs = Date.UTC(f0.getUTCFullYear(), f0.getUTCMonth(), 1);
@@ -2785,7 +2798,7 @@ function snapshotTasks(p) {
 function questBurnTasksOrdered(p) {
   var ts = live(state.tasks).filter(function (t) { return t.questId === p.id; });
   return ts.slice().sort(function (a, b) {
-    var aDone = a.status === "Completed" ? 1 : 0, bDone = b.status === "Completed" ? 1 : 0;
+    var aDone = a.status === "Unpursued" ? 2 : isClosed(a) ? 1 : 0, bDone = b.status === "Unpursued" ? 2 : isClosed(b) ? 1 : 0;
     return aDone - bDone || (a.block || 99) - (b.block || 99);
   });
 }
@@ -2982,7 +2995,7 @@ function renderTasks(node) {
 
 function renderIssues(node) {
   var rows = node.issues.map(function (t) {
-    return '<li class="etask' + (t.status === "Completed" ? " done" : "") + '">' + (t.start ? '<div class="el1">' + escHtml(t.start) + "</div>" : "") +
+    return '<li class="etask' + (t.status === "Completed" || t.status === "Unpursued" ? " done" : "") + '">' + (t.start ? '<div class="el1">' + escHtml(t.start) + "</div>" : "") +
       '<div class="el2">' + (t.launch ? '<span class="chip launchcrit" style="margin-right:8px">Launch critical</span>' : "") + escHtml(t.what) + '</div><div class="el3"><span>' + escHtml(t.status) + "</span></div>" +
       (t.notes ? '<p class="enotes">' + escHtml(t.notes) + "</p>" : "") + "</li>";
   });
@@ -3890,7 +3903,7 @@ function slipDialog(p) {
     acts.appendChild(on(el("button", { type: "button", "class": "small primary", id: "slipGo", title: "Push dates later" }, "Push dates later"), "click", function () {
       var n = parseInt(inp.value, 10);
       if (isNaN(n) || n < 1 || n > 90) { setMsg(err, "Enter a number of days from 1 to 90.", "error"); return; }
-      var targets = state.tasks.filter(function (t) { return t.questId === p.id && t.block > 0 && t.status !== "Completed" && !t.vault; });
+      var targets = state.tasks.filter(function (t) { return t.questId === p.id && t.block > 0 && !isClosed(t) && !t.vault; });
       if (!targets.length) { setMsg(err, "Nothing incomplete is scheduled to slip.", "error"); return; }
       // Warns once for this number of days; choosing the button again goes ahead.
       var limit = questDueLimit(p.id), past = limit === null ? 0 : targets.filter(function (t) { return addDays(taskEnd(t), n) > limit; }).length;
@@ -5184,6 +5197,8 @@ function helpTopics() {
       "**Issues:** Use the **+** button to log a problem on a quest, such as a bug. Issues appear in the **Issues** section of the quest’s details. Like tasks, they have steps, notes, and a status, but don’t require a due date or display a **Backlog** badge.",
       ">Issues without due dates stay in the quest’s details and don’t appear on the **Tasks** page, the **Timeline**, or the **Burndown**. Add a due date to schedule an issue like any other task. Scheduled issues display an **Issue** badge.",
       ">Select **Launch critical** to move an issue to the **Before you launch** section.",
+      ">Select **Make task** to turn an issue into a task, or **Make issue** to turn a task into an issue. An issue can’t be a milestone, so a task that becomes an issue stops being one.",
+      ">Set an issue’s status to **Unpursued** when you decide not to fix it. An unpursued issue counts as resolved, so it doesn’t keep a quest open. A scheduled one leaves the **Burndown** as a scope change.",
       "**Notes:** Use **Notes** for any additional information about the quest. An idea’s note carries over when the idea becomes a candidate quest."
     ]],
     ["Quest giver and Quest links", [
@@ -5745,7 +5760,8 @@ function addRowControls(li, t) {
   var pen = pencilButton("Rename " + (t.issue ? "issue: " : "task: ") + short(t.what, 40), t.issue ? "Rename this issue" : "Rename this task", function () { renameTaskDialog(t); });
   pen.classList.add("rowpencil"); pen.setAttribute("data-task", t.id); li.appendChild(pen);
   var sel = el("select", { "class": "status rowstatus", "aria-label": "Status of " + short(t.what, 40), title: "Change this task’s status", "data-task": t.id, "data-focus": "status-" + t.id });
-  STATUSES.forEach(function (s) { var o = el("option", { value: s }, s); if (s === t.status) o.selected = true; sel.appendChild(o); });
+  // Unpursued is for issues only.
+  (t.issue ? STATUSES.concat([UNPURSUED]) : STATUSES).forEach(function (s) { var o = el("option", { value: s }, s); if (s === t.status) o.selected = true; sel.appendChild(o); });
   sel.setAttribute("data-v", t.status);
   // Focus returns to the select only for keyboard use; after a tap or click it would look still open.
   var byPointer = false;
@@ -5959,6 +5975,15 @@ function buildDetail(t, inline, readOnly) {
         ar.appendChild(on(el("button", { type: "button", "class": "small", "aria-pressed": "false", title: "Mark this task as a milestone" }, "Make milestone"), "click", function () { t.milestone = true; changed(); }));
       }
       var kind = t.issue ? "issue" : "task";
+      // Task and issue are one record with a flag; an issue is never a milestone, and an undated one is not Backlog.
+      ar.appendChild(on(el("button", { type: "button", "class": "small", title: t.issue ? "Turn this issue into a task" : "Turn this task into an issue" }, t.issue ? "Make task" : "Make issue"), "click", function () {
+        var wasMilestone = t.milestone, undated = t.block === 0;
+        t.issue = !t.issue; if (t.issue) t.milestone = false; else if (t.status === UNPURSUED) t.status = "Not started";
+        changed();
+        // The row moves to the other section, so bring it to the top of the screen.
+        window.setTimeout(function () { scrollToRow(document.getElementById((t.launch ? "ltask-" : t.issue ? "itask-" : "ptask-") + t.id)); }, 80);
+        notify(t.issue ? "Now an issue." + (wasMilestone ? " It is no longer a milestone." : "") + (undated ? " It is out of the Backlog until it has a due date." : "") : "Now a task." + (undated ? " It is in the Backlog." : ""));
+      }));
       if (t.launch) ar.appendChild(on(el("button", { type: "button", "class": "small on", "aria-pressed": "true", title: "Unmark this " + kind + " as launch critical" }, "Skip launch"), "click", function () { t.launch = false; changed(); }));
       else ar.appendChild(on(el("button", { type: "button", "class": "small", "aria-pressed": "false", title: "Mark this " + kind + " as launch critical" }, "Launch critical"), "click", function () { t.launch = true; changed(); }));
       ar.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Delete this " + kind + " (can be undone)" }, "Delete"), "click", function () { ui.detail = false; removeNow(t, "tasks", t.issue ? "Issue" : "Task"); }));
@@ -6013,14 +6038,14 @@ function launchSection(root, p) {
   var ha = el("div", { "class": "sechead" }); ha.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-checks" }, "Before you launch"), "before-you-launch", "Before you launch"));
   root.appendChild(ha);
   var items = launchItems(p.id);
-  var n = items.filter(function (t) { return t.status === "Completed"; }).length;
+  var n = items.filter(isClosed).length;
   var total = items.length;
   // "items" once an issue is on the list, since an issue is not called a task anywhere else.
   var unit = items.some(function (t) { return t.issue; }) ? ["item", "items"] : ["task", "tasks"];
   root.appendChild(el("p", { "class": "hint" }, total ? "Complete: " + n + " of " + total + " launch-critical " + (total === 1 ? unit[0] : unit[1]) : "No tasks have been marked as launch critical yet."));
   var ul = el("ul", { "class": "tlist check", "aria-labelledby": "h-checks" });
   items.forEach(function (t) {
-    var done = t.status === "Completed";
+    var done = isClosed(t);
     // A vaulted quest, or an individually vaulted task, still opens in place -- read-only, not redirected away.
     var taskReadOnly = readOnly || !!t.vault;
     var open = ui.questOpen[p.id] === t.id;
@@ -6056,13 +6081,13 @@ function issuesSection(root, p) {
   var hd = el("div", { "class": "sechead" }); hd.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-issues" }, "Issues"), "issue", "Issue"));
   if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Log an issue on this quest" }, "Add issue"), "click", function () { issueDialog(p.id); }));
   root.appendChild(hd);
-  var n = items.filter(function (t) { return t.status === "Completed"; }).length;
+  var n = items.filter(isClosed).length;
   root.appendChild(el("p", { "class": "hint" }, items.length ? "Complete: " + n + " of " + items.length + (items.length === 1 ? " issue" : " issues") : "No issues yet."));
   if (!items.length) return;
   var ul = el("ul", { "class": "tlist", "aria-labelledby": "h-issues" });
   items.forEach(function (t) {
     var open = ui.questOpen[p.id] === t.id;
-    var li = el("li", { id: "itask-" + t.id }), b = el("button", { type: "button", "class": "item" + (t.status === "Completed" ? " done" : ""), title: "View this issue" });
+    var li = el("li", { id: "itask-" + t.id }), b = el("button", { type: "button", "class": "item" + (isClosed(t) ? " done" : ""), title: "View this issue" });
     b.setAttribute("aria-expanded", open ? "true" : "false");
     // An issue with no due date has no first line: it is not Backlog.
     if (t.block !== 0) {
@@ -6959,7 +6984,7 @@ function backupReminder() {
 
 function taskRow(t) {
   var li = el("li");
-  var b = el("button", { type: "button", "class": "item" + (t.status === "Completed" ? " done" : ""), title: "View this task" });
+  var b = el("button", { type: "button", "class": "item" + (isClosed(t) ? " done" : ""), title: "View this task" });
   if (t.id === ui.sel) b.setAttribute("aria-current", "true");
   var l1 = el("div", { "class": "l1 split" }), l1t = el("span"); l1t.appendChild(el("b", null, dispQuest(t)));
   if (t.block !== 0) l1t.appendChild(document.createTextNode(" · " + fmt(taskStart(t)) + " to " + fmt(taskEnd(t))));
@@ -7065,7 +7090,7 @@ function completedSection(rows, first) { return questListSection("Completed", ro
 function standingBlock() {
   var groups = {}, order = [];
   ordered().forEach(function (t) {
-    if (t.status === "Completed") return;
+    if (isClosed(t)) return;
     var quest = findQuest(t.questId);
     if (!quest || quest.status !== "active") return;
     var g = groups[t.questId]; if (!g) { g = groups[t.questId] = { questId: t.questId, name: dispQuest(t), open: 0, first: t }; order.push(g); }
@@ -7088,8 +7113,10 @@ function standingBlock() {
     var nx = el("div", { "class": "snext" }), oi = openIssues(g.questId).length; nx.appendChild(document.createTextNode("Next up: "));
     var tl = el("button", { type: "button", "class": "textbtn", title: "View this task" }, short(g.first.what, 90));
     on(tl, "click", function () { openTask(g.first.id); });
-    nx.appendChild(tl); nx.appendChild(document.createTextNode(" · " + fmt(taskStart(g.first)) + " · " + g.open + " open " + (g.open === 1 ? "task" : "tasks") + (oi ? " · " + oi + " open " + (oi === 1 ? "issue" : "issues") : "")));
+    nx.appendChild(tl);
     textWrap.appendChild(nx);
+    // The date and counts follow Next up on a wide screen and take their own line on a narrow one (styles.css).
+    nx.appendChild(el("span", { "class": "sdetail" }, fmt(taskStart(g.first)) + " · " + g.open + " open " + (g.open === 1 ? "task" : "tasks") + (oi ? " · " + oi + " open " + (oi === 1 ? "issue" : "issues") : "")));
     row.appendChild(textWrap); row.appendChild(questPinButton("quest:" + g.questId, g.name));
     li.appendChild(row); ul.appendChild(li);
   });
@@ -7663,7 +7690,7 @@ function playSplash(showSplash, done, audio, pickIndex, opts) {
 
 /* navigation */
 function leaveSearch() { if (ui.view === "search") { ui.query = ""; var b = $("searchBox"); if (b) b.value = ""; } }
-function go(view) { leaveSearch(); ui.view = view; ui.detail = false; renderAll(); scrollTop(); }
+function go(view) { leaveSearch(); ui.view = view; ui.detail = false; if (view === "schedule") ui.sel = null; renderAll(); scrollTop(); }
 function openTask(id) {
   var at = findAnyTask(id);
   if (at && at.vault) { go("vault"); notify("That task is in the Vault. Restore it to work on it.", null, "problem"); return; }

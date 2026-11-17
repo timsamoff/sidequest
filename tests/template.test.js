@@ -76,7 +76,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.2.8"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.3.0"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -787,7 +787,8 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   const rows = () => [...k.d.querySelectorAll("#view .standing li")];
   const webRow = () => rows().find(li => li.textContent.includes("Sample Website"));
   ok(!!k.btn(webRow(), "Pin") && !webRow().querySelector(".scount"), "a Where things stand row has a Pin button and no separate open-task count");
-  ok(/Next up: .* · [A-Z][a-z]{2} [0-9]+ · 3 open tasks/.test(webRow().querySelector(".snext").textContent), "the open-task count is on the Next up line (" + webRow().querySelector(".snext").textContent + ")");
+  const sn = webRow().querySelector(".snext"), sd = sn.querySelector(".sdetail");
+  ok(!!sd && /^Next up: [^·]+$/.test(sn.textContent.slice(0, sn.textContent.length - sd.textContent.length)) && /^[A-Z][a-z]{2} [0-9]+ · 3 open tasks/.test(sd.textContent), "the date and open-task count are their own span after Next up, so a narrow screen can put them on a second line (" + sn.textContent + ")");
   k.click(k.btn(webRow(), "Pin"));
   ok(k.saved().pins.includes("quest:pSite") && !!k.btn(webRow(), "Unpin"), "Pin in Where things stand pins the quest and the button flips to Unpin");
   ok(!!k.btn(k.d.querySelector("#nav"), "Sample Website"), "the pinned quest appears in the sidebar");
@@ -1108,7 +1109,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   const board = {
     name: "Launch Plan",
     cards: [
-      { id: "c1", name: "Design landing page", desc: "Hero + pricing", due: "2026-11-01T17:00:00.000Z", closed: false, idChecklists: ["cl1"], idLabels: ["lab1"], idMembers: ["m1"], checkItemStates: [{ idCheckItem: "ci1", state: "complete" }] },
+      { id: "c1", name: "Design landing page", desc: "Hero + pricing", due: "2027-06-01T17:00:00.000Z", closed: false, idChecklists: ["cl1"], idLabels: ["lab1"], idMembers: ["m1"], checkItemStates: [{ idCheckItem: "ci1", state: "complete" }] },
       { id: "c2", name: "Write copy", desc: "", due: null, closed: false, idChecklists: [], idLabels: [], idMembers: [] },
       { id: "c3", name: "Old, skipped", desc: "", due: null, closed: true, idChecklists: [], idLabels: [], idMembers: [] }
     ],
@@ -1137,10 +1138,10 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   const its = k.saved().tasks.filter(t => t.questId === qp.id);
   ok(its.length === 2, "the closed card was skipped, the other two became tasks");
   const dated = its.find(t => t.what === "Design landing page"), undated = its.find(t => t.what === "Write copy");
-  ok(dated.due === "2026-11-01" && dated.block === 1 && dated.notes === "Hero + pricing", "a card with a due date keeps its date, note, and lands in a real block");
+  ok(dated.due === "2027-06-01" && dated.block === 1 && dated.notes === "Hero + pricing", "a card with a due date keeps its date, note, and lands in a real block");
   ok(undated.due === "" && undated.block === 0, "a card with no due date goes to the Backlog");
   ok(dated.steps.length === 2 && dated.steps[0].done === true && dated.steps[1].done === false, "checklist items become steps with their done state kept");
-  ok(qp.start === "2026-11-01", "the new quest starts on the earliest due date found");
+  ok(qp.start === "2027-06-01", "the new quest starts on the earliest due date found");
   ok(k.saved().tasks.length === tBefore + 2, "existing tasks are untouched");
 }
 {
@@ -3476,6 +3477,28 @@ async function exportClick(k, projectName) {
   ok(!!hit && hit.querySelector(".l1").textContent.includes("Issue Quest · Issue · Not started"), "search lists an issue as an Issue, not as Backlog");
   k.click(hit);
   ok(k.$("viewTitle").textContent === "Issue Quest" && k.$("itask-" + made.id).querySelector(".item").getAttribute("aria-expanded") === "true", "opening it goes to its quest's page with the issue open");
+  // Make issue / Make task switches the flag on one record.
+  {
+  let k = kit(await mk(base([T("t1", { block: 1, milestone: true }), T("b1")])));
+  k.tab("projects"); k.click(k.btn(k.$("view"), "Issue Quest"));
+  k.click(k.$("ptask-t1").querySelector(".item"));
+  k.click(k.btn(k.$("ptask-t1"), "Make issue"));
+  let sw = k.saved().tasks.find(t => t.id === "t1");
+  ok(sw.issue === true && sw.milestone === false && !!k.$("itask-t1") && !k.$("ptask-t1"), "Make issue flags the task, clears its milestone, and moves it to Issues");
+  k.click(k.btn(k.$("itask-t1"), "Make task"));
+  ok(k.saved().tasks.find(t => t.id === "t1").issue === false && !!k.$("ptask-t1"), "Make task turns it back");
+  k.click(k.$("ptask-b1").querySelector(".item")); k.click(k.btn(k.$("ptask-b1"), "Make issue"));
+  ok(k.saved().tasks.find(t => t.id === "b1").block === 0 && !!k.$("itask-b1") && k.$("toast").textContent.includes("out of the Backlog"), "an undated task becomes a loose issue and the toast says so");
+  // Unpursued: issues only, closed without counting as progress or holding the quest open.
+  k = kit(await mk(base([T("t1", { block: 1 }), T("i1", { issue: true, what: "Crash on save" })])));
+  k.tab("projects"); k.click(k.btn(k.$("view"), "Issue Quest"));
+  const isel = k.d.querySelector('select.rowstatus[data-task="i1"]'), tsel = k.d.querySelector('select.rowstatus[data-task="t1"]');
+  ok([...isel.options].some(o => o.value === "Unpursued") && ![...tsel.options].some(o => o.value === "Unpursued"), "Unpursued is offered for an issue and not for a task");
+  isel.value = "Unpursued"; k.fire(isel);
+  ok(k.saved().tasks.find(t => t.id === "i1").status === "Unpursued" && !k.$("view").textContent.includes("Issues: 1 open"), "an Unpursued issue is no longer open");
+  finish(k, "t1");
+  ok(questOf(k).status === "complete", "an Unpursued issue does not hold a quest open");
+  }
   // The Quest giver export leaves issues with no due date out unless asked.
   async function exportRun(check) {
     const kx = kit(await mk(base([T("t1", { block: 1 }), T("i1", { issue: true, what: "Crash on save", notes: "Happens on a full disk" }), T("i2", { issue: true, block: 1, due: "2026-12-01", what: "Slow first load" })])));
