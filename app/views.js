@@ -207,6 +207,9 @@ export function updateBanner() {
     else fallback();
   }
   ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Copy the prompt" }, "Copy prompt"), "click", copyPrompt));
+  ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"), "click", function () {
+    window.open("https://samoff.com/sidequest/patch-notes.html", "_blank", "noopener");
+  }));
   ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Hide this notice for this version" }, "Dismiss"), "click", function () {
     state.settings.dismissedUpdateVersion = availableUpdateVersion; save(); box.remove();
   }));

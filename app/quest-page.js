@@ -135,7 +135,7 @@ export function buildDetail(t, inline, readOnly) {
     // A bad date stays in its field with its message until it is fixed; nothing is saved or reverted. "change" fires per segment while typing, so saving waits for blur.
     function liveCheck() { var m = dateProblems(t.questId, sd.value, bd.value); setMsg(smsg, m.start, "error"); setMsg(dmsg, m.due, "error"); return m; }
     ["input", "change"].forEach(function (ev) { on(bd, ev, liveCheck); on(sd, ev, liveCheck); });
-    on(bd, "blur", function () {
+    function saveDue() {
       if (bd.value === shownDue()) return;
       var m = liveCheck();
       if (bd.value === "") { var hadStart = !!t.start, wasMilestone = t.milestone; t.block = 0; t.due = ""; t.added = ""; t.milestone = false; changed(); notify((t.issue ? "Due date cleared." : "Moved to the Backlog.") + (hadStart ? " Its start date is kept." : "") + (wasMilestone ? " It is no longer a milestone." : "")); return; }
@@ -149,8 +149,8 @@ export function buildDetail(t, inline, readOnly) {
       if (startedToday) t.start = iso(TODAY);
       t.due = bd.value; t.block = blk; changed();
       notify("Due " + fmt(taskEnd(t)) + ", in " + wd() + " " + blk + "." + (startedToday ? " Starts today." : ""));
-    });
-    on(sd, "blur", function () {
+    }
+    function saveStart() {
       if (sd.value === shownStart()) return;
       var m = liveCheck();
       if (sd.value === "") { setMsg(smsg, "", ""); t.start = ""; changed(); notify(t.block === 0 ? "Start date cleared." : "Start date cleared. The task starts when its " + wl() + " does."); return; }
@@ -158,7 +158,14 @@ export function buildDetail(t, inline, readOnly) {
       if (m.start) return;
       if (t.block > 0 && sd.value > iso(taskEnd(t))) { setMsg(smsg, "You can’t begin after you finish! Choose a start date on or before the due date.", "error"); return; }
       t.start = sd.value; changed(); notify("Start date saved.");
-    });
+    }
+    on(bd, "blur", saveDue); on(sd, "blur", saveStart);
+    // A picker's Reset empties an unfocused field, so no blur follows; typing in a focused field still waits for blur.
+    on(bd, "change", function () { if (bd.value === "" && document.activeElement !== bd) saveDue(); });
+    on(sd, "change", function () { if (sd.value === "" && document.activeElement !== sd) saveStart(); });
+    function clearBtn(input, save, label) {
+      return on(el("button", { type: "button", "class": "small", "aria-label": label, title: label }, "Clear"), "click", function () { input.value = ""; save(); });
+    }
     // Warn while typing; saving still waits for blur.
     on(ei, "input", function () { setMsg(emsg, t.block > 0 ? estimateWarning(parseFloat(ei.value), taskStart(t), taskEnd(t)) : "", "note"); });
     on(ei, "blur", function () {
@@ -170,7 +177,16 @@ export function buildDetail(t, inline, readOnly) {
       t.est = v; changed();
       notify(v > 0 ? "Estimated time saved." : "Estimated time cleared.");
     });
-    dfield("task-start", "Start date (optional)", sd); dfield("task-due", t.issue ? "Due date (optional)" : "Due date (leave empty to backlog)", bd); dg.appendChild(smsg); dg.appendChild(dmsg); dfield("task-est", "Estimated time (hours)", ei).appendChild(emsg);
+    // Each date sits beside a Clear button that shows only while the field has a date.
+    function dateRow(input, save, label) {
+      var row = el("div", { style: "display:flex;gap:8px;align-items:center" }), btn = clearBtn(input, save, label);
+      function sync() { btn.hidden = input.value === ""; }
+      input.style.flex = "1 1 auto"; input.style.minWidth = "0";
+      sync(); ["input", "change"].forEach(function (ev) { on(input, ev, sync); });
+      row.appendChild(input); row.appendChild(btn); return row;
+    }
+    dfield("task-start", "Start date (optional)", dateRow(sd, saveStart, "Clear the start date"));
+    dfield("task-due", t.issue ? "Due date (optional)" : "Due date (leave empty to backlog)", dateRow(bd, saveDue, t.issue ? "Clear the due date" : "Clear the due date and move to the Backlog")); dg.appendChild(smsg); dg.appendChild(dmsg); dfield("task-est", "Estimated time (hours)", ei).appendChild(emsg);
     box.appendChild(dg);
   }
 

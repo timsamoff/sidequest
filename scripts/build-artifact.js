@@ -159,6 +159,7 @@ function build() {
     .replace(/<script async src="https:\/\/www\.googletagmanager\.com[^>]*><\/script>\s*<script>[^]*?<\/script>\s*/, "")
     .replace(/<meta (?:property="og:|name="twitter:|name="description")[^>]*>\s*/g, "")
     .replace(/<link rel="canonical"[^>]*>\s*/g, "")
+    .replace("<title>HQ | Sidequest</title>", "<title>Sidequest</title>")
     .replace(/(<meta name="viewport" content="[^"]*)"/, "$1, maximum-scale=1, user-scalable=no\"");
   out = head + out.slice(headEnd);
   var outHead = out.slice(0, out.indexOf("</head>"));

@@ -76,7 +76,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.3.0"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.3.1"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -1046,6 +1046,12 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   ok(dm.start === iso(0), "a due date with no start date starts the task today (" + dm.start + ")");
   const due2 = k.$("task-due"); due2.value = ""; k.fire(due2, "blur");
   ok(k.saved().tasks.find(t => t.what === "Add a dark mode").added === "" && !chip(rowOf("Add a dark mode")), "sending it back to the Backlog clears that");
+  // the Clear button beside a date empties it and saves without a blur
+  due2.value = iso(20); k.fire(due2, "blur");
+  const clr = k.$("task-due").parentNode.querySelector("button");
+  ok(!clr.hidden, "Clear shows beside a date");
+  k.click(clr);
+  ok(k.saved().tasks.find(t => t.what === "Add a dark mode").added === "", "Clear on the due date sends the task back to the Backlog");
   // a task from the dialog starts in the Backlog, so it is not tagged
   k.click(k.btn(k.$("view"), "Add task"));
   k.setField("what", "Late idea"); k.click(k.btn(k.$("modalBody"), "Add task"));
