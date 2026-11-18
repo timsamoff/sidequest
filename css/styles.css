@@ -253,10 +253,13 @@ body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 
    highlight blue a quest page's expanded task gets -- the user's call. */
 .detailpane .detail { background: var(--sel); }
 .detail { padding: var(--space-18) var(--space-20); }
-.detail .what { color: var(--ink); font-family: var(--font-serif); font-size: calc(1.25rem + 1px); font-weight: 400; line-height: 1.3; margin-top: var(--space-8); }
+.detail .what { color: var(--ink); margin-top: var(--space-2); }
 .detail .donewhenfield { margin-top: var(--space-6); }
 .detail .donewhen { display: flex; gap: var(--space-8); align-items: flex-start; }
 .detail .dmeta { color: var(--muted); margin-top: var(--space-4); }
+/* The Tasks pane's quest and date line matches the row's first line. */
+.detailpane .dmeta { font-size: var(--text-sm); margin-top: 0; }
+.detailpane .dmeta b { color: var(--ink); font-weight: 600; }
 select.status { border: 1px solid var(--line); border-radius: var(--radius-control); padding: var(--space-5) var(--space-12); min-height: 38px; background: var(--chip-idle); color: var(--chip-ink); }
 /* A task row's status pulldown sits beside the row's button, on the title line; alignStatuses() sets its top. */
 /* The row is the container, so a narrow column on a wide screen gets the compact layout too. */
@@ -401,6 +404,9 @@ html { scrollbar-gutter: stable; }
 .sechead { display: flex; align-items: center; justify-content: space-between; gap: var(--space-10); margin-top: var(--space-22); }
 .sechead h3, .sechead .sechead-h { margin-top: 0; }
 .sechead.wraps { flex-wrap: wrap; }
+/* A section's heading and Add button stay under the top bar while its list scrolls; the section's end releases it. */
+.stickysec > .sechead { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h, 64px)); z-index: 5; background: var(--bg); padding: var(--space-6) 0; margin-top: calc(var(--space-22) - var(--space-6)); }
+.stickysec > .sechead.first { margin-top: calc(-1 * var(--space-6)); }
 .sechead-btns { display: flex; flex-wrap: wrap; gap: var(--space-10); }
 .importlist { margin: var(--space-6) 0 0 var(--space-18); padding: 0; font-size: var(--text-sm); }
 .importlist li { margin-top: var(--space-4); }

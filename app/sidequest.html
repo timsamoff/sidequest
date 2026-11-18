@@ -481,10 +481,13 @@ body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 
    highlight blue a quest page's expanded task gets -- the user's call. */
 .detailpane .detail { background: var(--sel); }
 .detail { padding: var(--space-18) var(--space-20); }
-.detail .what { color: var(--ink); font-family: var(--font-serif); font-size: calc(1.25rem + 1px); font-weight: 400; line-height: 1.3; margin-top: var(--space-8); }
+.detail .what { color: var(--ink); margin-top: var(--space-2); }
 .detail .donewhenfield { margin-top: var(--space-6); }
 .detail .donewhen { display: flex; gap: var(--space-8); align-items: flex-start; }
 .detail .dmeta { color: var(--muted); margin-top: var(--space-4); }
+/* The Tasks pane's quest and date line matches the row's first line. */
+.detailpane .dmeta { font-size: var(--text-sm); margin-top: 0; }
+.detailpane .dmeta b { color: var(--ink); font-weight: 600; }
 select.status { border: 1px solid var(--line); border-radius: var(--radius-control); padding: var(--space-5) var(--space-12); min-height: 38px; background: var(--chip-idle); color: var(--chip-ink); }
 /* A task row's status pulldown sits beside the row's button, on the title line; alignStatuses() sets its top. */
 /* The row is the container, so a narrow column on a wide screen gets the compact layout too. */
@@ -629,6 +632,9 @@ html { scrollbar-gutter: stable; }
 .sechead { display: flex; align-items: center; justify-content: space-between; gap: var(--space-10); margin-top: var(--space-22); }
 .sechead h3, .sechead .sechead-h { margin-top: 0; }
 .sechead.wraps { flex-wrap: wrap; }
+/* A section's heading and Add button stay under the top bar while its list scrolls; the section's end releases it. */
+.stickysec > .sechead { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h, 64px)); z-index: 5; background: var(--bg); padding: var(--space-6) 0; margin-top: calc(var(--space-22) - var(--space-6)); }
+.stickysec > .sechead.first { margin-top: calc(-1 * var(--space-6)); }
 .sechead-btns { display: flex; flex-wrap: wrap; gap: var(--space-10); }
 .importlist { margin: var(--space-6) 0 0 var(--space-18); padding: 0; font-size: var(--text-sm); }
 .importlist li { margin-top: var(--space-4); }
@@ -1252,7 +1258,9 @@ function scrollToRow(node) {
   if (!node || typeof node.scrollIntoView !== "function") return;
   var bar = document.querySelector(".topbar"), pos = bar ? window.getComputedStyle(bar).position : "";
   var head = bar && (pos === "sticky" || pos === "fixed") ? bar.getBoundingClientRect().height : 0;
-  node.style.scrollMarginTop = (head + 12) + "px";
+  // A row in a section with a sticky heading also clears that heading.
+  var sec = node.closest && node.closest(".stickysec"), sh = sec && sec.querySelector(":scope > .sechead");
+  node.style.scrollMarginTop = (head + (sh ? sh.offsetHeight : 0) + 12) + "px";
   try { node.scrollIntoView({ block: "start" }); } catch (e) { /* ignore */ }
 }
 // Navigation only. A framed copy scrolls the host page, not this window, so every
@@ -1785,7 +1793,7 @@ var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 var UNPURSUED = "Unpursued";
 var CHECKPOINTS = 7;
-var APP_VERSION = "1.3.3";
+var APP_VERSION = "1.3.4";
 var APP_NAME = "Sidequest";
 
 function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -2281,7 +2289,7 @@ function checkForAppUpdate() {
   }).catch(function () { return null; });
 }
 
-var ui = { view: "today", sel: null, detail: false, query: "", prev: "today", searchVault: true,questOpen: {}, sectionOpen: {} };
+var ui = { view: "today", sel: null, detail: false, query: "", prev: "today", searchVault: true, questOpen: {}, sectionOpen: {} };
 
 // Stamps a task's completion date when it becomes Done, clears it if reopened, and returns how many it stamped.
 // Never moves anything to the Vault itself -- only Quests and Ideas do that.
@@ -5422,7 +5430,7 @@ function renderJobs(root) {
     done.forEach(function (j) { dl.appendChild(jobRow(j)); });
     root.appendChild(dl);
   }
-  landJob();
+  landJob(); landArrival();
 }
 
 var CALENDAR = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>';
@@ -5435,8 +5443,29 @@ function setJobDone(j, done, li) {
     if (!done && !j.due && at > 0) { state.jobs.splice(at, 1); state.jobs.unshift(j); }
     changed();
   }
-  // Completing or restoring pulses a brass ring on the row first (about a fifth of a second), then the list redraws.
-  if (pulse(li, 520)) setTimeout(apply, 220); else apply();
+  // Completing slides the row down and restoring slides it up, under the brass ring, then the list redraws and the row arrives in its new place.
+  var dir = done ? 1 : -1;
+  if (moveOut(li, dir)) { setTimeout(function () { arrival = { id: j.id, dir: dir, at: Date.now() }; apply(); }, SLIDE_MS); } else apply();
+}
+
+var SLIDE_MS = 280, arrival = null;
+// The row's brass ring with a short slide and fade away in the direction it is going. Skipped under reduced motion.
+function moveOut(node, dir) {
+  if (!node || typeof node.animate !== "function" || reduceMotion()) return false;
+  node.animate([
+    { boxShadow: "0 0 0 0 var(--brass)", transform: "translateY(0)", opacity: 1 },
+    { boxShadow: "0 0 0 3px var(--brass)", transform: "translateY(" + dir * 4 + "px)", opacity: 1, offset: 0.35 },
+    { boxShadow: "0 0 0 0 transparent", transform: "translateY(" + dir * 12 + "px)", opacity: 0 }
+  ], { duration: SLIDE_MS, easing: "ease-out", fill: "forwards" });
+  return true;
+}
+// After the redraw, the moved errand slides and fades in from the side it left.
+function landArrival() {
+  if (!arrival) return;
+  var a = arrival; arrival = null;
+  var node = Date.now() - a.at < 1500 ? document.querySelector('#view ul.jobs [data-job="' + a.id + '"]') : null;
+  if (!node || typeof node.animate !== "function" || reduceMotion()) return;
+  node.animate([{ opacity: 0, transform: "translateY(" + -a.dir * 12 + "px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 240, easing: "ease-out" });
 }
 
 // A quick brass ring around a card. Skipped under reduced motion or without the Web Animations API.
@@ -5798,10 +5827,11 @@ function buildDetail(t, inline, readOnly) {
   var box = el("div", { "class": "detail" });
   var top = el("div", { style: "display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap" });
   var lh = el("div");
-  if (!inline) lh.appendChild(el("h2", { style: "margin:0" }, dispQuest(t)));
+  // The Tasks pane reads like the task's row: the quest in bold, then the dates, in the same type.
   var dm = el("p", { "class": "dmeta" });
-  if (t.block === 0) { if (!t.issue) dm.appendChild(el("span", { "class": "chip backlog", style: "margin-right:6px" }, "Backlog")); }
-  else dm.appendChild(document.createTextNode(fmt(taskStart(t)) + " to " + fmt(taskEnd(t)) + " "));
+  if (!inline) dm.appendChild(el("b", null, dispQuest(t)));
+  if (t.block === 0) { if (!t.issue) dm.appendChild(el("span", { "class": "chip backlog", style: "margin:0 6px" }, "Backlog")); }
+  else dm.appendChild(document.createTextNode(" · " + fmt(taskStart(t)) + " to " + fmt(taskEnd(t)) + " "));
   if (isLate(t)) dm.appendChild(el("span", { "class": "badge" }, "Overdue"));
   var tag2 = addedChip(t); if (tag2) { tag2.style.marginLeft = "6px"; dm.appendChild(tag2); }
   // The folded (in-place) detail leaves the title and dates to the row above it.
@@ -5838,7 +5868,7 @@ function buildDetail(t, inline, readOnly) {
     function saveDue() {
       if (bd.value === shownDue()) return;
       var m = liveCheck();
-      if (bd.value === "") { var hadStart = !!t.start, wasMilestone = t.milestone; t.block = 0; t.due = ""; t.added = ""; t.milestone = false; changed(); notify((t.issue ? "Due date cleared." : "Moved to the Backlog.") + (hadStart ? " Its start date is kept." : "") + (wasMilestone ? " It is no longer a milestone." : "")); return; }
+      if (bd.value === "") { var hadStart = !!t.start, wasMilestone = t.milestone; t.block = 0; t.due = ""; t.added = ""; t.milestone = false; changed(); notify("Due date cleared." + (hadStart ? " Start date kept." : "") + (wasMilestone ? " It is no longer a milestone." : "")); return; }
       if (!isISO(bd.value)) { setMsg(dmsg, t.issue ? "Enter a valid due date, or leave it empty." : "Enter a valid due date, or leave it empty for the Backlog.", "error"); return; }
       var blk = blockForDate(t.questId, parseISO(bd.value));
       if (blk === null || m.due || m.start.indexOf("You can’t begin") === 0) { if (!dmsg.textContent && !smsg.textContent) setMsg(dmsg, "This quest starts " + fmtY(questFirst) + ". Choose a due date on or after that.", "error"); return; }
@@ -6083,11 +6113,12 @@ function launchSection(root, p) {
 function issuesSection(root, p) {
   var readOnly = !!p.vault;
   var items = sortTasks(questTasks(p.id).filter(function (t) { return t.issue && !t.launch; }));
+  var host = readOnly ? root : el("div", { "class": "stickysec" }); if (host !== root) root.appendChild(host);
   var hd = el("div", { "class": "sechead" }); hd.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-issues" }, "Issues"), "issue", "Issue"));
   if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Log an issue on this quest" }, "Add issue"), "click", function () { issueDialog(p.id); }));
-  root.appendChild(hd);
+  host.appendChild(hd);
   var n = items.filter(isClosed).length;
-  root.appendChild(el("p", { "class": "hint" }, items.length ? "Complete: " + n + " of " + items.length + (items.length === 1 ? " issue" : " issues") : "No issues yet."));
+  host.appendChild(el("p", { "class": "hint" }, items.length ? "Complete: " + n + " of " + items.length + (items.length === 1 ? " issue" : " issues") : "No issues yet."));
   if (!items.length) return;
   var ul = el("ul", { "class": "tlist", "aria-labelledby": "h-issues" });
   items.forEach(function (t) {
@@ -6113,7 +6144,7 @@ function issuesSection(root, p) {
     if (open) li.appendChild(buildDetail(t, true, readOnly));
     ul.appendChild(li);
   });
-  root.appendChild(ul);
+  host.appendChild(ul);
 }
 
 // A one-row section that opens in place like a task row. Starts collapsed.
@@ -6155,15 +6186,17 @@ function renderQuestPage(root, id) {
     root.appendChild(el("p", { "class": "hint" }, "In the Vault. Restore it to make changes."));
   }
 
+  // The Tasks and Issues headings stay under the top bar while their list scrolls, so Add is always in reach.
+  var tsec = readOnly ? root : el("div", { "class": "stickysec" }); if (tsec !== root) root.appendChild(tsec);
   var hd = el("div", { "class": "sechead" + (split ? " first" : "") }); hd.appendChild(el("h2", split ? { "class": "first" } : null, "Tasks"));
   if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add a task" }, "Add task"), "click", function () { taskDialog(p.id); }));
-  root.appendChild(hd);
+  tsec.appendChild(hd);
   // The count line on the left, the open estimated time on the right.
   var est = questEstimate(p), metaRow = el("div", { "class": "metarow" });
   metaRow.appendChild(metaLine);
   if (est.total > 0) metaRow.appendChild(el("span", { "class": "hint estleft" }, "Est. " + fmtHoursLong(est.left) + " remaining"));
-  root.appendChild(metaRow);
-  if (!readOnly && p.status === "complete") root.appendChild(el("p", { "class": "hint" }, "Its tasks are not included in Tasks, Timeline, or Today while this quest is Complete. Reopen it to bring them back."));
+  tsec.appendChild(metaRow);
+  if (!readOnly && p.status === "complete") tsec.appendChild(el("p", { "class": "hint" }, "Its tasks are not included in Tasks, Timeline, or Today while this quest is Complete. Reopen it to bring them back."));
   // questTasks(), not ordered()/backlogTasks()/live() -- a quest's page keeps
   // showing its tasks even while Complete or vaulted, when cross-quest lists exclude them.
   var ts = sortTasks(questTasks(p.id).filter(function (t) { return !t.launch && !t.issue; }));
@@ -6191,7 +6224,7 @@ function renderQuestPage(root, id) {
       if (open) li.appendChild(buildDetail(t, true, readOnly));
       ul.appendChild(li);
     });
-    root.appendChild(ul);
+    tsec.appendChild(ul);
   }
   if (!split) scheduleSection(root, p, readOnly);
 
@@ -6257,11 +6290,16 @@ function renderQuestPage(root, id) {
     giverBox.appendChild(gg2);
     root.appendChild(collapsibleSection("giver:" + p.id, function () { return [p.client.org, p.client.poc].filter(Boolean).join(" · "); }, giverBox, "Add Quest giver details"));
   }
+  // The export button sits under the Quest giver section; a Candidate has no export.
+  if (p.status !== "candidate") {
+    var xa = el("div", { "class": "actions" });
+    xa.appendChild(on(el("button", { type: "button", "class": "small", title: "Export web page for client review" }, "Quest giver export"), "click", function () { askExportSides(p); }));
+    root.appendChild(xa);
+  }
 
   var ar = el("div", { "class": "actions questactions", style: "margin-top:14px" });
   if (readOnly) {
     ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Bring back to Quests" }, "Restore"), "click", function () { restoreEntry({ kind: "quest", list: "quests", item: p }); }));
-    if (p.status !== "candidate") ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Export web page for client review" }, "Quest giver export"), "click", function () { askExportSides(p); }));
   } else if (p.status === "candidate") {
     ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Promote to quest" }, "Promote"), "click", function () { promoteToActive(p.id); }));
     ar.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Send this candidate to the Vault" }, "Vault"), "click", function () { removeToVault(p, "Quest"); }));
@@ -6286,9 +6324,6 @@ function renderQuestPage(root, id) {
       }));
     }
     ar.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Send this quest to the Vault" }, "Vault"), "click", function () { vaultQuest(p); }));
-    ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Export web page for client review" }, "Quest giver export"), "click", function () {
-      askExportSides(p);
-    }));
   }
   // Sits outside .questmain so it renders last when stacked; CSS puts it back under the left column on wide screens.
   if (split) { split.appendChild(questChartsPanel(p)); split.appendChild(ar); } else { root.appendChild(ar); }
@@ -7057,7 +7092,7 @@ function questPinButton(key, name) {
 function dustChip() { return el("span", { "class": "chip dust", style: "margin-left:8px", title: "No activity for a while" }, "Gathering dust"); }
 
 function questRow(r) {
-  var li = el("li"), row = el("div", { "class": "crow oneline" });
+  var li = el("li", { "data-quest": r.id }), row = el("div", { "class": "crow oneline" });
   var nm = el("div", { style: "flex:1 1 200px" });
   var link = el("button", { type: "button", "class": "textbtn qlink", style: "font-weight:600", title: "View this quest" }, r.name);
   on(link, "click", function () { go(r.key); });
@@ -7112,7 +7147,7 @@ function standingBlock() {
   var box = el("div", { "class": "box", style: "margin-top:10px" });
   var ul = el("ul", { "class": "standing" });
   order.forEach(function (g) {
-    var li = el("li"), row = el("div", { "class": "srow" }), textWrap = el("div", { style: "flex:1 1 200px" });
+    var li = el("li", { "data-quest": g.questId }), row = el("div", { "class": "srow" }), textWrap = el("div", { style: "flex:1 1 200px" });
     var nm = el("button", { type: "button", "class": "textbtn qlink", title: "View this quest" }, g.name);
     on(nm, "click", function () { go(validPage("quest:" + g.questId) ? "quest:" + g.questId : "projects"); });
     textWrap.appendChild(nm);
@@ -7144,7 +7179,7 @@ function candidatesSection(first) {
   var cs = candidateQuests();
   if (!cs.length) list.appendChild(el("li", { "class": "hint" }, "No candidate quests yet. Start one with the + button."));
   cs.forEach(function (cd) {
-    var li = el("li"), row = el("div", { "class": "crow oneline" });
+    var li = el("li", { "data-quest": cd.id }), row = el("div", { "class": "crow oneline" });
     var nmWrap = el("div", { style: "flex:1 1 200px" });
     var nm = el("button", { type: "button", "class": "textbtn qlink", title: "View this candidate" }, cd.name);
     on(nm, "click", function () { go("quest:" + cd.id); });
@@ -7698,7 +7733,27 @@ function playSplash(showSplash, done, audio, pickIndex, opts) {
 
 /* navigation */
 function leaveSearch() { if (ui.view === "search") { ui.query = ""; var b = $("searchBox"); if (b) b.value = ""; } }
-function go(view) { leaveSearch(); ui.view = view; ui.detail = false; if (view === "schedule") ui.sel = null; renderAll(); scrollTop(); }
+// Returning to Quests from a quest keeps the list's scroll; any other arrival goes to the top.
+// A framed copy scrolls its host page, so there the quest just opened is brought back into view.
+function framed() { try { return window.self !== window.top; } catch (e) { return true; } }
+function go(view) {
+  var fromList = ui.view === "projects", inQuest = ui.view.indexOf("quest:") === 0, toQuest = view.indexOf("quest:") === 0;
+  if (fromList && toQuest) { ui.listY = window.pageYOffset || 0; ui.listQuest = view.slice(6); }
+  else if (!(inQuest && (toQuest || view === "projects"))) { ui.listY = null; ui.listQuest = ""; }
+  var back = view === "projects" && inQuest && typeof ui.listY === "number", keepY = ui.listY;
+  leaveSearch(); ui.view = view; ui.detail = false; if (view === "schedule") ui.sel = null; renderAll();
+  if (!back) { scrollTop(); return; }
+  function restore() {
+    if (framed()) {
+      var row = document.querySelector('#view [data-quest="' + ui.listQuest + '"]');
+      if (row && typeof row.scrollIntoView === "function") { try { row.scrollIntoView({ block: "center" }); } catch (e) { /* ignore */ } }
+      return;
+    }
+    try { window.scrollTo(0, keepY); } catch (e) { /* ignore */ }
+  }
+  restore();
+  try { if (typeof window.requestAnimationFrame === "function") window.requestAnimationFrame(restore); } catch (e) { /* ignore */ }
+}
 function openTask(id) {
   var at = findAnyTask(id);
   if (at && at.vault) { go("vault"); notify("That task is in the Vault. Restore it to work on it.", null, "problem"); return; }
@@ -7727,6 +7782,11 @@ function buildMoreMenu(pinned) {
   m.appendChild(el("hr"));
   BOTTOM.forEach(function (c) { item(c[0], c[1]); });
 }
+// A tab or menu entry for the page already showing does nothing, except Tasks with a task open, which goes back to its list.
+function goTab(key) {
+  if (key === ui.view && !(key === "schedule" && ui.detail)) return;
+  go(key);
+}
 function renderChrome() {
   var nav = $("nav"); nav.innerHTML = ""; var nb = $("navBottom"); nb.innerHTML = "";
   var pinned = state.pins.filter(validPage);
@@ -7740,7 +7800,7 @@ function renderChrome() {
     if (key === active) b.setAttribute("aria-current", "page");
     b.appendChild(el("span", null, label));
     if (key === "today") { var n = lateTasks().length; if (n) b.appendChild(el("span", { "class": "badge tabbadge", "aria-label": n + " overdue" }, String(n))); }
-    on(b, "click", function () { go(key); });
+    on(b, "click", function () { goTab(key); });
     host.appendChild(b);
   }
   CORE.forEach(function (c) { addTab(nav, c[0], c[1]); });
@@ -7828,6 +7888,9 @@ if (!isStandaloneApp && typeof window.matchMedia === "function") {
 }
 
 // The quest page showing on the last draw, so leaving it can close its open task.
+// The sticky section headings sit just under the top bar, whose height changes with the screen and the title.
+function setTopbarHeight() { var bar = document.querySelector(".topbar"); if (bar) document.documentElement.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
+on(window, "resize", setTopbarHeight);
 var lastQuestView = null;
 var lastView = null;
 function renderView() {
@@ -7857,6 +7920,7 @@ function renderView() {
   renderChrome();
   alignStatuses(root);
   root.style.minHeight = "";
+  setTopbarHeight();
   if (keepY !== null) { try { window.scrollTo(0, keepY); } catch (e) { /* ignore */ } }
   lastView = ui.view;
   if (focusKey) { var f = document.querySelector('[data-focus="' + focusKey + '"]'); if (f) f.focus({ preventScroll: true }); setFocusKey(null); }
@@ -7884,7 +7948,7 @@ function wireMenu(btnId, menuId) {
   on(m, "click", function (e) {
     var t = e.target.closest ? e.target.closest("button[data-act], button[data-view]") : null; if (!t) return;
     closeMenus(false);
-    if (t.getAttribute("data-view")) { go(t.getAttribute("data-view")); return; }
+    if (t.getAttribute("data-view")) { goTab(t.getAttribute("data-view")); return; }
     var act = t.getAttribute("data-act");
     ({ newTask: taskDialog, newStep: function () { stepDialog(); }, newQuest: questDialog, newIdea: ideaDialog, newJob: jobDialog, newDecision: decisionDialog, newIssue: issueDialog, vault: function () { go("vault"); }, settings: function () { go("settings"); } })[act]();
   });

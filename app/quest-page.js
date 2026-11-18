@@ -98,10 +98,11 @@ export function buildDetail(t, inline, readOnly) {
   var box = el("div", { "class": "detail" });
   var top = el("div", { style: "display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap" });
   var lh = el("div");
-  if (!inline) lh.appendChild(el("h2", { style: "margin:0" }, dispQuest(t)));
+  // The Tasks pane reads like the task's row: the quest in bold, then the dates, in the same type.
   var dm = el("p", { "class": "dmeta" });
-  if (t.block === 0) { if (!t.issue) dm.appendChild(el("span", { "class": "chip backlog", style: "margin-right:6px" }, "Backlog")); }
-  else dm.appendChild(document.createTextNode(fmt(taskStart(t)) + " to " + fmt(taskEnd(t)) + " "));
+  if (!inline) dm.appendChild(el("b", null, dispQuest(t)));
+  if (t.block === 0) { if (!t.issue) dm.appendChild(el("span", { "class": "chip backlog", style: "margin:0 6px" }, "Backlog")); }
+  else dm.appendChild(document.createTextNode(" · " + fmt(taskStart(t)) + " to " + fmt(taskEnd(t)) + " "));
   if (isLate(t)) dm.appendChild(el("span", { "class": "badge" }, "Overdue"));
   var tag2 = addedChip(t); if (tag2) { tag2.style.marginLeft = "6px"; dm.appendChild(tag2); }
   // The folded (in-place) detail leaves the title and dates to the row above it.
@@ -138,7 +139,7 @@ export function buildDetail(t, inline, readOnly) {
     function saveDue() {
       if (bd.value === shownDue()) return;
       var m = liveCheck();
-      if (bd.value === "") { var hadStart = !!t.start, wasMilestone = t.milestone; t.block = 0; t.due = ""; t.added = ""; t.milestone = false; changed(); notify((t.issue ? "Due date cleared." : "Moved to the Backlog.") + (hadStart ? " Its start date is kept." : "") + (wasMilestone ? " It is no longer a milestone." : "")); return; }
+      if (bd.value === "") { var hadStart = !!t.start, wasMilestone = t.milestone; t.block = 0; t.due = ""; t.added = ""; t.milestone = false; changed(); notify("Due date cleared." + (hadStart ? " Start date kept." : "") + (wasMilestone ? " It is no longer a milestone." : "")); return; }
       if (!isISO(bd.value)) { setMsg(dmsg, t.issue ? "Enter a valid due date, or leave it empty." : "Enter a valid due date, or leave it empty for the Backlog.", "error"); return; }
       var blk = blockForDate(t.questId, parseISO(bd.value));
       if (blk === null || m.due || m.start.indexOf("You can’t begin") === 0) { if (!dmsg.textContent && !smsg.textContent) setMsg(dmsg, "This quest starts " + fmtY(questFirst) + ". Choose a due date on or after that.", "error"); return; }
@@ -383,11 +384,12 @@ export function launchSection(root, p) {
 export function issuesSection(root, p) {
   var readOnly = !!p.vault;
   var items = sortTasks(questTasks(p.id).filter(function (t) { return t.issue && !t.launch; }));
+  var host = readOnly ? root : el("div", { "class": "stickysec" }); if (host !== root) root.appendChild(host);
   var hd = el("div", { "class": "sechead" }); hd.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-issues" }, "Issues"), "issue", "Issue"));
   if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Log an issue on this quest" }, "Add issue"), "click", function () { issueDialog(p.id); }));
-  root.appendChild(hd);
+  host.appendChild(hd);
   var n = items.filter(isClosed).length;
-  root.appendChild(el("p", { "class": "hint" }, items.length ? "Complete: " + n + " of " + items.length + (items.length === 1 ? " issue" : " issues") : "No issues yet."));
+  host.appendChild(el("p", { "class": "hint" }, items.length ? "Complete: " + n + " of " + items.length + (items.length === 1 ? " issue" : " issues") : "No issues yet."));
   if (!items.length) return;
   var ul = el("ul", { "class": "tlist", "aria-labelledby": "h-issues" });
   items.forEach(function (t) {
@@ -413,7 +415,7 @@ export function issuesSection(root, p) {
     if (open) li.appendChild(buildDetail(t, true, readOnly));
     ul.appendChild(li);
   });
-  root.appendChild(ul);
+  host.appendChild(ul);
 }
 
 // A one-row section that opens in place like a task row. Starts collapsed.
@@ -455,15 +457,17 @@ export function renderQuestPage(root, id) {
     root.appendChild(el("p", { "class": "hint" }, "In the Vault. Restore it to make changes."));
   }
 
+  // The Tasks and Issues headings stay under the top bar while their list scrolls, so Add is always in reach.
+  var tsec = readOnly ? root : el("div", { "class": "stickysec" }); if (tsec !== root) root.appendChild(tsec);
   var hd = el("div", { "class": "sechead" + (split ? " first" : "") }); hd.appendChild(el("h2", split ? { "class": "first" } : null, "Tasks"));
   if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add a task" }, "Add task"), "click", function () { taskDialog(p.id); }));
-  root.appendChild(hd);
+  tsec.appendChild(hd);
   // The count line on the left, the open estimated time on the right.
   var est = questEstimate(p), metaRow = el("div", { "class": "metarow" });
   metaRow.appendChild(metaLine);
   if (est.total > 0) metaRow.appendChild(el("span", { "class": "hint estleft" }, "Est. " + fmtHoursLong(est.left) + " remaining"));
-  root.appendChild(metaRow);
-  if (!readOnly && p.status === "complete") root.appendChild(el("p", { "class": "hint" }, "Its tasks are not included in Tasks, Timeline, or Today while this quest is Complete. Reopen it to bring them back."));
+  tsec.appendChild(metaRow);
+  if (!readOnly && p.status === "complete") tsec.appendChild(el("p", { "class": "hint" }, "Its tasks are not included in Tasks, Timeline, or Today while this quest is Complete. Reopen it to bring them back."));
   // questTasks(), not ordered()/backlogTasks()/live() -- a quest's page keeps
   // showing its tasks even while Complete or vaulted, when cross-quest lists exclude them.
   var ts = sortTasks(questTasks(p.id).filter(function (t) { return !t.launch && !t.issue; }));
@@ -491,7 +495,7 @@ export function renderQuestPage(root, id) {
       if (open) li.appendChild(buildDetail(t, true, readOnly));
       ul.appendChild(li);
     });
-    root.appendChild(ul);
+    tsec.appendChild(ul);
   }
   if (!split) scheduleSection(root, p, readOnly);
 
@@ -557,11 +561,16 @@ export function renderQuestPage(root, id) {
     giverBox.appendChild(gg2);
     root.appendChild(collapsibleSection("giver:" + p.id, function () { return [p.client.org, p.client.poc].filter(Boolean).join(" · "); }, giverBox, "Add Quest giver details"));
   }
+  // The export button sits under the Quest giver section; a Candidate has no export.
+  if (p.status !== "candidate") {
+    var xa = el("div", { "class": "actions" });
+    xa.appendChild(on(el("button", { type: "button", "class": "small", title: "Export web page for client review" }, "Quest giver export"), "click", function () { askExportSides(p); }));
+    root.appendChild(xa);
+  }
 
   var ar = el("div", { "class": "actions questactions", style: "margin-top:14px" });
   if (readOnly) {
     ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Bring back to Quests" }, "Restore"), "click", function () { restoreEntry({ kind: "quest", list: "quests", item: p }); }));
-    if (p.status !== "candidate") ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Export web page for client review" }, "Quest giver export"), "click", function () { askExportSides(p); }));
   } else if (p.status === "candidate") {
     ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Promote to quest" }, "Promote"), "click", function () { promoteToActive(p.id); }));
     ar.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Send this candidate to the Vault" }, "Vault"), "click", function () { removeToVault(p, "Quest"); }));
@@ -586,9 +595,6 @@ export function renderQuestPage(root, id) {
       }));
     }
     ar.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Send this quest to the Vault" }, "Vault"), "click", function () { vaultQuest(p); }));
-    ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Export web page for client review" }, "Quest giver export"), "click", function () {
-      askExportSides(p);
-    }));
   }
   // Sits outside .questmain so it renders last when stacked; CSS puts it back under the left column on wide screens.
   if (split) { split.appendChild(questChartsPanel(p)); split.appendChild(ar); } else { root.appendChild(ar); }

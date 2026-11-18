@@ -10,7 +10,7 @@ export var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 export var UNPURSUED = "Unpursued";
 export var CHECKPOINTS = 7;
-export var APP_VERSION = "1.3.3";
+export var APP_VERSION = "1.3.4";
 export var APP_NAME = "Sidequest";
 
 export function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -506,7 +506,7 @@ export function checkForAppUpdate() {
   }).catch(function () { return null; });
 }
 
-export var ui = { view: "today", sel: null, detail: false, query: "", prev: "today", searchVault: true,questOpen: {}, sectionOpen: {} };
+export var ui = { view: "today", sel: null, detail: false, query: "", prev: "today", searchVault: true, questOpen: {}, sectionOpen: {} };
 
 // Stamps a task's completion date when it becomes Done, clears it if reopened, and returns how many it stamped.
 // Never moves anything to the Vault itself -- only Quests and Ideas do that.

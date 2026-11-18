@@ -40,7 +40,7 @@ export function renderJobs(root) {
     done.forEach(function (j) { dl.appendChild(jobRow(j)); });
     root.appendChild(dl);
   }
-  landJob();
+  landJob(); landArrival();
 }
 
 export var CALENDAR = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>';
@@ -53,8 +53,29 @@ export function setJobDone(j, done, li) {
     if (!done && !j.due && at > 0) { state.jobs.splice(at, 1); state.jobs.unshift(j); }
     changed();
   }
-  // Completing or restoring pulses a brass ring on the row first (about a fifth of a second), then the list redraws.
-  if (pulse(li, 520)) setTimeout(apply, 220); else apply();
+  // Completing slides the row down and restoring slides it up, under the brass ring, then the list redraws and the row arrives in its new place.
+  var dir = done ? 1 : -1;
+  if (moveOut(li, dir)) { setTimeout(function () { arrival = { id: j.id, dir: dir, at: Date.now() }; apply(); }, SLIDE_MS); } else apply();
+}
+
+var SLIDE_MS = 280, arrival = null;
+// The row's brass ring with a short slide and fade away in the direction it is going. Skipped under reduced motion.
+function moveOut(node, dir) {
+  if (!node || typeof node.animate !== "function" || reduceMotion()) return false;
+  node.animate([
+    { boxShadow: "0 0 0 0 var(--brass)", transform: "translateY(0)", opacity: 1 },
+    { boxShadow: "0 0 0 3px var(--brass)", transform: "translateY(" + dir * 4 + "px)", opacity: 1, offset: 0.35 },
+    { boxShadow: "0 0 0 0 transparent", transform: "translateY(" + dir * 12 + "px)", opacity: 0 }
+  ], { duration: SLIDE_MS, easing: "ease-out", fill: "forwards" });
+  return true;
+}
+// After the redraw, the moved errand slides and fades in from the side it left.
+function landArrival() {
+  if (!arrival) return;
+  var a = arrival; arrival = null;
+  var node = Date.now() - a.at < 1500 ? document.querySelector('#view ul.jobs [data-job="' + a.id + '"]') : null;
+  if (!node || typeof node.animate !== "function" || reduceMotion()) return;
+  node.animate([{ opacity: 0, transform: "translateY(" + -a.dir * 12 + "px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 240, easing: "ease-out" });
 }
 
 // A quick brass ring around a card. Skipped under reduced motion or without the Web Animations API.

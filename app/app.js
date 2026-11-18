@@ -17,7 +17,27 @@ import { stopTutorial } from "./tutorial.js";
 
 /* navigation */
 export function leaveSearch() { if (ui.view === "search") { ui.query = ""; var b = $("searchBox"); if (b) b.value = ""; } }
-export function go(view) { leaveSearch(); ui.view = view; ui.detail = false; if (view === "schedule") ui.sel = null; renderAll(); scrollTop(); }
+// Returning to Quests from a quest keeps the list's scroll; any other arrival goes to the top.
+// A framed copy scrolls its host page, so there the quest just opened is brought back into view.
+function framed() { try { return window.self !== window.top; } catch (e) { return true; } }
+export function go(view) {
+  var fromList = ui.view === "projects", inQuest = ui.view.indexOf("quest:") === 0, toQuest = view.indexOf("quest:") === 0;
+  if (fromList && toQuest) { ui.listY = window.pageYOffset || 0; ui.listQuest = view.slice(6); }
+  else if (!(inQuest && (toQuest || view === "projects"))) { ui.listY = null; ui.listQuest = ""; }
+  var back = view === "projects" && inQuest && typeof ui.listY === "number", keepY = ui.listY;
+  leaveSearch(); ui.view = view; ui.detail = false; if (view === "schedule") ui.sel = null; renderAll();
+  if (!back) { scrollTop(); return; }
+  function restore() {
+    if (framed()) {
+      var row = document.querySelector('#view [data-quest="' + ui.listQuest + '"]');
+      if (row && typeof row.scrollIntoView === "function") { try { row.scrollIntoView({ block: "center" }); } catch (e) { /* ignore */ } }
+      return;
+    }
+    try { window.scrollTo(0, keepY); } catch (e) { /* ignore */ }
+  }
+  restore();
+  try { if (typeof window.requestAnimationFrame === "function") window.requestAnimationFrame(restore); } catch (e) { /* ignore */ }
+}
 export function openTask(id) {
   var at = findAnyTask(id);
   if (at && at.vault) { go("vault"); notify("That task is in the Vault. Restore it to work on it.", null, "problem"); return; }
@@ -46,6 +66,11 @@ export function buildMoreMenu(pinned) {
   m.appendChild(el("hr"));
   BOTTOM.forEach(function (c) { item(c[0], c[1]); });
 }
+// A tab or menu entry for the page already showing does nothing, except Tasks with a task open, which goes back to its list.
+export function goTab(key) {
+  if (key === ui.view && !(key === "schedule" && ui.detail)) return;
+  go(key);
+}
 export function renderChrome() {
   var nav = $("nav"); nav.innerHTML = ""; var nb = $("navBottom"); nb.innerHTML = "";
   var pinned = state.pins.filter(validPage);
@@ -59,7 +84,7 @@ export function renderChrome() {
     if (key === active) b.setAttribute("aria-current", "page");
     b.appendChild(el("span", null, label));
     if (key === "today") { var n = lateTasks().length; if (n) b.appendChild(el("span", { "class": "badge tabbadge", "aria-label": n + " overdue" }, String(n))); }
-    on(b, "click", function () { go(key); });
+    on(b, "click", function () { goTab(key); });
     host.appendChild(b);
   }
   CORE.forEach(function (c) { addTab(nav, c[0], c[1]); });
@@ -147,6 +172,9 @@ if (!isStandaloneApp && typeof window.matchMedia === "function") {
 }
 
 // The quest page showing on the last draw, so leaving it can close its open task.
+// The sticky section headings sit just under the top bar, whose height changes with the screen and the title.
+function setTopbarHeight() { var bar = document.querySelector(".topbar"); if (bar) document.documentElement.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
+on(window, "resize", setTopbarHeight);
 var lastQuestView = null;
 var lastView = null;
 export function renderView() {
@@ -176,6 +204,7 @@ export function renderView() {
   renderChrome();
   alignStatuses(root);
   root.style.minHeight = "";
+  setTopbarHeight();
   if (keepY !== null) { try { window.scrollTo(0, keepY); } catch (e) { /* ignore */ } }
   lastView = ui.view;
   if (focusKey) { var f = document.querySelector('[data-focus="' + focusKey + '"]'); if (f) f.focus({ preventScroll: true }); setFocusKey(null); }
@@ -203,7 +232,7 @@ export function wireMenu(btnId, menuId) {
   on(m, "click", function (e) {
     var t = e.target.closest ? e.target.closest("button[data-act], button[data-view]") : null; if (!t) return;
     closeMenus(false);
-    if (t.getAttribute("data-view")) { go(t.getAttribute("data-view")); return; }
+    if (t.getAttribute("data-view")) { goTab(t.getAttribute("data-view")); return; }
     var act = t.getAttribute("data-act");
     ({ newTask: taskDialog, newStep: function () { stepDialog(); }, newQuest: questDialog, newIdea: ideaDialog, newJob: jobDialog, newDecision: decisionDialog, newIssue: issueDialog, vault: function () { go("vault"); }, settings: function () { go("settings"); } })[act]();
   });

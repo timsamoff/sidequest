@@ -295,7 +295,7 @@ export function questPinButton(key, name) {
 export function dustChip() { return el("span", { "class": "chip dust", style: "margin-left:8px", title: "No activity for a while" }, "Gathering dust"); }
 
 export function questRow(r) {
-  var li = el("li"), row = el("div", { "class": "crow oneline" });
+  var li = el("li", { "data-quest": r.id }), row = el("div", { "class": "crow oneline" });
   var nm = el("div", { style: "flex:1 1 200px" });
   var link = el("button", { type: "button", "class": "textbtn qlink", style: "font-weight:600", title: "View this quest" }, r.name);
   on(link, "click", function () { go(r.key); });
@@ -350,7 +350,7 @@ export function standingBlock() {
   var box = el("div", { "class": "box", style: "margin-top:10px" });
   var ul = el("ul", { "class": "standing" });
   order.forEach(function (g) {
-    var li = el("li"), row = el("div", { "class": "srow" }), textWrap = el("div", { style: "flex:1 1 200px" });
+    var li = el("li", { "data-quest": g.questId }), row = el("div", { "class": "srow" }), textWrap = el("div", { style: "flex:1 1 200px" });
     var nm = el("button", { type: "button", "class": "textbtn qlink", title: "View this quest" }, g.name);
     on(nm, "click", function () { go(validPage("quest:" + g.questId) ? "quest:" + g.questId : "projects"); });
     textWrap.appendChild(nm);
@@ -382,7 +382,7 @@ export function candidatesSection(first) {
   var cs = candidateQuests();
   if (!cs.length) list.appendChild(el("li", { "class": "hint" }, "No candidate quests yet. Start one with the + button."));
   cs.forEach(function (cd) {
-    var li = el("li"), row = el("div", { "class": "crow oneline" });
+    var li = el("li", { "data-quest": cd.id }), row = el("div", { "class": "crow oneline" });
     var nmWrap = el("div", { style: "flex:1 1 200px" });
     var nm = el("button", { type: "button", "class": "textbtn qlink", title: "View this candidate" }, cd.name);
     on(nm, "click", function () { go("quest:" + cd.id); });

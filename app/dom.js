@@ -238,7 +238,9 @@ export function scrollToRow(node) {
   if (!node || typeof node.scrollIntoView !== "function") return;
   var bar = document.querySelector(".topbar"), pos = bar ? window.getComputedStyle(bar).position : "";
   var head = bar && (pos === "sticky" || pos === "fixed") ? bar.getBoundingClientRect().height : 0;
-  node.style.scrollMarginTop = (head + 12) + "px";
+  // A row in a section with a sticky heading also clears that heading.
+  var sec = node.closest && node.closest(".stickysec"), sh = sec && sec.querySelector(":scope > .sechead");
+  node.style.scrollMarginTop = (head + (sh ? sh.offsetHeight : 0) + 12) + "px";
   try { node.scrollIntoView({ block: "start" }); } catch (e) { /* ignore */ }
 }
 // Navigation only. A framed copy scrolls the host page, not this window, so every
