@@ -163,9 +163,6 @@ export function buildDetail(t, inline, readOnly) {
     // A picker's Reset empties an unfocused field, so no blur follows; typing in a focused field still waits for blur.
     on(bd, "change", function () { if (bd.value === "" && document.activeElement !== bd) saveDue(); });
     on(sd, "change", function () { if (sd.value === "" && document.activeElement !== sd) saveStart(); });
-    function clearBtn(input, save, label) {
-      return on(el("button", { type: "button", "class": "small", "aria-label": label, title: label }, "Clear"), "click", function () { input.value = ""; save(); });
-    }
     // Warn while typing; saving still waits for blur.
     on(ei, "input", function () { setMsg(emsg, t.block > 0 ? estimateWarning(parseFloat(ei.value), taskStart(t), taskEnd(t)) : "", "note"); });
     on(ei, "blur", function () {
@@ -177,16 +174,8 @@ export function buildDetail(t, inline, readOnly) {
       t.est = v; changed();
       notify(v > 0 ? "Estimated time saved." : "Estimated time cleared.");
     });
-    // Each date sits beside a Clear button that shows only while the field has a date.
-    function dateRow(input, save, label) {
-      var row = el("div", { style: "display:flex;gap:8px;align-items:center" }), btn = clearBtn(input, save, label);
-      function sync() { btn.hidden = input.value === ""; }
-      input.style.flex = "1 1 auto"; input.style.minWidth = "0";
-      sync(); ["input", "change"].forEach(function (ev) { on(input, ev, sync); });
-      row.appendChild(input); row.appendChild(btn); return row;
-    }
-    dfield("task-start", "Start date (optional)", dateRow(sd, saveStart, "Clear the start date"));
-    dfield("task-due", t.issue ? "Due date (optional)" : "Due date (leave empty to backlog)", dateRow(bd, saveDue, t.issue ? "Clear the due date" : "Clear the due date and move to the Backlog")); dg.appendChild(smsg); dg.appendChild(dmsg); dfield("task-est", "Estimated time (hours)", ei).appendChild(emsg);
+    dfield("task-start", "Start date (optional)", sd);
+    dfield("task-due", t.issue ? "Due date (optional)" : "Due date (leave empty to backlog)", bd); dg.appendChild(smsg); dg.appendChild(dmsg); dfield("task-est", "Estimated time (hours)", ei).appendChild(emsg);
     box.appendChild(dg);
   }
 
