@@ -76,7 +76,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.3.4"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.3.5"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -1981,11 +1981,10 @@ async function exportClick(k, projectName) {
   ok(!kn.$("view").textContent.includes("Sidequest has leveled up!") && kn.saved().settings.seenVersion === ver, "a first run records the version and shows no banner");
   const ko = kit(await mk({ settings: { hideWelcome: true, seenVersion: "0.0.1" } }));
     ok(ko.$("view").textContent.includes("Sidequest has leveled up!") && ko.$("view").textContent.includes("You are now questing in version " + ver + "."), "an older seen version shows the banner with the current version");
-  const opened = []; ko.w.open = function (u) { opened.push(u); };
-  const banBtns = [...ko.d.querySelectorAll(".updatebanner .actions button")].map(b => b.textContent);
-  ok(banBtns.join() === "Patch notes,Dismiss" && !ko.d.querySelector(".updatebanner a"), "the banner has a Patch notes button to the left of Dismiss, and no link");
-  ko.click(ko.btn(ko.d.querySelector(".updatebanner"), "Patch notes"));
-  ok(opened[0] === "https://samoff.com/sidequest/patch-notes.html", "the Patch notes button opens the patch notes page");
+  const banItems = [...ko.d.querySelectorAll(".updatebanner .actions > *")].map(n => n.tagName + ":" + n.textContent);
+  ok(banItems.join() === "A:Patch notes,BUTTON:Dismiss", "the banner has a Patch notes link to the left of the Dismiss button");
+  const pn = ko.d.querySelector(".updatebanner .actions a");
+  ok(pn.getAttribute("href") === "https://samoff.com/sidequest/patch-notes.html" && pn.getAttribute("target") === "_blank" && pn.getAttribute("rel") === "noopener", "the Patch notes link opens the patch notes page in a new tab, as a real link a webview will follow");
   ko.click(ko.btn(ko.$("view"), "Dismiss"));
   ok(!ko.$("view").textContent.includes("Sidequest has leveled up!") && ko.saved().settings.seenVersion === ver, "Dismiss hides the banner and records the version");
   const kh = kit(await mk({ settings: { hideWelcome: true, seenVersion: "0.0.1" } }, { use: () => Promise.resolve(null) }));

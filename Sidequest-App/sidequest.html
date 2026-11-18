@@ -276,6 +276,12 @@ button { background: var(--control-bg); border: 1px solid var(--control-line); b
 button.primary { background: var(--btn); border-color: var(--btn); color: var(--on-btn); font-weight: 600; }
 @media (hover: hover) { button.primary:hover { border-color: var(--btn); filter: brightness(1.15); } }
 button.small { min-height: var(--control-min); padding: var(--space-4) var(--space-10); font-size: var(--text-sm); }
+/* A link that looks like a button, for places where a script-opened window is blocked (a webview). */
+a.btnlink { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; background: var(--control-bg); border: 1px solid var(--control-line); border-radius: var(--radius-control); padding: var(--space-8) var(--space-14); min-height: var(--control-height); color: var(--ink); text-decoration: none; cursor: pointer; }
+@media (hover: hover) { a.btnlink:hover { border-color: var(--muted); } }
+a.btnlink.primary { background: var(--btn); border-color: var(--btn); color: var(--on-btn); font-weight: 600; }
+@media (hover: hover) { a.btnlink.primary:hover { border-color: var(--btn); filter: brightness(1.15); } }
+a.btnlink.small { min-height: var(--control-min); padding: var(--space-4) var(--space-10); font-size: var(--text-sm); }
 /* Fixed width so the button doesn't resize when its label swaps Pin/Unpin. */
 button.pintoggle { min-width: 64px; }
 button[data-armed="1"] { border-color: var(--late); color: var(--late); }
@@ -1793,7 +1799,7 @@ var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 var UNPURSUED = "Unpursued";
 var CHECKPOINTS = 7;
-var APP_VERSION = "1.3.4";
+var APP_VERSION = "1.3.5";
 var APP_NAME = "Sidequest";
 
 function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -6971,9 +6977,7 @@ function versionBanner() {
   box.appendChild(el("h2", { "class": "first", style: "margin-bottom:4px" }, "Sidequest has leveled up!"));
   box.appendChild(el("p", { "class": "hint first" }, "You are now questing in version " + APP_VERSION + "."));
   var ar = el("div", { "class": "actions" });
-  ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"), "click", function () {
-    window.open("https://samoff.com/sidequest/patch-notes.html", "_blank", "noopener");
-  }));
+  ar.appendChild(el("a", { href: "https://samoff.com/sidequest/patch-notes.html", target: "_blank", rel: "noopener", "class": "btnlink small primary", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"));
   ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Hide this notice" }, "Dismiss"), "click", function () {
     state.settings.seenVersion = APP_VERSION; save(); box.remove();
   }));
@@ -7004,9 +7008,7 @@ function updateBanner() {
     else fallback();
   }
   ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Copy the prompt" }, "Copy prompt"), "click", copyPrompt));
-  ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"), "click", function () {
-    window.open("https://samoff.com/sidequest/patch-notes.html", "_blank", "noopener");
-  }));
+  ar.appendChild(el("a", { href: "https://samoff.com/sidequest/patch-notes.html", target: "_blank", rel: "noopener", "class": "btnlink small", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"));
   ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Hide this notice for this version" }, "Dismiss"), "click", function () {
     state.settings.dismissedUpdateVersion = availableUpdateVersion; save(); box.remove();
   }));

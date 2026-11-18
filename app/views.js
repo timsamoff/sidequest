@@ -174,9 +174,7 @@ function versionBanner() {
   box.appendChild(el("h2", { "class": "first", style: "margin-bottom:4px" }, "Sidequest has leveled up!"));
   box.appendChild(el("p", { "class": "hint first" }, "You are now questing in version " + APP_VERSION + "."));
   var ar = el("div", { "class": "actions" });
-  ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"), "click", function () {
-    window.open("https://samoff.com/sidequest/patch-notes.html", "_blank", "noopener");
-  }));
+  ar.appendChild(el("a", { href: "https://samoff.com/sidequest/patch-notes.html", target: "_blank", rel: "noopener", "class": "btnlink small primary", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"));
   ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Hide this notice" }, "Dismiss"), "click", function () {
     state.settings.seenVersion = APP_VERSION; save(); box.remove();
   }));
@@ -207,9 +205,7 @@ export function updateBanner() {
     else fallback();
   }
   ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Copy the prompt" }, "Copy prompt"), "click", copyPrompt));
-  ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"), "click", function () {
-    window.open("https://samoff.com/sidequest/patch-notes.html", "_blank", "noopener");
-  }));
+  ar.appendChild(el("a", { href: "https://samoff.com/sidequest/patch-notes.html", target: "_blank", rel: "noopener", "class": "btnlink small", title: "Read what changed in the patch notes, in a new tab" }, "Patch notes"));
   ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Hide this notice for this version" }, "Dismiss"), "click", function () {
     state.settings.dismissedUpdateVersion = availableUpdateVersion; save(); box.remove();
   }));
