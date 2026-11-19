@@ -112,7 +112,7 @@ export function burnPanel(o) {
 
 export function welcomeBox() {
   var box = el("div", { "class": "box welcomebox", style: "margin-bottom:22px" });
-  box.appendChild(el("h2", { style: "margin-bottom:4px" }, "Welcome to Sidequest"));
+  box.appendChild(el("h2", { "class": "first", style: "margin-bottom:4px" }, "Welcome to Sidequest"));
   var welcomeHint = el("p", { "class": "hint first" });
   welcomeHint.appendChild(el("strong", null, "Your new adventure begins here!"));
   var blank = !state.quests.length;
@@ -152,10 +152,10 @@ function postit(box, key) {
   return wrap;
 }
 export function renderToday(root) {
+  if (!state.settings.hideWelcome) root.appendChild(postit(welcomeBox(), "welcome"));
   if (availableUpdateVersion && state.settings.dismissedUpdateVersion !== availableUpdateVersion) root.appendChild(postit(updateBanner(), "update" + availableUpdateVersion));
   if (versionBannerDue()) root.appendChild(postit(versionBanner(), "version" + APP_VERSION));
   if (backupReminderDue()) root.appendChild(postit(backupReminder(), "backup"));
-  if (!state.settings.hideWelcome) root.appendChild(postit(welcomeBox(), "welcome"));
   var g = pgrid(), b = burnParts({});
   g.put(withHelp(el("h2", null, "Next up"), "next-up", "Next up"), 1, 1); g.put(nextUpPanel(), 1, 2); g.put(overduePanel(), 1, 3);
   var progress = el("div"); b.count.style.marginTop = "0";

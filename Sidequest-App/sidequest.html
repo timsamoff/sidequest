@@ -52,6 +52,7 @@
   --text-sm: calc(.9rem + 3px);
   --text-100: calc(1rem + 3px);
   --shadow-menu: 0 8px 24px rgba(0, 0, 0, .18);
+  --shadow-sticky: 0 7px 8px -6px rgba(0, 0, 0, .3);
   --bg: #F5EFDC;
   --surface: #FAF6E6;
   --card: #FCF1D6;
@@ -640,6 +641,8 @@ html { scrollbar-gutter: stable; }
 .sechead.wraps { flex-wrap: wrap; }
 /* A section's heading and Add button stay under the top bar while its list scrolls; the section's end releases it. */
 .stickysec > .sechead { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h, 64px)); z-index: 5; background: var(--bg); padding: var(--space-6) 0; margin-top: calc(var(--space-22) - var(--space-6)); }
+/* The shadow shows only while the heading is stuck under the top bar (set by markStuck() in app.js). */
+.stickysec > .sechead.stuck { box-shadow: var(--shadow-sticky); }
 .stickysec > .sechead.first { margin-top: calc(-1 * var(--space-6)); }
 .sechead-btns { display: flex; flex-wrap: wrap; gap: var(--space-10); }
 .importlist { margin: var(--space-6) 0 0 var(--space-18); padding: 0; font-size: var(--text-sm); }
@@ -1799,7 +1802,7 @@ var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 var UNPURSUED = "Unpursued";
 var CHECKPOINTS = 7;
-var APP_VERSION = "1.3.5";
+var APP_VERSION = "1.3.6";
 var APP_NAME = "Sidequest";
 
 function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -1812,7 +1815,7 @@ function task(id, block, questId, what, done, steps, extra) {
 // A quest's lifecycle: "candidate" or "active". Promoted in place -- the
 // same record and id carry through candidate -> active -> vaulted, never a second record.
 function quest(id, name, status, extra) {
-  var p = { id: id, name: name, status: status, start: "", days: 7, due: "", notes: "", vault: null, linkedQuestIds: [], hist: {}, lastSlip: null, wasPinned: false, justReopened: false, touched: "", sig: "", client: { org: "", poc: "", phone: "", email: "", address: "", website: "", coin: "", per: "Hour" } };
+  var p = { id: id, name: name, status: status, start: "", days: 7, due: "", notes: "", vault: null, linkedQuestIds: [], hist: {}, lastSlip: null, wasPinned: false, justReopened: false, hideDone: { tasks: false, issues: false }, touched: "", sig: "", client: { org: "", poc: "", phone: "", email: "", address: "", website: "", coin: "", per: "Hour" } };
   if (extra) Object.keys(extra).forEach(function (k) { p[k] = extra[k]; });
   return p;
 }
@@ -2006,6 +2009,8 @@ function normalize(s) {
         lastSlip: cleanSlip(x.lastSlip),
         // Set aside by completionDialog()'s auto-unpin so Reopen can restore it.
         wasPinned: x.wasPinned === true,
+        // A view choice per list: hide the resolved rows on this quest's page.
+        hideDone: { tasks: !!(x.hideDone && x.hideDone.tasks === true), issues: !!(x.hideDone && x.hideDone.issues === true) },
         touched: isISO(x.touched) ? x.touched : "", sig: S(x.sig, 20),
         // Validated below, once every quest's real id is known.
         linkedQuestIds: Array.isArray(linked) ? linked.filter(function (id) { return typeof id === "string"; }).slice(0, 60) : [],
@@ -2295,7 +2300,7 @@ function checkForAppUpdate() {
   }).catch(function () { return null; });
 }
 
-var ui = { view: "today", sel: null, detail: false, query: "", prev: "today", searchVault: true, questOpen: {}, sectionOpen: {} };
+var ui = { view: "today", sel: null, detail: false, query: "", prev: "today", searchVault: true, questOpen: {}, sectionOpen: {}, keepShown: {} };
 
 // Stamps a task's completion date when it becomes Done, clears it if reopened, and returns how many it stamped.
 // Never moves anything to the Vault itself -- only Quests and Ideas do that.
@@ -2380,7 +2385,7 @@ function touchQuests() {
   var today = iso(TODAY);
   state.quests.forEach(function (q) {
     if (q.vault) return;
-    var rest = {}; Object.keys(q).forEach(function (k) { if (k !== "touched" && k !== "sig" && k !== "hist" && k !== "lastSlip" && k !== "justReopened") rest[k] = q[k]; });
+    var rest = {}; Object.keys(q).forEach(function (k) { if (k !== "touched" && k !== "sig" && k !== "hist" && k !== "lastSlip" && k !== "justReopened" && k !== "hideDone") rest[k] = q[k]; });
     var text = JSON.stringify([rest, state.tasks.filter(function (t) { return t.questId === q.id; })]), h = 5381;
     for (var i = 0; i < text.length; i++) h = ((h * 33) ^ text.charCodeAt(i)) >>> 0;
     var sig = h.toString(36);
@@ -5213,6 +5218,7 @@ function helpTopics() {
       ">Select **Launch critical** to move an issue to the **Before you launch** section.",
       ">Select **Make task** to turn an issue into a task, or **Make issue** to turn a task into an issue. An issue can’t be a milestone, so a task that becomes an issue stops being one.",
       ">Set an issue’s status to **Unpursued** when you decide not to fix it. An unpursued issue counts as resolved, so it doesn’t keep a quest open. A scheduled one leaves the **Burndown** as a scope change.",
+      "**Hide completed:** Hides completed items from the list. The count shows how many items are completed. Your preference is saved for each quest. **Show completed** restores them.",
       "**Notes:** Use **Notes** for any additional information about the quest. An idea’s note carries over when the idea becomes a candidate quest."
     ]],
     ["Quest giver and Quest links", [
@@ -5802,7 +5808,7 @@ function addRowControls(li, t) {
   var byPointer = false;
   on(sel, "pointerdown", function () { byPointer = true; });
   on(sel, "keydown", function () { byPointer = false; });
-  on(sel, "change", function () { setStatus(t, sel.value); if (!byPointer) setFocusKey("status-" + t.id); changed(); });
+  on(sel, "change", function () { setStatus(t, sel.value); if (isClosed(t)) ui.keepShown[t.id] = true; if (!byPointer) setFocusKey("status-" + t.id); changed(); });
   li.classList.add("hasstatus"); li.appendChild(sel);
 }
 // Shows or hides one row's detail without a redraw, so no scroll correction is needed. Keeps one row open per quest.
@@ -6120,14 +6126,20 @@ function issuesSection(root, p) {
   var readOnly = !!p.vault;
   var items = sortTasks(questTasks(p.id).filter(function (t) { return t.issue && !t.launch; }));
   var host = readOnly ? root : el("div", { "class": "stickysec" }); if (host !== root) root.appendChild(host);
-  var hd = el("div", { "class": "sechead" }); hd.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-issues" }, "Issues"), "issue", "Issue"));
-  if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Log an issue on this quest" }, "Add issue"), "click", function () { issueDialog(p.id); }));
+  var hd = el("div", { "class": "sechead wraps" }); hd.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-issues" }, "Issues"), "issue", "Issue"));
+  if (!readOnly) {
+    var hb = el("div", { "class": "sechead-btns" });
+    hb.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Log an issue on this quest" }, "Add issue"), "click", function () { issueDialog(p.id); }));
+    var dt = doneToggle(p, "issues", items); if (dt) hb.appendChild(dt);
+    hd.appendChild(hb);
+  }
   host.appendChild(hd);
   var n = items.filter(isClosed).length;
   host.appendChild(el("p", { "class": "hint" }, items.length ? "Complete: " + n + " of " + items.length + (items.length === 1 ? " issue" : " issues") : "No issues yet."));
-  if (!items.length) return;
+  var shown = visibleItems(p, "issues", items);
+  if (!shown.length) { if (items.length) host.appendChild(el("p", { "class": "hint" }, "All done. " + items.filter(isClosed).length + " completed hidden.")); return; }
   var ul = el("ul", { "class": "tlist", "aria-labelledby": "h-issues" });
-  items.forEach(function (t) {
+  shown.forEach(function (t) {
     var open = ui.questOpen[p.id] === t.id;
     var li = el("li", { id: "itask-" + t.id }), b = el("button", { type: "button", "class": "item" + (isClosed(t) ? " done" : ""), title: "View this issue" });
     b.setAttribute("aria-expanded", open ? "true" : "false");
@@ -6151,6 +6163,21 @@ function issuesSection(root, p) {
     ul.appendChild(li);
   });
   host.appendChild(ul);
+}
+
+// Hide or show a list's resolved rows ("tasks" or "issues"). The choice is kept on the quest, per list.
+function hiddenDone(p, key, items) { return !p.vault && p.hideDone[key] === true && items.some(isClosed); }
+// A hidden row stays while it is open or was resolved on this page, so it does not vanish under the user's hand.
+function visibleItems(p, key, items) {
+  if (!hiddenDone(p, key, items)) return items;
+  return items.filter(function (t) { return !isClosed(t) || ui.questOpen[p.id] === t.id || !!ui.keepShown[t.id]; });
+}
+function doneToggle(p, key, items) {
+  var n = items.filter(isClosed).length;
+  if (p.vault || !n) return null;
+  var hidden = p.hideDone[key] === true, verb = hidden ? "Show" : "Hide";
+  var b = el("button", { type: "button", "class": "small", "data-focus": "hidedone-" + key, title: verb + " the completed " + key + " in this quest" }, verb + " completed (" + n + ")");
+  return on(b, "click", function () { p.hideDone[key] = !hidden; setFocusKey("hidedone-" + key); changed(); });
 }
 
 // A one-row section that opens in place like a task row. Starts collapsed.
@@ -6194,8 +6221,14 @@ function renderQuestPage(root, id) {
 
   // The Tasks and Issues headings stay under the top bar while their list scrolls, so Add is always in reach.
   var tsec = readOnly ? root : el("div", { "class": "stickysec" }); if (tsec !== root) root.appendChild(tsec);
-  var hd = el("div", { "class": "sechead" + (split ? " first" : "") }); hd.appendChild(el("h2", split ? { "class": "first" } : null, "Tasks"));
-  if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add a task" }, "Add task"), "click", function () { taskDialog(p.id); }));
+  var ts = sortTasks(questTasks(p.id).filter(function (t) { return !t.launch && !t.issue; }));
+  var hd = el("div", { "class": "sechead wraps" + (split ? " first" : "") }); hd.appendChild(el("h2", split ? { "class": "first" } : null, "Tasks"));
+  if (!readOnly) {
+    var hb = el("div", { "class": "sechead-btns" });
+    hb.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add a task" }, "Add task"), "click", function () { taskDialog(p.id); }));
+    var dt = doneToggle(p, "tasks", ts); if (dt) hb.appendChild(dt);
+    hd.appendChild(hb);
+  }
   tsec.appendChild(hd);
   // The count line on the left, the open estimated time on the right.
   var est = questEstimate(p), metaRow = el("div", { "class": "metarow" });
@@ -6205,10 +6238,10 @@ function renderQuestPage(root, id) {
   if (!readOnly && p.status === "complete") tsec.appendChild(el("p", { "class": "hint" }, "Its tasks are not included in Tasks, Timeline, or Today while this quest is Complete. Reopen it to bring them back."));
   // questTasks(), not ordered()/backlogTasks()/live() -- a quest's page keeps
   // showing its tasks even while Complete or vaulted, when cross-quest lists exclude them.
-  var ts = sortTasks(questTasks(p.id).filter(function (t) { return !t.launch && !t.issue; }));
-  if (ts.length) {
+  var shownTs = visibleItems(p, "tasks", ts);
+  if (shownTs.length) {
     var ul = el("ul", { "class": "tlist" });
-    ts.forEach(function (t) {
+    shownTs.forEach(function (t) {
       // A vaulted quest's task opens in place too, read-only, so its steps and decisions stay visible for historical purposes.
       var open = ui.questOpen[p.id] === t.id;
       var li = el("li", { id: "ptask-" + t.id }), b = el("button", { type: "button", "class": "item" + (t.status === "Completed" ? " done" : ""), title: "View this task" });
@@ -6231,7 +6264,7 @@ function renderQuestPage(root, id) {
       ul.appendChild(li);
     });
     tsec.appendChild(ul);
-  }
+  } else if (ts.length) tsec.appendChild(el("p", { "class": "hint" }, "All done. " + ts.filter(isClosed).length + " completed hidden."));
   if (!split) scheduleSection(root, p, readOnly);
 
   launchSection(root, p);
@@ -6915,7 +6948,7 @@ function burnPanel(o) {
 
 function welcomeBox() {
   var box = el("div", { "class": "box welcomebox", style: "margin-bottom:22px" });
-  box.appendChild(el("h2", { style: "margin-bottom:4px" }, "Welcome to Sidequest"));
+  box.appendChild(el("h2", { "class": "first", style: "margin-bottom:4px" }, "Welcome to Sidequest"));
   var welcomeHint = el("p", { "class": "hint first" });
   welcomeHint.appendChild(el("strong", null, "Your new adventure begins here!"));
   var blank = !state.quests.length;
@@ -6955,10 +6988,10 @@ function postit(box, key) {
   return wrap;
 }
 function renderToday(root) {
+  if (!state.settings.hideWelcome) root.appendChild(postit(welcomeBox(), "welcome"));
   if (availableUpdateVersion && state.settings.dismissedUpdateVersion !== availableUpdateVersion) root.appendChild(postit(updateBanner(), "update" + availableUpdateVersion));
   if (versionBannerDue()) root.appendChild(postit(versionBanner(), "version" + APP_VERSION));
   if (backupReminderDue()) root.appendChild(postit(backupReminder(), "backup"));
-  if (!state.settings.hideWelcome) root.appendChild(postit(welcomeBox(), "welcome"));
   var g = pgrid(), b = burnParts({});
   g.put(withHelp(el("h2", null, "Next up"), "next-up", "Next up"), 1, 1); g.put(nextUpPanel(), 1, 2); g.put(overduePanel(), 1, 3);
   var progress = el("div"); b.count.style.marginTop = "0";
@@ -7892,7 +7925,14 @@ if (!isStandaloneApp && typeof window.matchMedia === "function") {
 // The quest page showing on the last draw, so leaving it can close its open task.
 // The sticky section headings sit just under the top bar, whose height changes with the screen and the title.
 function setTopbarHeight() { var bar = document.querySelector(".topbar"); if (bar) document.documentElement.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
-on(window, "resize", setTopbarHeight);
+on(window, "resize", function () { setTopbarHeight(); markStuck(); });
+// A sticky section heading casts a shadow only while it is stuck under the top bar.
+function markStuck() {
+  var bar = document.querySelector(".topbar"), edge = bar ? bar.getBoundingClientRect().bottom : 0;
+  document.querySelectorAll(".stickysec > .sechead").forEach(function (h) { h.classList.toggle("stuck", (window.pageYOffset || 0) > 0 && h.getBoundingClientRect().top <= edge + 0.5); });
+}
+var stuckQueued = false;
+on(window, "scroll", function () { if (stuckQueued) return; stuckQueued = true; window.requestAnimationFrame(function () { stuckQueued = false; markStuck(); }); });
 var lastQuestView = null;
 var lastView = null;
 function renderView() {
@@ -7906,6 +7946,7 @@ function renderView() {
   noteBurnView(ui.view);
   var questView = ui.view.indexOf("quest:") === 0 ? ui.view : null;
   if (lastQuestView && lastQuestView !== questView) ui.questOpen = {};
+  if (lastView !== ui.view) ui.keepShown = {};
   lastQuestView = questView;
   root.className = "content";
   if (ui.view === "today") renderToday(root);
@@ -7923,6 +7964,7 @@ function renderView() {
   alignStatuses(root);
   root.style.minHeight = "";
   setTopbarHeight();
+  markStuck();
   if (keepY !== null) { try { window.scrollTo(0, keepY); } catch (e) { /* ignore */ } }
   lastView = ui.view;
   if (focusKey) { var f = document.querySelector('[data-focus="' + focusKey + '"]'); if (f) f.focus({ preventScroll: true }); setFocusKey(null); }

@@ -134,6 +134,7 @@ export function helpTopics() {
       ">Select **Launch critical** to move an issue to the **Before you launch** section.",
       ">Select **Make task** to turn an issue into a task, or **Make issue** to turn a task into an issue. An issue can’t be a milestone, so a task that becomes an issue stops being one.",
       ">Set an issue’s status to **Unpursued** when you decide not to fix it. An unpursued issue counts as resolved, so it doesn’t keep a quest open. A scheduled one leaves the **Burndown** as a scope change.",
+      "**Hide completed:** Hides completed items from the list. The count shows how many items are completed. Your preference is saved for each quest. **Show completed** restores them.",
       "**Notes:** Use **Notes** for any additional information about the quest. An idea’s note carries over when the idea becomes a candidate quest."
     ]],
     ["Quest giver and Quest links", [

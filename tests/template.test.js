@@ -76,7 +76,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.3.5"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.3.6"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -1415,7 +1415,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
     let k = kit(await mk(null, null, null, null, null, noManifest)); await wait();
     ok(banner(k) && k.d.querySelector(".updatebanner textarea.updateprompt").value.endsWith("/releases/download/v9.8.7/sidequest.html"), "a newer release tag shows the banner with that version in the prompt");
     ok(urls[0].indexOf("https://api.github.com/repos/timsamoff/sidequest/releases") === 0, "the version fetch asks the GitHub releases API");
-    k.click(k.btn(k.$("view"), "Dismiss"));
+    k.click(k.btn(k.d.querySelector(".updatebanner"), "Dismiss"));
     ok(!banner(k) && k.saved().settings.dismissedUpdateVersion === "9.8.7", "dismissing suppresses that version");
     global.fetch = () => Promise.reject(new Error("offline"));
     k = kit(await mk(null, null, null, null, null, noManifest)); await wait();
@@ -3549,6 +3549,27 @@ async function exportClick(k, projectName) {
   ok(!!k.$("itask-i1") && !k.$("itask-i1").querySelector(".l1") && !!k.$("itask-i2").querySelector(".l1") && !k.$("ptask-i1") && !k.$("ptask-i2"), "the sample issues list under Issues, the dated one with a date line and the undated one without");
   const css = fs.readFileSync(path.join(__dirname, "..", "css", "styles.css"), "utf8");
   ok(!/button\.rowpencil\s*\{[^}]*--row-l1/.test(css), "no layout moves a row's pencil off the title line, so it stays beside the pulldown at every width");
+}
+{
+  // Hide completed: kept on the quest per list, so it survives a reload; a row resolved on the page stays until the page changes
+  const k = kit(await mk({ settings: { hideWelcome: true } }));
+  k.tab("quest:pApp");
+  const rowCount = () => k.d.querySelectorAll('#view [id^="ptask-"]').length;
+  // The Tasks list's button comes first on the page; the Issues list has its own.
+  const toggle = () => [...k.$("view").querySelectorAll("button")].find(b => /^(Hide|Show) completed/.test(b.textContent));
+  const before = rowCount();
+  ok(toggle().textContent === "Hide completed (1)" && JSON.stringify(k.saved().quests.find(q => q.id === "pApp").hideDone) === JSON.stringify({ tasks: false, issues: false }), "a quest page offers Hide completed with the count, and nothing is hidden by default");
+  k.click(toggle());
+  ok(rowCount() === before - 1 && toggle().textContent === "Show completed (1)" && k.saved().quests.find(q => q.id === "pApp").hideDone.tasks === true, "Hide completed removes the completed task rows and saves the choice on the quest");
+  const sel = k.d.querySelector('select[data-task="a2"]'); sel.value = "Completed"; k.fire(sel);
+  ok(!!k.$("ptask-a2"), "a task completed while completed rows are hidden stays on the page");
+  k.tab("projects"); k.tab("quest:pApp");
+  ok(!k.$("ptask-a2"), "it is hidden after leaving the page and coming back");
+  const k2 = kit(await mk(k.saved()));
+  k2.tab("quest:pApp");
+  ok(!k2.$("ptask-a2") && [...k2.d.querySelectorAll("#view button")].some(b => b.textContent.startsWith("Show completed")), "the choice survives a reload");
+  const k3 = kit(await mk({ settings: { hideWelcome: true }, quests: [{ id: "pH", name: "Old Save", status: "active", start: "2026-08-03", days: 7 }], tasks: [] }));
+  ok(JSON.stringify(k3.saved().quests[0].hideDone) === JSON.stringify({ tasks: false, issues: false }), "an older save without the field loads with both lists showing completed rows");
 }
 console.log(fails ? ("\n" + fails + " FAILED") : "\nALL PASSED");
 process.exit(fails ? 1 : 0);

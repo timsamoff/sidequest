@@ -67,7 +67,7 @@ export function addRowControls(li, t) {
   var byPointer = false;
   on(sel, "pointerdown", function () { byPointer = true; });
   on(sel, "keydown", function () { byPointer = false; });
-  on(sel, "change", function () { setStatus(t, sel.value); if (!byPointer) setFocusKey("status-" + t.id); changed(); });
+  on(sel, "change", function () { setStatus(t, sel.value); if (isClosed(t)) ui.keepShown[t.id] = true; if (!byPointer) setFocusKey("status-" + t.id); changed(); });
   li.classList.add("hasstatus"); li.appendChild(sel);
 }
 // Shows or hides one row's detail without a redraw, so no scroll correction is needed. Keeps one row open per quest.
@@ -385,14 +385,20 @@ export function issuesSection(root, p) {
   var readOnly = !!p.vault;
   var items = sortTasks(questTasks(p.id).filter(function (t) { return t.issue && !t.launch; }));
   var host = readOnly ? root : el("div", { "class": "stickysec" }); if (host !== root) root.appendChild(host);
-  var hd = el("div", { "class": "sechead" }); hd.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-issues" }, "Issues"), "issue", "Issue"));
-  if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Log an issue on this quest" }, "Add issue"), "click", function () { issueDialog(p.id); }));
+  var hd = el("div", { "class": "sechead wraps" }); hd.appendChild(withHelp(el("h2", { "class": "sechead-h", id: "h-issues" }, "Issues"), "issue", "Issue"));
+  if (!readOnly) {
+    var hb = el("div", { "class": "sechead-btns" });
+    hb.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Log an issue on this quest" }, "Add issue"), "click", function () { issueDialog(p.id); }));
+    var dt = doneToggle(p, "issues", items); if (dt) hb.appendChild(dt);
+    hd.appendChild(hb);
+  }
   host.appendChild(hd);
   var n = items.filter(isClosed).length;
   host.appendChild(el("p", { "class": "hint" }, items.length ? "Complete: " + n + " of " + items.length + (items.length === 1 ? " issue" : " issues") : "No issues yet."));
-  if (!items.length) return;
+  var shown = visibleItems(p, "issues", items);
+  if (!shown.length) { if (items.length) host.appendChild(el("p", { "class": "hint" }, "All done. " + items.filter(isClosed).length + " completed hidden.")); return; }
   var ul = el("ul", { "class": "tlist", "aria-labelledby": "h-issues" });
-  items.forEach(function (t) {
+  shown.forEach(function (t) {
     var open = ui.questOpen[p.id] === t.id;
     var li = el("li", { id: "itask-" + t.id }), b = el("button", { type: "button", "class": "item" + (isClosed(t) ? " done" : ""), title: "View this issue" });
     b.setAttribute("aria-expanded", open ? "true" : "false");
@@ -416,6 +422,21 @@ export function issuesSection(root, p) {
     ul.appendChild(li);
   });
   host.appendChild(ul);
+}
+
+// Hide or show a list's resolved rows ("tasks" or "issues"). The choice is kept on the quest, per list.
+function hiddenDone(p, key, items) { return !p.vault && p.hideDone[key] === true && items.some(isClosed); }
+// A hidden row stays while it is open or was resolved on this page, so it does not vanish under the user's hand.
+function visibleItems(p, key, items) {
+  if (!hiddenDone(p, key, items)) return items;
+  return items.filter(function (t) { return !isClosed(t) || ui.questOpen[p.id] === t.id || !!ui.keepShown[t.id]; });
+}
+function doneToggle(p, key, items) {
+  var n = items.filter(isClosed).length;
+  if (p.vault || !n) return null;
+  var hidden = p.hideDone[key] === true, verb = hidden ? "Show" : "Hide";
+  var b = el("button", { type: "button", "class": "small", "data-focus": "hidedone-" + key, title: verb + " the completed " + key + " in this quest" }, verb + " completed (" + n + ")");
+  return on(b, "click", function () { p.hideDone[key] = !hidden; setFocusKey("hidedone-" + key); changed(); });
 }
 
 // A one-row section that opens in place like a task row. Starts collapsed.
@@ -459,8 +480,14 @@ export function renderQuestPage(root, id) {
 
   // The Tasks and Issues headings stay under the top bar while their list scrolls, so Add is always in reach.
   var tsec = readOnly ? root : el("div", { "class": "stickysec" }); if (tsec !== root) root.appendChild(tsec);
-  var hd = el("div", { "class": "sechead" + (split ? " first" : "") }); hd.appendChild(el("h2", split ? { "class": "first" } : null, "Tasks"));
-  if (!readOnly) hd.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add a task" }, "Add task"), "click", function () { taskDialog(p.id); }));
+  var ts = sortTasks(questTasks(p.id).filter(function (t) { return !t.launch && !t.issue; }));
+  var hd = el("div", { "class": "sechead wraps" + (split ? " first" : "") }); hd.appendChild(el("h2", split ? { "class": "first" } : null, "Tasks"));
+  if (!readOnly) {
+    var hb = el("div", { "class": "sechead-btns" });
+    hb.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Add a task" }, "Add task"), "click", function () { taskDialog(p.id); }));
+    var dt = doneToggle(p, "tasks", ts); if (dt) hb.appendChild(dt);
+    hd.appendChild(hb);
+  }
   tsec.appendChild(hd);
   // The count line on the left, the open estimated time on the right.
   var est = questEstimate(p), metaRow = el("div", { "class": "metarow" });
@@ -470,10 +497,10 @@ export function renderQuestPage(root, id) {
   if (!readOnly && p.status === "complete") tsec.appendChild(el("p", { "class": "hint" }, "Its tasks are not included in Tasks, Timeline, or Today while this quest is Complete. Reopen it to bring them back."));
   // questTasks(), not ordered()/backlogTasks()/live() -- a quest's page keeps
   // showing its tasks even while Complete or vaulted, when cross-quest lists exclude them.
-  var ts = sortTasks(questTasks(p.id).filter(function (t) { return !t.launch && !t.issue; }));
-  if (ts.length) {
+  var shownTs = visibleItems(p, "tasks", ts);
+  if (shownTs.length) {
     var ul = el("ul", { "class": "tlist" });
-    ts.forEach(function (t) {
+    shownTs.forEach(function (t) {
       // A vaulted quest's task opens in place too, read-only, so its steps and decisions stay visible for historical purposes.
       var open = ui.questOpen[p.id] === t.id;
       var li = el("li", { id: "ptask-" + t.id }), b = el("button", { type: "button", "class": "item" + (t.status === "Completed" ? " done" : ""), title: "View this task" });
@@ -496,7 +523,7 @@ export function renderQuestPage(root, id) {
       ul.appendChild(li);
     });
     tsec.appendChild(ul);
-  }
+  } else if (ts.length) tsec.appendChild(el("p", { "class": "hint" }, "All done. " + ts.filter(isClosed).length + " completed hidden."));
   if (!split) scheduleSection(root, p, readOnly);
 
   launchSection(root, p);

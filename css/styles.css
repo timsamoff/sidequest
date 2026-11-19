@@ -412,6 +412,8 @@ html { scrollbar-gutter: stable; }
 .sechead.wraps { flex-wrap: wrap; }
 /* A section's heading and Add button stay under the top bar while its list scrolls; the section's end releases it. */
 .stickysec > .sechead { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h, 64px)); z-index: 5; background: var(--bg); padding: var(--space-6) 0; margin-top: calc(var(--space-22) - var(--space-6)); }
+/* The shadow shows only while the heading is stuck under the top bar (set by markStuck() in app.js). */
+.stickysec > .sechead.stuck { box-shadow: var(--shadow-sticky); }
 .stickysec > .sechead.first { margin-top: calc(-1 * var(--space-6)); }
 .sechead-btns { display: flex; flex-wrap: wrap; gap: var(--space-10); }
 .importlist { margin: var(--space-6) 0 0 var(--space-18); padding: 0; font-size: var(--text-sm); }

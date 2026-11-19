@@ -174,7 +174,14 @@ if (!isStandaloneApp && typeof window.matchMedia === "function") {
 // The quest page showing on the last draw, so leaving it can close its open task.
 // The sticky section headings sit just under the top bar, whose height changes with the screen and the title.
 function setTopbarHeight() { var bar = document.querySelector(".topbar"); if (bar) document.documentElement.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
-on(window, "resize", setTopbarHeight);
+on(window, "resize", function () { setTopbarHeight(); markStuck(); });
+// A sticky section heading casts a shadow only while it is stuck under the top bar.
+function markStuck() {
+  var bar = document.querySelector(".topbar"), edge = bar ? bar.getBoundingClientRect().bottom : 0;
+  document.querySelectorAll(".stickysec > .sechead").forEach(function (h) { h.classList.toggle("stuck", (window.pageYOffset || 0) > 0 && h.getBoundingClientRect().top <= edge + 0.5); });
+}
+var stuckQueued = false;
+on(window, "scroll", function () { if (stuckQueued) return; stuckQueued = true; window.requestAnimationFrame(function () { stuckQueued = false; markStuck(); }); });
 var lastQuestView = null;
 var lastView = null;
 export function renderView() {
@@ -188,6 +195,7 @@ export function renderView() {
   noteBurnView(ui.view);
   var questView = ui.view.indexOf("quest:") === 0 ? ui.view : null;
   if (lastQuestView && lastQuestView !== questView) ui.questOpen = {};
+  if (lastView !== ui.view) ui.keepShown = {};
   lastQuestView = questView;
   root.className = "content";
   if (ui.view === "today") renderToday(root);
@@ -205,6 +213,7 @@ export function renderView() {
   alignStatuses(root);
   root.style.minHeight = "";
   setTopbarHeight();
+  markStuck();
   if (keepY !== null) { try { window.scrollTo(0, keepY); } catch (e) { /* ignore */ } }
   lastView = ui.view;
   if (focusKey) { var f = document.querySelector('[data-focus="' + focusKey + '"]'); if (f) f.focus({ preventScroll: true }); setFocusKey(null); }

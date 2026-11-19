@@ -10,7 +10,7 @@ export var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 export var UNPURSUED = "Unpursued";
 export var CHECKPOINTS = 7;
-export var APP_VERSION = "1.3.5";
+export var APP_VERSION = "1.3.6";
 export var APP_NAME = "Sidequest";
 
 export function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -23,7 +23,7 @@ export function task(id, block, questId, what, done, steps, extra) {
 // A quest's lifecycle: "candidate" or "active". Promoted in place -- the
 // same record and id carry through candidate -> active -> vaulted, never a second record.
 export function quest(id, name, status, extra) {
-  var p = { id: id, name: name, status: status, start: "", days: 7, due: "", notes: "", vault: null, linkedQuestIds: [], hist: {}, lastSlip: null, wasPinned: false, justReopened: false, touched: "", sig: "", client: { org: "", poc: "", phone: "", email: "", address: "", website: "", coin: "", per: "Hour" } };
+  var p = { id: id, name: name, status: status, start: "", days: 7, due: "", notes: "", vault: null, linkedQuestIds: [], hist: {}, lastSlip: null, wasPinned: false, justReopened: false, hideDone: { tasks: false, issues: false }, touched: "", sig: "", client: { org: "", poc: "", phone: "", email: "", address: "", website: "", coin: "", per: "Hour" } };
   if (extra) Object.keys(extra).forEach(function (k) { p[k] = extra[k]; });
   return p;
 }
@@ -217,6 +217,8 @@ export function normalize(s) {
         lastSlip: cleanSlip(x.lastSlip),
         // Set aside by completionDialog()'s auto-unpin so Reopen can restore it.
         wasPinned: x.wasPinned === true,
+        // A view choice per list: hide the resolved rows on this quest's page.
+        hideDone: { tasks: !!(x.hideDone && x.hideDone.tasks === true), issues: !!(x.hideDone && x.hideDone.issues === true) },
         touched: isISO(x.touched) ? x.touched : "", sig: S(x.sig, 20),
         // Validated below, once every quest's real id is known.
         linkedQuestIds: Array.isArray(linked) ? linked.filter(function (id) { return typeof id === "string"; }).slice(0, 60) : [],
@@ -506,7 +508,7 @@ export function checkForAppUpdate() {
   }).catch(function () { return null; });
 }
 
-export var ui = { view: "today", sel: null, detail: false, query: "", prev: "today", searchVault: true, questOpen: {}, sectionOpen: {} };
+export var ui = { view: "today", sel: null, detail: false, query: "", prev: "today", searchVault: true, questOpen: {}, sectionOpen: {}, keepShown: {} };
 
 // Stamps a task's completion date when it becomes Done, clears it if reopened, and returns how many it stamped.
 // Never moves anything to the Vault itself -- only Quests and Ideas do that.
@@ -591,7 +593,7 @@ function touchQuests() {
   var today = iso(TODAY);
   state.quests.forEach(function (q) {
     if (q.vault) return;
-    var rest = {}; Object.keys(q).forEach(function (k) { if (k !== "touched" && k !== "sig" && k !== "hist" && k !== "lastSlip" && k !== "justReopened") rest[k] = q[k]; });
+    var rest = {}; Object.keys(q).forEach(function (k) { if (k !== "touched" && k !== "sig" && k !== "hist" && k !== "lastSlip" && k !== "justReopened" && k !== "hideDone") rest[k] = q[k]; });
     var text = JSON.stringify([rest, state.tasks.filter(function (t) { return t.questId === q.id; })]), h = 5381;
     for (var i = 0; i < text.length; i++) h = ((h * 33) ^ text.charCodeAt(i)) >>> 0;
     var sig = h.toString(36);
