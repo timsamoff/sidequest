@@ -76,7 +76,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.3.6"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.3.7"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -1984,7 +1984,7 @@ async function exportClick(k, projectName) {
   const banItems = [...ko.d.querySelectorAll(".updatebanner .actions > *")].map(n => n.tagName + ":" + n.textContent);
   ok(banItems.join() === "A:Patch notes,BUTTON:Dismiss", "the banner has a Patch notes link to the left of the Dismiss button");
   const pn = ko.d.querySelector(".updatebanner .actions a");
-  ok(pn.getAttribute("href") === "https://samoff.com/sidequest/patch-notes.html" && pn.getAttribute("target") === "_blank" && pn.getAttribute("rel") === "noopener", "the Patch notes link opens the patch notes page in a new tab, as a real link a webview will follow");
+  ok(pn.getAttribute("href") === "https://offware.io/sidequest/patch-notes.html" && pn.getAttribute("target") === "_blank" && pn.getAttribute("rel") === "noopener", "the Patch notes link opens the patch notes page in a new tab, as a real link a webview will follow");
   ko.click(ko.btn(ko.$("view"), "Dismiss"));
   ok(!ko.$("view").textContent.includes("Sidequest has leveled up!") && ko.saved().settings.seenVersion === ver, "Dismiss hides the banner and records the version");
   const kh = kit(await mk({ settings: { hideWelcome: true, seenVersion: "0.0.1" } }, { use: () => Promise.resolve(null) }));
@@ -2253,7 +2253,7 @@ async function exportClick(k, projectName) {
     ok(none.includes("Available options vary by browser") && boom.includes("Available options vary by browser"), "an empty answer or an error keeps the generic install message");
     ok(JSON.parse(fs.readFileSync(path.join(__dirname, "..", "app", "manifest.json"), "utf8")).related_applications.some(a => a.platform === "webapp" && a.url === "manifest.json"), "the manifest lists the web app so detection can work");
     const mf = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "app", "manifest.json"), "utf8"));
-    ok(mf.id === "/sidequest/app/index.html" && new URL(mf.id, "https://samoff.com/sidequest/app/manifest.json").href === new URL(mf.start_url, "https://samoff.com/sidequest/app/manifest.json").href, "the manifest id is the start URL, so installed apps keep the identity they had without one");
+    ok(mf.id === "/index.html" && new URL(mf.id, "https://sidequest.offware.io/manifest.json").href === new URL(mf.start_url, "https://sidequest.offware.io/manifest.json").href, "the manifest id is the start URL, so installed apps keep the identity they had without one");
   }
   // iPhone and iPad have no Install button, so they alone get their own steps
   // Browser-specific install tips: Safari on a Mac, Firefox on a computer, and an iPad that reports a Mac user agent

@@ -4,7 +4,7 @@
 
 A lightweight project planner for juggling several projects.
 
-🔗 [samoff.com/sidequest](https://samoff.com/sidequest/)
+🔗 [offware.io/sidequest](https://offware.io/sidequest/)
 
 ## The perfect project management system... for me. And maybe you'll like it too!
 
@@ -30,11 +30,11 @@ So give Sidequest a try! It's free, and it might become your favorite way to kee
 
 ## Getting started
 
-Ready to give it a try? Choose where you want to use Sidequest. There's also a [feature tour and setup guides](https://samoff.com/sidequest/) if you'd like a closer look before getting started.
+Ready to give it a try? Choose where you want to use Sidequest. There's also a [feature tour and setup guides](https://offware.io/sidequest/) if you'd like a closer look before getting started.
 
 You can switch between versions later, but your data won't move between them automatically. To carry it over, use a backup file (see [Saving and syncing your data](#saving-and-syncing-your-data)).
 
-- **Browser:** Use [samoff.com/sidequest/app](https://samoff.com/sidequest/app/) directly in your browser. No account needed, and your data stays in the browser on that device.
+- **Browser:** Use [sidequest.offware.io](https://sidequest.offware.io/) directly in your browser. No account needed, and your data stays in the browser on that device.
 - **Installed app (PWA):** In a supported browser, open **Options** and choose **Install Sidequest**. It opens in its own window and works offline. On some phones, you'll need to use your browser's **Add to Home Screen** option instead. Some browsers can't report whether Sidequest is installed; Options then says so and lists the menu options to look for.
 - **Claude:** Build Sidequest as a Claude Artifact. See [Use as app](#use-as-app).
 - **Muse:** Build Sidequest as a Muse space. See the same section.
