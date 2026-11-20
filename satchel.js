@@ -271,6 +271,16 @@
   dlg.addEventListener("close", function () { big.removeAttribute("src"); });
 })();
 
+/* Every pinned card gets a random offset and fold size on each load, so neighbors never fall into a
+   pattern. This runs before the pinned cards below copy the offsets and read the fold size. */
+(function () {
+  function rnd(a, b) { return (a + Math.random() * (b - a)).toFixed(2); }
+  Array.prototype.forEach.call(document.querySelectorAll(".grid > .posting"), function (card) {
+    var bbox = Math.round(rnd(46, 64));
+    card.style.cssText = "--rx:" + rnd(-0.5, 0.5) + ";--ry:" + rnd(-0.7, 0.7) + ";--bend:" + (bbox - 10) + "px;--bbox:" + bbox + "px";
+  });
+})();
+
 /* Pinned cards: each card's edge and shadows are drawn once on a canvas behind it. The live filter in
    leather.css, which this replaces, was re-run on every frame of anything that moved over the cards. */
 (function () {
