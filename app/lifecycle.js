@@ -3,8 +3,8 @@ import { renderAll } from "./app.js";
 import { playConfetti } from "./confetti.js";
 import { TODAY, iso } from "./dates.js";
 import { closeModal, confirmDialog, openModal } from "./dialogs.js";
-import { el, notify, on, playSfx } from "./dom.js";
-import { activeQuests, questNameTaken, findQuest, isPinned, liveQuests, openIssues, questRemainingUnits, questTasksAllDone, questTotalUnits, recordHist, remainingUnits, short, totalUnits } from "./model.js";
+import { el, notify, on, playSfx, setFocusKey } from "./dom.js";
+import { activeQuests, questNameTaken, findQuest, isPinned, liveQuests, openIssues, questRemainingUnits, questState, questTasksAllDone, questTotalUnits, recordHist, remainingUnits, short, totalUnits } from "./model.js";
 import { changed, removeLinksTo, removeQuestTasks, save, state } from "./state.js";
 import { KIND_LABEL } from "./views.js";
 
@@ -48,7 +48,7 @@ export function completionDialog(p) {
   openModal("Quest complete", function (body) {
     body.appendChild(el("p", { "class": "first" }, "“" + p.name + "” is marked complete. Send it to the Vault now, or leave it in Quests."));
     var openTasks = questRemainingUnits(p);
-    if (openTasks) body.appendChild(el("p", { "class": "hint" }, openTasks + (openTasks === 1 ? " open task is" : " open tasks are") + " no longer counted in the main burndown. Reopen the quest to count " + (openTasks === 1 ? "it" : "them") + " again."));
+    if (openTasks) body.appendChild(el("p", { "class": "hint" }, openTasks + (openTasks === 1 ? " open task is" : " open tasks are") + " no longer counted in the main burndown. Set the quest back to In progress to count " + (openTasks === 1 ? "it" : "them") + " again."));
     var oi = openIssues(p.id).length;
     if (oi) body.appendChild(el("p", { "class": "hint" }, oi + (oi === 1 ? " issue is" : " issues are") + " still open."));
     var acts = el("div", { "class": "actions" });
@@ -68,7 +68,7 @@ export function promoteToActive(id) {
   if (!p) return;
   var n = activeQuests().length;
   if (overWip() && p.status !== "active") {
-    confirmDialog("Promote past your limit?", "You already have " + n + " active " + (n === 1 ? "quest" : "quests") + ". Promote it anyway?", "Promote anyway", function () { doPromote(p); });
+    confirmDialog("Quest limit reached", "You already have " + n + (n === 1 ? " quest" : " quests") + " in progress. Do you want to move this quest to In progress anyway?", "Continue anyway", function () { doPromote(p); });
     return;
   }
   doPromote(p);
@@ -82,13 +82,64 @@ export function doPromote(p) {
   if (state.settings.audio) playSfx("../assets/sfx/quest.mp3");
 }
 
-// Sends an active quest back to Candidates. Its links are kept, shown read-only, and live again on promotion.
+// Sends an active quest back to Candidates, keeping its links. A Candidate cannot be pinned, so its pin goes.
 export function demoteToCandidate(id) {
   var p = findQuest(id);
   if (!p) return;
   p.status = "candidate";
+  var pinKey = "quest:" + p.id; state.pins = state.pins.filter(function (k) { return k !== pinKey; });
   changed();
   notify("Sent back to Candidates.");
+}
+
+// Brings a Complete quest back to Active, and restores a pin completionDialog() removed.
+function reopenQuest(p) {
+  p.status = "active";
+  // Lets sweepQuestCompletion() skip this quest once, so reopening one whose tasks are all Completed does not refire.
+  p.justReopened = true;
+  if (p.wasPinned) { var key = "quest:" + p.id; if (!isPinned(key)) state.pins.push(key); p.wasPinned = false; }
+  changed(); notify("Reopened.");
+  if (state.settings.audio) playSfx("../assets/sfx/quest.mp3");
+}
+
+// What each state's dropdown offers, in this order.
+var STATE_ORDER = ["Candidate", "In progress", "Complete", "Vault"];
+var STATE_CHOICES = {
+  "Candidate": ["Candidate", "In progress", "Vault"],
+  "In progress": ["Candidate", "In progress", "Complete", "Vault"],
+  "Complete": ["In progress", "Complete", "Vault"]
+};
+// The status chip colors reuse the task pill styles in styles.css.
+var STATE_PILL = { "Candidate": "Unpursued", "In progress": "In progress", "Complete": "Completed" };
+
+// Moves a quest to a chosen state through the same handlers the old buttons used.
+export function setQuestState(p, to) {
+  var from = questState(p);
+  if (to === from || p.vault || STATE_ORDER.indexOf(to) < 0) return;
+  if (to === "Vault") { if (p.status === "candidate") removeToVault(p, "Quest"); else vaultQuest(p); return; }
+  if (to === "Candidate") { demoteToCandidate(p.id); return; }
+  if (to === "Complete") { p.status = "complete"; changed(); completionDialog(p); return; }
+  if (from === "Candidate") promoteToActive(p.id);
+  else if (from === "Complete") reopenQuest(p);
+}
+
+// The status dropdown for a quest (not used for a vaulted one). It shows the current state until a change takes effect.
+export function questStatusSelect(p, focusKey) {
+  var cur = questState(p);
+  var sel = el("select", { "class": "status questsel", "aria-label": "Status of " + short(p.name, 40), title: "Change this quest’s status", "data-v": STATE_PILL[cur], "data-focus": focusKey });
+  STATE_CHOICES[cur].forEach(function (s) { var o = el("option", { value: s }, s); if (s === cur) o.selected = true; sel.appendChild(o); });
+  // Focus returns to the select only for keyboard use; after a tap or click it would look still open.
+  var byPointer = false;
+  on(sel, "pointerdown", function () { byPointer = true; });
+  on(sel, "keydown", function () { byPointer = false; });
+  on(sel, "change", function () {
+    var to = sel.value;
+    // A choice that opens a dialog or is canceled leaves the quest as it was, so show that.
+    sel.value = cur;
+    if (!byPointer) setFocusKey(focusKey);
+    setQuestState(p, to);
+  });
+  return sel;
 }
 
 // Only Quests and Ideas go to the Vault independently -- see removeNow() for the rest.

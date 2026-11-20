@@ -203,7 +203,7 @@ export function renderSettings(page) {
   var wipSel = el("select", { id: "set-wip", "class": "plain" });
   [[0, "No limit"], [2, "2"], [3, "3"], [4, "4"], [5, "5"]].forEach(function (o) { var op = el("option", { value: String(o[0]) }, o[1]); if (o[0] === state.settings.wipLimit) op.selected = true; wipSel.appendChild(op); });
   on(wipSel, "change", function () { state.settings.wipLimit = parseInt(wipSel.value, 10); changed(); });
-  fieldOf("set-wip", "Warn when active quests exceed", wipSel);
+  fieldOf("set-wip", "Warn when quests in progress exceed", wipSel);
   fieldOf("set-dust", "Quests begin gathering dust after", dustSel);
   scheduleBox.appendChild(grid); scheduleBox.appendChild(msg); root.appendChild(scheduleBox);
 

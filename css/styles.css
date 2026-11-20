@@ -97,6 +97,7 @@ button[data-armed="1"] { border-color: var(--late); color: var(--late); }
 .hbody ul { list-style: none; margin: 0; padding: 0; }
 .hbody li { position: relative; padding-left: var(--space-18); margin-top: var(--space-6); }
 .hbody li::before { content: ""; position: absolute; left: 0; top: .6em; width: 7px; height: 7px; background: var(--brass); border-radius: 1px; transform: rotate(45deg); }
+.hbody li li::before { box-sizing: border-box; background: transparent; border: 1.5px solid var(--brass); }
 /* Bold text inside a Field guide section is the dark blue; the section headings stay as they are. */
 .hbody b, .hbody strong { color: var(--planned); }
 kbd { font: inherit; font-size: .9em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 var(--space-6); background: var(--bg); }
@@ -110,6 +111,7 @@ kbd { font: inherit; font-size: .9em; border: 1px solid var(--line); border-bott
 .qlink:hover, .qlink:focus-visible { text-decoration: underline; }
 .snext { margin-top: var(--space-2); color: var(--muted); font-size: var(--text-sm); }
 .snext .sdetail::before { content: " · "; }
+.snext .sdetail.alone::before { content: none; }
 @media (max-width: 639px) { .snext .sdetail { display: block; } .snext .sdetail::before { content: none; } }
 .tbleft { display: flex; align-items: center; gap: var(--space-10); min-width: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -270,7 +272,7 @@ select.status { border: 1px solid var(--line); border-radius: var(--radius-contr
 /* A task row's status pulldown sits beside the row's button, on the title line; alignStatuses() sets its top. */
 /* The row is the container, so a narrow column on a wide screen gets the compact layout too. */
 .tlist li.hasstatus { position: relative; container-type: inline-size; }
-select.rowstatus { position: absolute; top: calc(var(--row-l2, 40px) - 1px); right: var(--space-14); z-index: 1; width: 124px; min-height: 32px; padding: var(--space-2) var(--space-10); font-size: var(--text-sm); }
+select.rowstatus { position: absolute; top: calc(var(--row-l2, 40px) - 3px); right: var(--space-14); z-index: 1; width: 124px; min-height: var(--control-select); padding: var(--space-2) var(--space-10); font-size: var(--text-sm); }
 button.rowpencil { position: absolute; z-index: 1; top: calc(var(--row-l2, 40px) - 3px); right: calc(var(--space-14) + 132px); }
 .tlist li.hasstatus > .item .l2 { padding-right: 172px; }
 /* The pencil stays beside the pulldown at every width; a narrow row only shrinks the pulldown and lets the title take a third line. */
@@ -312,7 +314,7 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; margin:
 /* prefers-reduced-motion's blanket `animation: none !important` rule already
    covers this -- the icon just jumps straight to reloading instead of spinning. */
 #refreshBtn.spinning svg { animation: spin .6s linear infinite; }
-.toast .toastbtn { background: transparent; border: 1px solid currentColor; color: inherit; min-height: 32px; padding: var(--space-2) var(--space-12); }
+.toast .toastbtn { background: transparent; border: 1px solid currentColor; color: inherit; min-height: var(--control-small); padding: var(--space-2) var(--space-12); }
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-8); margin-top: var(--space-12); }
 .chipbtn { border-radius: var(--radius-control); min-height: 36px; padding: var(--space-4) var(--space-14); }
 .chipbtn[aria-pressed="true"] { background: var(--sel); border-color: var(--planned); color: var(--planned); font-weight: 600; }
@@ -403,6 +405,18 @@ html { scrollbar-gutter: stable; }
 .handfoot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-12); margin-top: var(--space-14); position: sticky; bottom: calc(-1 * var(--space-20)); margin-bottom: calc(-1 * var(--space-20)); padding: var(--space-12) 0 var(--space-20); background: var(--surface); border-top: 1px solid var(--line); z-index: 2; }
 .handfoot .handcount { margin: 0; }
 .li-actions { display: flex; gap: var(--space-8); align-items: center; }
+/* A quest row's status dropdown sits left of its Pin button, both at the right edge. */
+.li-actions.stack { margin-left: auto; }
+.qname { flex: 1 1 200px; }
+/* Narrow: the dropdown and Pin stack at the right edge, centered in the row with 20px between them (about 48px on a phone screenshot). */
+@media (max-width: 639px), (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (not (pointer: coarse)) {
+  .srow:has(.li-actions.stack) > .qname, .crow:has(.li-actions.stack) > .qname { flex-basis: 120px; min-width: 0; }
+  .li-actions.stack { flex-direction: column; align-items: flex-end; gap: var(--space-20); }
+  .li-actions.stack select { font-size: 16px; }
+}
+select.status.questsel { width: auto; min-height: var(--control-select); padding: var(--space-2) var(--space-10); font-size: var(--text-sm); flex: none; }
+/* In the page title row the dropdown stays at the right edge of the row. */
+.titlerow select.questsel { margin-left: auto; }
 .dq { font-weight: 500; }
 .dstate { font-size: var(--text-sm); color: var(--muted); margin-left: var(--space-8); }
 .dstate.ok { color: var(--planned); }
@@ -522,7 +536,7 @@ svg.chart.nofocusring { outline: none; }
 .modal { width: 100%; max-width: 520px; max-height: calc(100vh - 32px); overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: var(--space-18) var(--space-20) var(--space-20); }
 .mhead { display: flex; align-items: center; justify-content: space-between; gap: var(--space-12); margin-bottom: var(--space-4); position: sticky; top: calc(-1 * var(--space-18)); margin-top: calc(-1 * var(--space-18)); padding-top: var(--space-18); padding-bottom: var(--space-4); background: var(--surface); z-index: 2; }
 .mhead h2 { margin: 0; }
-.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: calc(100vw - 32px); background: var(--ink); color: var(--bg); padding: var(--space-10) var(--space-16); border-radius: var(--radius-card); z-index: 60; font-size: var(--text-sm); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-8) var(--space-12); text-align: left; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: calc(100vw - 32px); background: var(--btn); color: var(--on-btn); padding: var(--space-10) var(--space-16); border-radius: var(--radius-card); z-index: 60; font-size: var(--text-sm); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-8) var(--space-12); text-align: left; }
 .toast:empty { display: none; }
 .toast.problem { background: var(--late); color: var(--bg); }
 

@@ -42,11 +42,10 @@ var STEPS = [
     done: function (c) { return hasTask(c) || promoted(c); } },
   { title: "Start the quest",
     view: function (c) {
-      var btn = 'button[title="Promote to quest"]';
-      if (onQuestPage(c)) return { target: document.querySelector("#view " + btn), text: "Find the **Promote** button at the bottom of the Quest details." };
+      if (onQuestPage(c)) return { target: document.querySelector("#questStatusSel"), text: "Use the status dropdown beside the quest’s name. Choose **In progress**." };
       var row = candidateRow(c);
-      if (row) return { target: row.querySelector(btn), text: "Select **Promote** next to your quest under **Candidate quests**." };
-      return { target: tab("projects"), text: "Open **Quests**, then select **Promote** next to your quest under **Candidate quests**." };
+      if (row) return { target: row.querySelector("select.questsel"), text: "Use the status dropdown next to your quest under **Candidate quests**. Choose **In progress**." };
+      return { target: tab("projects"), text: "Open **Quests**, then use the status dropdown next to your quest under **Candidate quests**." };
     },
     done: promoted },
   { title: "See your plan",

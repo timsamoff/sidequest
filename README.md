@@ -47,7 +47,7 @@ Sidequest organizes projects into **quests**, with **tasks** and **steps** to br
 
 ### Quests
 
-- Each quest has its own page for tasks, notes, and scheduling. New quests start as **candidates**, giving you a place to work out the details before getting started. Choose **Promote** when you're ready to begin, and **Mark complete** when the quest is finished.
+- Each quest has its own page for tasks, notes, and scheduling. New quests start as **candidates**, giving you a place to work out the details before getting started. Use the status dropdown to move a quest to **In progress** when you're ready to begin, and to **Complete** when it is finished.
 
 ### Errands
 

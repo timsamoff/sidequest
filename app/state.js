@@ -10,7 +10,7 @@ export var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 export var UNPURSUED = "Unpursued";
 export var CHECKPOINTS = 7;
-export var APP_VERSION = "1.3.7";
+export var APP_VERSION = "1.4.0";
 export var APP_NAME = "Sidequest";
 
 export function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -54,7 +54,7 @@ export function sampleData() {
     quest("pCli", "Sample Command-Line Tool", "candidate", { notes: "Would save time on your own quests" }),
     // Demonstrates a Complete quest: drops out of In progress but still shows in the plain Quests list.
     quest("pDone", "Sample Finished Quest", "complete", { start: day(-28), notes: "Shipped and wrapped up.", hist: doneHistory }),
-    // Demonstrates a promoted-but-task-less Active quest, which lands under Pending instead of In progress; untouched for 45 days, so it also shows Gathering dust.
+    // Demonstrates an In progress quest with nothing scheduled yet; untouched for 45 days, so it also shows Gathering dust.
     quest("pNext", "Sample Next Quest", "active", { touched: new Date(n.getTime() - 45 * D).toISOString().slice(0, 10), notes: "Chosen, but nothing scheduled yet." })
   ];
   var tasks = [
@@ -210,7 +210,8 @@ export function normalize(s) {
       var xc = x.client && typeof x.client === "object" ? x.client : {};
       return {
         id: S(x.id, 40), name: S(x.name, 120),
-        status: (x.status === "active" || x.status === "candidate" || x.status === "complete") ? x.status : "candidate",
+        // A short-lived build had a Pending state (an Active quest with started: false); it is a Candidate now.
+        status: x.status === "active" && x.started === false ? "candidate" : (x.status === "active" || x.status === "candidate" || x.status === "complete") ? x.status : "candidate",
         start: isISO(x.start) ? x.start : "", days: days,
         due: isISO(x.due) ? x.due : "",
         notes: (oldNote && body ? oldNote + "\n\n" + body : oldNote || body).slice(0, 5000), vault: validVault(x.vault || x.arch), hist: cleanHist(x.hist),
@@ -333,7 +334,8 @@ export function normalize(s) {
   }
   // Pins used to route to a quest's page via "proj:" + id; migrate any saved
   // pin to "quest:" + id so an old sidebar pin keeps working after the rename.
-  if (Array.isArray(s.pins)) d.pins = s.pins.filter(function (k) { return typeof k === "string" && k.length < 130; }).map(function (k) { return k.indexOf("proj:") === 0 ? "quest:" + k.slice(5) : k; }).slice(0, 30);
+  var candidateKeys = {}; /* a Candidate cannot be pinned */ d.quests.forEach(function (p) { if (p.status === "candidate") candidateKeys["quest:" + p.id] = true; });
+  if (Array.isArray(s.pins)) d.pins = s.pins.filter(function (k) { return typeof k === "string" && k.length < 130; }).map(function (k) { return k.indexOf("proj:") === 0 ? "quest:" + k.slice(5) : k; }).filter(function (k) { return !candidateKeys[k]; }).slice(0, 30);
   return d;
 }
 // Storage adapter: localStorage is synchronous and always available; Claude's

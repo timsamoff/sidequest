@@ -243,6 +243,9 @@ export function scrollToRow(node) {
   node.style.scrollMarginTop = (head + (sh ? sh.offsetHeight : 0) + 12) + "px";
   try { node.scrollIntoView({ block: "start" }); } catch (e) { /* ignore */ }
 }
+// The phone layout test; styles.css has the same media query, so the two agree.
+export var NARROW_QUERY = "(max-width: 639px), (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (not (pointer: coarse))";
+export function isNarrow() { try { return typeof window.matchMedia === "function" && window.matchMedia(NARROW_QUERY).matches; } catch (e) { return false; } }
 // Navigation only. A framed copy scrolls the host page, not this window, so every
 // scroller is zeroed, the app's top is scrolled into view, and it repeats after paint.
 export function scrollTop() {

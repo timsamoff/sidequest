@@ -56,6 +56,10 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) fails++
 // The status pulldown on a task's row: the selected row in Tasks, or the open row on a quest's page.
 const selRow = (k) => { const b = k.d.querySelector('.listpane .item[aria-current="true"]'); return b && b.parentNode.querySelector("select.rowstatus"); };
 const openSel = (k) => { const b = k.d.querySelector("#view .questmain .tlist button.item[aria-expanded='true']"); return b && b.parentNode.querySelector("select.rowstatus"); };
+// The values the quest status dropdown offers on a quest page.
+const choices = (k) => [...k.$("questStatusSel").options].map(o => o.value);
+// The quest status dropdown: in the page title row on a quest page, or in a given row of the Quests list.
+function setState(k, to, row) { const s = row ? row.querySelector("select.questsel") : (k.$("questStatusSel") || [...k.d.querySelectorAll("#view select.questsel")].find(x => x.value === "Candidate")); s.value = to; k.fire(s); }
 function kit(dom) {
   const w = dom.window, d = w.document, $ = id => d.getElementById(id);
   return { w, d, $, fire: (e, t = "change") => e.dispatchEvent(new w.Event(t, { bubbles: true })),
@@ -76,7 +80,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.3.7"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.4.0"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -138,7 +142,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 /* ---- sample quests ---- */
 {
   const k = kit(await mk()); k.tab("projects");
-  ok(k.stand().join() === "Sample App,Sample Website,Sample Newsletter,Sample Game", "In progress lists the four sample quests, earliest next task first (" + k.stand().join() + ")");
+  ok(k.stand().join() === "Sample App,Sample Website,Sample Newsletter,Sample Game,Sample Next Quest", "In progress lists the sample quests, earliest next task first, then the one with no tasks (" + k.stand().join() + ")");
   const pagesList = [...k.d.querySelectorAll("#view .list")][0].textContent;
   ok(!pagesList.includes("Sample App") && !pagesList.includes("Sample Website") && !pagesList.includes("Sample Game"), "the Projects list excludes the projects already shown in In progress");
   ok(k.$("view").textContent.includes("Sample Browser Extension") && k.$("view").textContent.includes("Sample Command-Line Tool"), "two sample candidates listed");
@@ -335,7 +339,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   ok(Object.keys(k.saved().hist).length === 0, "a blank slate keeps none of the sample burndown history");
   // add own quest from scratch: a task needs an active quest to attach to
   k.menuAct("newBtn", "newQuest"); k.setField("name", "My App"); k.click(k.btn(k.$("modalBody"), "Add quest"));
-  k.tab("projects"); k.click(k.btn(k.$("view"), "Promote"));
+  k.tab("projects"); setState(k, "In progress");
   k.menuAct("newBtn", "newTask"); k.setField("what", "First task"); k.click(k.btn(k.$("modalBody"), "Add task"));
   ok(k.saved().tasks.some(t => t.what === "First task"), "can add a task right away, once a quest exists");
   // reload samples
@@ -468,16 +472,16 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   const k = kit(await mk());
   k.click(k.btn(k.d.querySelector("#nav"), "Sample App"));
   // manual Complete, independent of task status -- Sample App has open tasks
-  ok(!!k.btn(k.$("view"), "Mark complete"), "Active quest offers Mark complete regardless of task status");
-  k.click(k.btn(k.$("view"), "Mark complete"));
+  ok(choices(k).includes("Complete"), "an active quest's dropdown offers Complete regardless of task status");
+  setState(k, "Complete");
   ok(k.$("modalTitle").textContent === "Quest complete" && k.$("modalBody").textContent.includes("leave it in Quests"), "marking complete with open tasks left triggers the completion dialog, no block");
   k.click(k.btn(k.$("modalBody"), "Leave in Quests"));
   ok(k.$("overlay").hidden, "Leave in Quests closes the dialog");
-  ok(k.$("view").textContent.includes("Restore") === false && !k.btn(k.$("view"), "Mark complete") && !k.btn(k.$("view"), "Vault") === false, "quest stays Complete, not vaulted, after Leave in Quests");
+  ok(!k.btn(k.$("view"), "Restore") && k.$("questStatusSel").value === "Complete", "quest stays Complete, not vaulted, after Leave in Quests");
   ok(k.saved().quests.find(p => p.id === "pApp").status === "complete", "status persisted as complete");
   // set apart visually, and can be reopened
-  ok(!!k.d.querySelector("#view .chip.questcomplete"), "a Complete quest shows a Complete badge on its own page");
-  ok(!!k.btn(k.$("view"), "Reopen") && !k.btn(k.$("view"), "Mark complete"), "Complete quest offers Reopen in place of Mark complete");
+  ok(k.$("questStatusSel").value === "Complete", "a Complete quest's dropdown shows Complete on its own page");
+  ok(JSON.stringify(choices(k)) === JSON.stringify(["In progress", "Complete", "Vault"]), "a Complete quest's dropdown offers In progress to reopen it, and Vault");
   // Sample App was pinned by sample data -- completing it auto-unpins it.
   ok(!k.btn(k.d.querySelector("#nav"), "Sample App"), "completing a pinned quest auto-unpins it from the sidebar");
   ok(k.saved().quests.find(p => p.id === "pApp").wasPinned === true, "the prior pin is remembered, not just dropped");
@@ -485,18 +489,18 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   ok(!k.stand().includes("Sample App"), "a Complete quest drops out of In progress");
   const appRow = [...k.d.querySelectorAll("#view .list li")].find(li => li.textContent.includes("Sample App"));
   ok(!!appRow, "a Complete quest (no longer in In progress) appears in the Quests section instead");
-  ok(!!appRow.querySelector(".chip.questcomplete"), "the Quests section also shows the Complete badge");
+  ok(!appRow.querySelector(".chip.questcomplete") && !appRow.querySelector(".pintoggle") && appRow.querySelector("select.questsel").value === "Complete", "a completed quest's row has the dropdown but no Complete badge and no Pin button");
   ok(!k.btn(appRow, "View"), "Quests rows have no separate View button, the title is the link");
   k.click(k.btn(appRow, "Sample App"));
   ok(k.$("viewTitle").textContent === "Sample App", "View navigated to Sample App's page");
-  k.click(k.btn(k.$("view"), "Reopen"));
+  setState(k, "In progress");
   ok(k.saved().quests.find(p => p.id === "pApp").status === "active", "Reopen sets the quest back to active");
   ok(!k.d.querySelector("#view .chip.questcomplete"), "reopened quest loses the Complete badge");
-  ok(!!k.btn(k.$("view"), "Mark complete"), "reopened quest offers Mark complete again");
+  ok(k.$("questStatusSel").value === "In progress" && choices(k).includes("Complete"), "a reopened quest shows In progress and offers Complete again");
   ok(!!k.btn(k.d.querySelector("#nav"), "Sample App"), "Reopen restores the quest's prior pin");
   ok(k.saved().quests.find(p => p.id === "pApp").wasPinned === false, "and clears the remembered flag once restored");
   // sticky: reopening a task does not revert Complete
-  k.click(k.btn(k.$("view"), "Mark complete"));
+  setState(k, "Complete");
   k.click(k.btn(k.$("modalBody"), "Leave in Quests"));
   // Complete-but-kept: its tasks drop out of the Tasks list and the global
   // Timeline, but stay visible on the quest's page.
@@ -512,7 +516,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   ok(k.saved().quests.find(p => p.id === "pApp").status === "complete", "reopening a task does not auto-revert a Complete quest");
   // reopening the quest brings its tasks straight back, no separate restore
   k.tab("projects"); k.click(k.btn(k.$("view"), "Sample App"));
-  k.click(k.btn(k.$("view"), "Reopen"));
+  setState(k, "In progress");
   k.tab("schedule");
   ok(k.$("view").textContent.includes("Sketch the main screens"), "reopening the quest brings its tasks back into the Tasks list immediately");
 }
@@ -541,8 +545,8 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   // empty-task-set guard: a candidate with zero tasks must never auto-complete
   const k = kit(await mk());
   k.tab("projects");
-  const extRow = [...k.d.querySelectorAll("#view .list li")].find(li => li.textContent.includes("Sample Browser Extension") && k.btn(li, "Promote"));
-  k.click(k.btn(extRow, "Promote"));
+  const extRow = [...k.d.querySelectorAll("#view .list li")].find(li => li.textContent.includes("Sample Browser Extension") && li.querySelector("select.questsel"));
+  setState(k, "In progress", extRow);
   ok(k.saved().quests.find(p => p.id === "pExt").status === "active" && k.$("overlay").hidden, "promoting a task-less quest to Active does not trigger completion");
 }
 {
@@ -550,7 +554,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   const k = kit(await mk());
   k.click(k.btn(k.d.querySelector("#nav"), "Sample App"));
   ok([...k.d.querySelectorAll("#view .list li")].some(li => li.textContent.includes("Sample Website")) && ![...k.d.querySelectorAll("#view .list li")].some(li => li.textContent.includes("Launch critical")) && !k.btn(k.$("view"), "Skip launch"), "Quest links list Sample Website with no Launch critical badge or toggle");
-  k.click(k.btn(k.$("view"), "Vault"));
+  setState(k, "Vault");
   ok(k.saved().quests.find(p => p.id === "pApp").vault, "sending a quest with a link to the Vault proceeds with no warning gate");
 }
 {
@@ -560,7 +564,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   k.tab("projects");
   k.click(k.btn(k.d.querySelector("#view .standing"), "Sample Game"));
   ok(k.$("viewTitle").textContent === "Sample Game", "navigated to Sample Game via Where things stand");
-  k.click(k.btn(k.$("view"), "Vault"));
+  setState(k, "Vault");
   ok(k.$("viewTitle").textContent !== "Sample Game" || k.$("view").textContent.includes("In the Vault"), "sending to the Vault navigates away or shows a vaulted notice");
   ok(k.saved().tasks.filter(t => t.questId === "pGame" && !t.vault).length === 0 && tasksBefore > 0, "sending a quest to the Vault cascades to vault its own tasks");
   k.tab("vault");
@@ -656,8 +660,8 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   ok(k.$("viewTitle").textContent === "Sample Browser Extension", "the candidate page shows its name as the title");
   ok(!k.$("renameBtn").hidden, "a candidate's page has the rename pencil like any other live quest");
   ok([...k.d.querySelectorAll("#view h2")].some(h => h.textContent === "Quest links") && !!k.btn(k.$("view"), "Link quest"), "a candidate's page has a Quest links section with a Link quest button");
-  ok(!!k.btn(k.$("view"), "Promote") && !!k.btn(k.$("view"), "Vault"), "a candidate's page offers Promote and Vault");
-  ok(!k.btn(k.$("view"), "Mark complete") && !k.btn(k.$("view"), "Quest giver export"), "a candidate's page has no Mark complete or Quest giver export button");
+  ok(k.$("questStatusSel").value === "Candidate" && JSON.stringify(choices(k)) === JSON.stringify(["Candidate", "In progress", "Vault"]), "a candidate's dropdown offers In progress and Vault");
+  ok(!choices(k).includes("Complete") && !k.btn(k.$("view"), "Quest giver export"), "a candidate's page offers no Complete choice and has no Quest giver export button");
   // Quest giver fields live right on the page for a candidate, same as an active quest
   ok(!!k.$("giver-org-pExt") && !!k.$("giver-poc-pExt") && !!k.$("giver-phone-pExt") && !!k.$("giver-email-pExt") && !!k.$("giver-website-pExt") && !!k.$("giver-address-pExt"), "the candidate page has all six Quest giver fields");
   k.$("giver-org-pExt").value = "Acme Co."; k.fire(k.$("giver-org-pExt"), "input");
@@ -669,20 +673,20 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   // Promote and Vault both work from the candidate page itself
   const k = kit(await mk());
   k.tab("projects"); k.click(k.btn(k.$("view"), "Sample Browser Extension"));
-  k.click(k.btn(k.$("view"), "Promote"));
+  setState(k, "In progress");
   ok(k.saved().quests.find(p => p.id === "pExt").status === "active", "Promote on the candidate page promotes it");
-  ok(!!k.btn(k.$("view"), "Demote") && !!k.btn(k.$("view"), "Mark complete") && !!k.btn(k.$("view"), "Vault") && !!k.btn(k.$("view"), "Quest giver export"), "the now-active quest's page has the full active action row, including Demote");
-  k.click(k.btn(k.$("view"), "Demote"));
+  ok(choices(k).includes("Candidate") && choices(k).includes("Complete") && choices(k).includes("Vault") && !!k.btn(k.$("view"), "Quest giver export"), "the now-active quest's dropdown offers Candidate, Complete, and Vault");
+  setState(k, "Candidate");
   ok(k.saved().quests.find(p => p.id === "pExt").status === "candidate", "Demote sends it back to Candidates");
-  ok(!!k.btn(k.$("view"), "Promote") && !k.btn(k.$("view"), "Mark complete"), "after demotion the page shows the candidate layout again");
-  k.click(k.btn(k.$("view"), "Vault"));
+  ok(k.$("questStatusSel").value === "Candidate" && !choices(k).includes("Complete"), "after demotion the page shows the candidate layout again");
+  setState(k, "Vault");
   ok(!!k.saved().quests.find(p => p.id === "pExt").vault, "Vault on the candidate page sends it to the Vault");
 }
 {
   // Demoting or vaulting keeps a quest's links, shown read-only; promoting or restoring makes them live again
   const k = kit(await mk());
   k.tab("projects"); k.click(k.btn(k.d.querySelector("#nav"), "Sample App"));
-  k.click(k.btn(k.$("view"), "Demote"));
+  setState(k, "Candidate");
   const links = () => k.saved().quests.find(p => p.id === "pApp").linkedQuestIds;
   ok(k.saved().quests.find(p => p.id === "pApp").status === "candidate" && links().indexOf("pSite") >= 0 && k.saved().quests.find(p => p.id === "pSite").linkedQuestIds.indexOf("pApp") >= 0, "demoting keeps the link on both sides");
   ok(k.saved().quests.find(p => p.id === "pApp").savedLinkIds === undefined, "there is no separate set-aside list any more");
@@ -695,14 +699,14 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   const opts = () => { k.click(k.btn(k.$("view"), "Link quest")); return [...k.d.querySelectorAll("#f-quest option")].map(o => o.textContent); };
   ok(k.btn(k.$("view"), "Link quest") ? !opts().includes("Sample App") : true, "a Candidate is not offered as a link target");
   k.click(k.btn(k.$("modalBody"), "Cancel") || k.btn(k.$("modalBody"), "Close") || k.$("modalBody"));
-  k.tab("projects"); k.click(k.btn(k.$("view"), "Sample App")); k.click(k.btn(k.$("view"), "Promote"));
+  k.tab("projects"); k.click(k.btn(k.$("view"), "Sample App")); setState(k, "In progress");
   ok(k.saved().quests.find(p => p.id === "pApp").status === "active" && links().indexOf("pSite") >= 0, "promoting makes the same link live again");
 }
 {
   // Vaulting keeps the links too; deleting forever removes them
   const k = kit(await mk());
   k.tab("projects"); k.click(k.btn(k.d.querySelector("#nav"), "Sample App"));
-  k.click(k.btn(k.$("view"), "Vault"));
+  setState(k, "Vault");
   const q = id => k.saved().quests.find(p => p.id === id);
   ok(!!q("pApp").vault && q("pApp").linkedQuestIds.indexOf("pSite") >= 0 && q("pSite").linkedQuestIds.indexOf("pApp") >= 0, "vaulting keeps the links on both sides");
   k.tab("projects"); k.click(k.btn(k.$("view"), "Sample Website"));
@@ -756,7 +760,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   // a candidate has no way back to the Workshop (one-way)
   const k = kit(await mk());
   k.tab("projects");
-  const candRow = () => [...k.d.querySelectorAll("#view .list li")].find(li => li.querySelector('button[title="Promote to quest"]') && li.textContent.includes("Sample Browser Extension"));
+  const candRow = () => [...k.d.querySelectorAll("#view .list li")].find(li => li.querySelector("select.questsel") && li.textContent.includes("Sample Browser Extension"));
   ok(!!candRow().querySelector(".noteclamp"), "a candidate's note in the list is clamped to two lines");
   ok(!candRow().querySelector('button[title="Move to the Workshop"]'), "a candidate row has no Workshop it button");
   k.tab("workshop");
@@ -773,8 +777,8 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   // a vaulted candidate's page is read-only like any vaulted quest's
   const k = kit(await mk());
   k.tab("projects");
-  const candRow = [...k.d.querySelectorAll("#view .list li")].find(li => li.querySelector('button[title="Promote to quest"]') && li.textContent.includes("Sample Browser Extension"));
-  k.click(k.btn(candRow, "Vault"));
+  const candRow = [...k.d.querySelectorAll("#view .list li")].find(li => li.querySelector("select.questsel") && li.textContent.includes("Sample Browser Extension"));
+  setState(k, "Vault", candRow);
   k.tab("vault");
   k.click(k.btn(k.$("view"), "Sample Browser Extension"));
   ok(!k.btn(k.$("view"), "Choose as next quest") && k.$("renameBtn").hidden && !k.d.querySelector("#view textarea"), "a vaulted candidate's page has no pencil, editable fields, or promote button");
@@ -823,7 +827,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   ok(split.querySelector(".questmain").textContent.includes("Complete: 1 of 7 tasks | Backlog: 1 unscheduled task | Issues: 2 open"), "the task-count line sits under the Tasks heading, with the open issues counted apart");
   const side = split.querySelector(".questcharts");
   ok([...side.querySelectorAll("h2")].map(h => h.textContent).join() === "Schedule,Timeline,Burndown,Stats", "the right column flows Schedule, Timeline, Burndown, then Stats, as one column");
-  ok([...split.children].map(c => c.className).join() === "questmain,questcharts,actions questactions", "the page is ordered content, then the Schedule/Timeline/Burndown column, then the action buttons last, which is also the reading and phone order");
+  ok([...split.children].map(c => c.className).join() === "questmain,questcharts", "the page is ordered content, then the Schedule/Timeline/Burndown column, with no action buttons since status is in the title row");
   ok(!!side.querySelector("#proj-start") && !!side.querySelector("#proj-days") && !split.querySelector(".questmain #proj-start") && ![...split.querySelectorAll(".questmain h2")].some(h => h.textContent === "Schedule"), "the Schedule heading and fields are in the right column, not the left");
   ok(!!k.btn(side, "Expand"), "the right column has an Expand button");
   ok(side.querySelectorAll(".lane").length === 7, "one timeline lane per scheduled task, plus the milestones lane (" + side.querySelectorAll(".lane").length + ")");
@@ -987,7 +991,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   const k = kit(await mk());
   k.click(k.$("welcomeDismiss"));
   k.click(k.btn(k.d.querySelector("#nav"), "Sample App"));
-  k.click(k.btn(k.$("view"), "Mark complete"));
+  setState(k, "Complete");
   ok(/5 open tasks are no longer counted in the main burndown/.test(k.$("modalBody").textContent), "the completion dialog warns about open tasks leaving the burndown (" + k.$("modalBody").textContent.slice(0, 160) + ")");
 }
 {
@@ -1495,7 +1499,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   // vaulted quests, including vaulted candidates, stay single-column
   const k = kit(await mk());
   k.tab("projects"); k.click(k.btn(k.$("view"), "Sample Game"));
-  k.click(k.btn(k.$("view"), "Vault"));
+  setState(k, "Vault");
   k.tab("vault"); k.click(k.btn(k.$("view"), "Sample Game"));
   ok(!k.d.querySelector("#view .questsplit"), "a vaulted quest's page has no charts column");
   ok([...k.d.querySelectorAll("#view h2")].some(h => h.textContent === "Schedule") && !k.$("proj-start"), "a vaulted quest still shows its Schedule, read only, in the single column");
@@ -2077,7 +2081,7 @@ async function exportClick(k, projectName) {
   // Completion FX gates the confetti burst. The canvas appears synchronously after Mark complete, so checking for it confirms the gate without running the animation loop.
   const k = kit(await mk({ quests: [{ id: "pFx", name: "FX Quest", status: "active" }], tasks: [] }));
   k.tab("projects"); k.click(k.btn(k.d.querySelector("#view"), "FX Quest"));
-  k.click(k.btn(k.$("view"), "Mark complete"));
+  setState(k, "Complete");
   ok(!!k.d.querySelector("canvas.confettiFx"), "Mark complete starts the confetti burst when Completion FX is on");
 }
 {
@@ -2088,7 +2092,7 @@ async function exportClick(k, projectName) {
     { id: "tReoFx", block: 0, questId: "pReoFx", what: "Done task", status: "Completed", steps: [] }
   ] }));
   k.tab("projects"); k.click(k.btn(k.$("view"), "Reopen FX Quest"));
-  k.click(k.btn(k.$("view"), "Reopen"));
+  setState(k, "In progress");
   ok(k.saved().quests.find(p => p.id === "pReoFx").status === "active", "the quest is actually reopened");
   ok(!k.d.querySelector("canvas.confettiFx"), "reopening a quest whose tasks are still all Completed does not re-trigger the completion confetti");
   ok(!k.$("modalTitle").textContent, "and does not reopen the completion dialog either");
@@ -2096,7 +2100,7 @@ async function exportClick(k, projectName) {
 {
   const k = kit(await mk({ settings: { completionFx: false }, quests: [{ id: "pFx2", name: "FX Quest Off", status: "active" }], tasks: [] }));
   k.tab("projects"); k.click(k.btn(k.d.querySelector("#view"), "FX Quest Off"));
-  k.click(k.btn(k.$("view"), "Mark complete"));
+  setState(k, "Complete");
   ok(!k.d.querySelector("canvas.confettiFx"), "Mark complete starts no confetti burst when Completion FX is off");
 }
 {
@@ -2121,7 +2125,7 @@ async function exportClick(k, projectName) {
   const RealAudio = k.w.Audio;
   k.w.Audio = function (src) { played = src; return { play: function () { return Promise.resolve(); } }; };
   k.tab("projects"); k.click(k.btn(k.$("view"), "Sound Quest"));
-  k.click(k.btn(k.$("view"), "Mark complete"));
+  setState(k, "Complete");
   k.w.Audio = RealAudio;
   ok(played === "../assets/sfx/complete.mp3", "Mark complete plays the completion sound when Audio is on (" + played + ")");
 }
@@ -2136,7 +2140,7 @@ async function exportClick(k, projectName) {
   const RealAudio = k.w.Audio;
   k.w.Audio = function () { played = true; return { play: function () { return Promise.resolve(); } }; };
   k.tab("projects"); k.click(k.btn(k.$("view"), "No Sound Quest"));
-  k.click(k.btn(k.$("view"), "Mark complete"));
+  setState(k, "Complete");
   k.w.Audio = RealAudio;
   ok(!played, "Mark complete plays no sound when Audio is off");
 }
@@ -2150,7 +2154,7 @@ async function exportClick(k, projectName) {
   const RealAudio = k.w.Audio;
   k.w.Audio = function (src) { played = src; return { play: function () { return Promise.resolve(); } }; };
   k.tab("projects");
-  k.click(k.btn(k.$("view"), "Promote"));
+  setState(k, "In progress");
   k.w.Audio = RealAudio;
   ok(played === "../assets/sfx/quest.mp3", "promoting a candidate plays the quest sound when Audio is on (" + played + ")");
   ok(k.saved().quests.find((q) => q.id === "pCand").status === "active", "and the quest is actually promoted");
@@ -2162,7 +2166,7 @@ async function exportClick(k, projectName) {
   const RealAudio = k.w.Audio;
   k.w.Audio = function () { played = true; return { play: function () { return Promise.resolve(); } }; };
   k.tab("projects");
-  k.click(k.btn(k.$("view"), "Promote"));
+  setState(k, "In progress");
   k.w.Audio = RealAudio;
   ok(!played, "promoting a candidate plays no sound when Audio is off");
 }
@@ -2175,7 +2179,7 @@ async function exportClick(k, projectName) {
   const RealAudio = k.w.Audio;
   k.w.Audio = function (src) { played = src; return { play: function () { return Promise.resolve(); } }; };
   k.tab("projects"); k.click(k.btn(k.$("view"), "Reopen Quest"));
-  k.click(k.btn(k.$("view"), "Reopen"));
+  setState(k, "In progress");
   k.w.Audio = RealAudio;
   ok(played === "../assets/sfx/quest.mp3", "reopening a Complete quest plays the quest sound when Audio is on (" + played + ")");
   ok(k.saved().quests.find((q) => q.id === "pReo").status === "active", "and the quest is actually reopened");
@@ -2187,7 +2191,7 @@ async function exportClick(k, projectName) {
   const RealAudio = k.w.Audio;
   k.w.Audio = function () { played = true; return { play: function () { return Promise.resolve(); } }; };
   k.tab("projects"); k.click(k.btn(k.$("view"), "Reopen Quest 2"));
-  k.click(k.btn(k.$("view"), "Reopen"));
+  setState(k, "In progress");
   k.w.Audio = RealAudio;
   ok(!played, "reopening a Complete quest plays no sound when Audio is off");
 }
@@ -2519,20 +2523,20 @@ async function exportClick(k, projectName) {
   ok(qs.find(q => q.id === "q1").client.coin === 1500 && qs.find(q => q.id === "q2").client.coin === "" && qs.find(q => q.id === "q3").client.coin === "", "a saved whole-number bounty keeps loading, and a zero or over-the-cap value loads as empty");
 }
 {
-  // The Quests page shows only what exists, in this order: In progress, Pending, Candidate quests, Completed
+  // The Quests page shows only what exists, in this order: In progress, Candidate quests, Completed
   const k = kit(await mk());
   k.click(k.$("welcomeDismiss"));
   k.tab("projects");
   const heads = () => [...k.d.querySelectorAll("#view h2")].map(h => h.textContent);
-  ok(JSON.stringify(heads()) === JSON.stringify(["In progress", "Pending", "Candidate quests", "Completed"]), "with every kind of quest, the Quests page runs In progress, Pending, Candidate quests, Completed (" + heads() + ")");
+  ok(JSON.stringify(heads()) === JSON.stringify(["In progress", "Candidate quests", "Completed"]), "with every kind of quest, the Quests page runs In progress, Candidate quests, Completed (" + heads() + ")");
   ok(!k.$("view").textContent.includes("Pending and completed") && !k.$("view").textContent.includes("Nothing here right now."), "there is no combined Pending and completed section");
   const only = kit(await mk({ quests: [{ id: "c1", name: "Just a candidate", status: "candidate" }], tasks: [], settings: { hideWelcome: true } }));
   only.tab("projects");
   ok(JSON.stringify([...only.d.querySelectorAll("#view h2")].map(h => h.textContent)) === JSON.stringify(["Candidate quests"]), "with only a candidate, only Candidate quests shows");
-  const noProg = kit(await mk({ quests: [{ id: "a1", name: "Waiting", status: "active", start: "2026-08-03", days: 7 }, { id: "d1", name: "Wrapped", status: "complete", start: "2026-08-03", days: 7 }], tasks: [], settings: { hideWelcome: true } }));
+  const noProg = kit(await mk({ quests: [{ id: "a1", name: "Waiting", status: "candidate", start: "2026-08-03", days: 7 }, { id: "d1", name: "Wrapped", status: "complete", start: "2026-08-03", days: 7 }], tasks: [], settings: { hideWelcome: true } }));
   noProg.tab("projects");
-  ok(JSON.stringify([...noProg.d.querySelectorAll("#view h2")].map(h => h.textContent)) === JSON.stringify(["Pending", "Candidate quests", "Completed"]), "with no quest in progress, In progress is not shown, and Candidate quests sits between Pending and Completed");
-  ok(!!noProg.d.querySelector("#view h2.first") && noProg.d.querySelector("#view h2.first").textContent === "Pending", "the first visible heading is the one with no top margin");
+  ok(JSON.stringify([...noProg.d.querySelectorAll("#view h2")].map(h => h.textContent)) === JSON.stringify(["Candidate quests", "Completed"]), "with no quest in progress, In progress is not shown, and Candidate quests comes before Completed");
+  ok(!!noProg.d.querySelector("#view .first") && noProg.d.querySelector("#view .first").textContent.startsWith("Candidate quests"), "the first visible heading is the one with no top margin");
 }
 {
   // Tasks go in a Candidate quest before promotion, and do not count anywhere else until then, dates or not
@@ -2554,7 +2558,7 @@ async function exportClick(k, projectName) {
   ok(JSON.stringify([...k.d.querySelectorAll("#view h2")].map(h => h.textContent)) === JSON.stringify(["Candidate quests"]) && !k.$("view").textContent.includes("Dated candidate task"), "the Quests page does not put the Candidate quest in progress");
   k.click(k.btn(k.$("view"), "Fleshing out"));
   ok(k.$("view").textContent.includes("Dated candidate task"), "the Candidate quest's page lists its tasks");
-  k.tab("projects"); k.click(k.btn(k.$("view"), "Promote"));
+  k.tab("projects"); setState(k, "In progress");
   ok(k.saved().quests[0].status === "active" && k.saved().tasks.find(t => t.what === "Dated candidate task").added === "", "promoting it makes the quest active, and its tasks were part of the plan from the start (no Added tag)");
   k.tab("schedule");
   ok(k.$("view").textContent.includes("Dated candidate task"), "once promoted, its tasks count and show on the Tasks page");
@@ -2562,7 +2566,7 @@ async function exportClick(k, projectName) {
 
 {
   // Today when everything is finished: just the heading, no instructions
-  const k = kit(await mk({ quests: [{ id: "q1", name: "Finished", status: "active", start: "2026-08-03", days: 7 }], tasks: [{ id: "t1", block: 1, questId: "q1", what: "All done", done: "d", status: "Completed", steps: [], due: "2026-08-05" }], settings: { hideWelcome: true } }));
+  const k = kit(await mk({ quests: [{ id: "q1", name: "Finished", status: "active", started: true, start: "2026-08-03", days: 7 }], tasks: [{ id: "t1", block: 1, questId: "q1", what: "All done", done: "d", status: "Completed", steps: [], due: "2026-08-05" }], settings: { hideWelcome: true } }));
   k.tab("today");
   const panel = k.d.querySelector("#view .panel");
   ok(panel.textContent.includes("All tasks complete!") && !panel.textContent.includes("Add a task") && !panel.textContent.includes("next quest") && !panel.querySelector(".pmeta"), "when every task is finished, Today says All tasks complete! and nothing more");
@@ -2631,15 +2635,16 @@ async function exportClick(k, projectName) {
   const k = kit(await mk());
   const nActive = () => JSON.parse(k.w.localStorage.getItem("sidequest-template-v1")).quests.filter(q => q.status === "active").length;
   const before = nActive();
-  k.tab("projects"); k.click(k.btn(k.$("view"), "Promote"));
+  k.tab("projects"); setState(k, "In progress");
   ok(nActive() === before + 1 && !k.d.getElementById("confirmYes"), "with no limit set, Promote just promotes");
-  k.tab("settings"); k.$("set-wip").value = "2"; k.fire(k.$("set-wip"), "change");
+  k.tab("settings"); ok(k.$("view").textContent.includes("Warn when quests in progress exceed"), "the Options label reads Warn when quests in progress exceed");
+  k.$("set-wip").value = "2"; k.fire(k.$("set-wip"), "change");
   ok(JSON.parse(k.w.localStorage.getItem("sidequest-template-v1")).settings.wipLimit === 2, "the limit saves");
-  k.tab("projects"); k.click(k.btn(k.$("view"), "Promote"));
+  k.tab("projects"); setState(k, "In progress");
   const yes = k.d.getElementById("confirmYes");
-  ok(yes && k.d.body.textContent.includes("Promote it anyway?") && nActive() === before + 1, "past the limit, Promote asks first and changes nothing yet");
+  ok(yes && k.$("modalTitle").textContent === "Quest limit reached" && yes.textContent === "Continue anyway" && k.d.body.textContent.includes("Do you want to move this quest to In progress anyway?") && nActive() === before + 1, "past the limit, moving to In progress asks first and changes nothing yet");
   k.click(yes);
-  ok(nActive() === before + 2, "Promote anyway promotes");
+  ok(nActive() === before + 2, "Continue anyway moves it to In progress");
   k.tab("projects"); ok(!k.$("view").textContent.includes("Your limit is 2"), "the Quests page no longer prints the over-limit line");
 }
 {
@@ -2751,7 +2756,7 @@ async function exportClick(k, projectName) {
   const { helpTopics } = await import("../app/help.js?run=" + counter);
   const topics = helpTopics(), titles = topics.map(t => t[0]);
   const termLines = topics.find(t => t[0] === "Terms")[1];
-  ok(termLines.length === 41 && termLines.every(l => /^\{#[a-z-]+\}\*\*[^*]+(\*\* and \*\*[^*]+)?:\*\* .+ See “[^”]+”\.$/.test(l)), "all 41 Terms entries read as a bold term, a definition, and a pointer");
+  ok(termLines.length === 39 && termLines.every(l => /^\{#[a-z-]+\}\*\*[^*]+(\*\* and \*\*[^*]+)?:\*\* .+ See “[^”]+”\.$/.test(l)), "all 39 Terms entries read as a bold term, a definition, and a pointer");
   ok(termLines.every(l => titles.includes(l.match(/See “([^”]+)”\.$/)[1])), "every Terms pointer names a topic that exists");
   f.value = "decision"; k.fire(f, "input");
   ok(titlesOf()[0] === "Terms" && items()[0].open, "a word that is a term puts the Terms topic first and opens it");
@@ -2772,7 +2777,7 @@ async function exportClick(k, projectName) {
   const { helpTopics, helpTerm } = await import("../app/help.js?run=" + counter);
   const ids = helpTopics().find(t => t[0] === "Terms")[1].map(l => l.match(/^\{#([a-z-]+)\}/)[1]);
   ok(new Set(ids).size === ids.length, "every Terms entry has its own id");
-  ok(!!helpTerm("pending") && helpTerm("pending").name === "Pending" && helpTerm("nope") === null, "an id finds its Terms entry, and an unknown id finds nothing");
+  ok(!!helpTerm("in-progress") && helpTerm("in-progress").name === "In progress" && helpTerm("nope") === null, "an id finds its Terms entry, and an unknown id finds nothing");
   k.tab("help");
   ok(!k.d.querySelector("#view .hbody b").textContent.includes("{#") && !k.d.querySelector("#view details.helpitem:nth-of-type(2)").textContent.includes("{#"), "the ids never show in the Field guide");
   ok(k.d.querySelector("#view li[data-term='bounty']") !== null, "each Terms line carries its id for linking");
@@ -3143,7 +3148,7 @@ async function exportClick(k, projectName) {
   ok(a4.block === 0 && a4.milestone === false && toast().includes("no longer a milestone"), "a milestone moved to the Backlog stops being a milestone");
 }
 {
-  const k = kit(await mk()); k.tab("projects"); k.click(k.btn(k.$("view"), "Sample Website")); k.click(k.btn(k.$("view"), "Vault"));
+  const k = kit(await mk()); k.tab("projects"); k.click(k.btn(k.$("view"), "Sample Website")); setState(k, "Vault");
   k.tab("vault"); k.click(k.btn([...k.d.querySelectorAll("#view li")].find(li => li.textContent.includes("Sample Website")), "Sample Website"));
   k.click(k.d.querySelector("#ltask-w3 button.item"));
   const lines = [...k.d.querySelectorAll("#ltask-w3 .steps li p.hint")].map(p => p.textContent);
@@ -3570,6 +3575,101 @@ async function exportClick(k, projectName) {
   ok(!k2.$("ptask-a2") && [...k2.d.querySelectorAll("#view button")].some(b => b.textContent.startsWith("Show completed")), "the choice survives a reload");
   const k3 = kit(await mk({ settings: { hideWelcome: true }, quests: [{ id: "pH", name: "Old Save", status: "active", start: "2026-08-03", days: 7 }], tasks: [] }));
   ok(JSON.stringify(k3.saved().quests[0].hideDone) === JSON.stringify({ tasks: false, issues: false }), "an older save without the field loads with both lists showing completed rows");
+}
+/* ---- quest status dropdown ---- */
+{
+  // A save from the short-lived Pending build (started: false) loads as a Candidate, and a Candidate cannot stay pinned
+  const old = { settings: { hideWelcome: true }, pins: ["quest:qa", "quest:qb", "quest:qd"], quests: [
+    { id: "qa", name: "Going", status: "active", started: true, start: "2026-08-03", days: 7 },
+    { id: "qb", name: "Waiting", status: "active", started: false, start: "2026-08-03", days: 7 },
+    { id: "qc", name: "Older save", status: "active", start: "2026-08-03", days: 7 },
+    { id: "qd", name: "Only a candidate", status: "candidate", start: "2026-08-03", days: 7 }
+  ], tasks: [] };
+  const k = kit(await mk(old));
+  const st = id => k.saved().quests.find(q => q.id === id).status;
+  ok(st("qa") === "active" && st("qb") === "candidate" && st("qc") === "active" && st("qd") === "candidate", "started: false becomes a Candidate; an older active quest with no flag stays active");
+  ok(JSON.stringify(k.saved().pins) === JSON.stringify(["quest:qa"]) && !("started" in k.saved().quests[0]), "pins on Candidates are dropped, and the old flag is not kept");
+}
+{
+  const k = kit(await mk({ settings: { hideWelcome: true } }));
+  const rowOf = name => [...k.d.querySelectorAll("#view li")].find(li => li.querySelector(".qlink") && li.querySelector(".qlink").textContent === name);
+  const status = id => k.saved().quests.find(q => q.id === id).status;
+  k.tab("projects");
+  ok(!k.d.querySelector("#view h2") || ![...k.d.querySelectorAll("#view h2")].some(h => h.textContent === "Pending"), "there is no Pending section");
+  ok(k.stand().includes("Sample Next Quest") && rowOf("Sample Next Quest").textContent.includes("No scheduled tasks"), "an active quest with no tasks is In progress and says so");
+  const offers = name => [...rowOf(name).querySelector("select.questsel").options].map(o => o.value).join();
+  ok(offers("Sample Browser Extension") === "Candidate,In progress,Vault" && offers("Sample Next Quest") === "Candidate,In progress,Complete,Vault" && offers("Sample Finished Quest") === "In progress,Complete,Vault", "each state offers its own choices");
+  ok(!k.btn(k.$("view"), "Promote") && !k.btn(rowOf("Sample Browser Extension"), "Vault") && !rowOf("Sample Browser Extension").querySelector(".pintoggle"), "a Candidate row has no Promote, Vault, or Pin button, only the dropdown");
+  k.click(k.btn(k.$("view"), "Sample Next Quest"));
+  ok(k.$("titleRow").contains(k.$("questStatusSel")) && !k.btn(k.$("view"), "Mark complete") && !k.btn(k.$("view"), "Demote") && !k.btn(k.$("view"), "Reopen") && !k.btn(k.$("view"), "Vault"), "the quest page has the dropdown beside the rename pencil in place of the four buttons");
+  // Sample App is pinned; sending it back to Candidate removes the pin
+  ok(k.saved().pins.includes("quest:pApp"), "Sample App starts out pinned");
+  k.tab("quest:pApp"); setState(k, "Candidate");
+  ok(status("pApp") === "candidate" && !k.saved().pins.includes("quest:pApp"), "sending a quest back to Candidate removes its pin");
+  k.tab("projects");
+  setState(k, "In progress", rowOf("Sample App"));
+  ok(status("pApp") === "active" && k.stand().includes("Sample App"), "Candidate to In progress promotes it");
+  // Complete and back
+  k.click(k.btn(k.$("view"), "Sample Browser Extension"));
+  setState(k, "In progress");
+  setState(k, "Complete");
+  k.click(k.btn(k.$("modalBody"), "Leave in Quests"));
+  setState(k, "In progress");
+  ok(status("pExt") === "active", "Complete to In progress reopens a quest");
+  setState(k, "Vault");
+  ok(!!k.saved().quests.find(q => q.id === "pExt").vault, "Vault sends it to the Vault");
+}
+{
+  // A completed quest that goes to the Vault keeps its Complete badge there, in the list and on its page
+  const k = kit(await mk({ settings: { hideWelcome: true } }));
+  k.tab("projects");
+  const row = [...k.d.querySelectorAll("#view li")].find(li => li.querySelector(".qlink") && li.querySelector(".qlink").textContent === "Sample Finished Quest");
+  setState(k, "Vault", row);
+  k.tab("vault");
+  const vrow = [...k.d.querySelectorAll("#view li")].find(li => li.textContent.includes("Sample Finished Quest"));
+  ok(!!vrow.querySelector(".chip.questcomplete"), "a completed quest in the Vault shows the Complete badge");
+  k.click(k.btn(vrow, "Sample Finished Quest"));
+  ok(!!k.d.querySelector("#view .chip.questcomplete") && !k.$("questStatusSel"), "its vaulted page shows the badge and has no status dropdown");
+  const k2 = kit(await mk({ settings: { hideWelcome: true } }));
+  k2.tab("projects"); setState(k2, "Vault", [...k2.d.querySelectorAll("#view li")].find(li => li.querySelector(".qlink") && li.querySelector(".qlink").textContent === "Sample Next Quest"));
+  k2.tab("vault");
+  ok(![...k2.d.querySelectorAll("#view li")].find(li => li.textContent.includes("Sample Next Quest")).querySelector(".chip.questcomplete"), "a quest that was not complete has no Complete badge in the Vault");
+}
+/* ---- Tasks page: in-place rows on a phone, scroll kept when Tasks is tapped ---- */
+{
+  const phone = q => ({ matches: q.includes("max-width: 639px"), media: q, addEventListener() {}, removeEventListener() {} });
+  const k = kit(await mk({ settings: { hideWelcome: true } }, false, undefined, undefined, phone));
+  k.tab("schedule");
+  const rows = () => [...k.d.querySelectorAll('#view [id^="ttask-"]')];
+  const openRows = () => rows().filter(li => li.querySelector(":scope > button.item").getAttribute("aria-expanded") === "true");
+  ok(!k.d.querySelector("#view .detailpane") && rows().length > 3 && openRows().length === 0, "on a phone the Tasks page has no detail pane and starts with every task closed");
+  const btnOf = li => li.querySelector(":scope > button.item");
+  k.click(btnOf(rows()[0]));
+  ok(openRows().length === 1 && !!rows()[0].querySelector(":scope > .detail") && rows().length > 3, "tapping a task opens it in place, and the list stays");
+  k.click(btnOf(rows()[1]));
+  ok(openRows().length === 1 && openRows()[0] === rows()[1] && !rows()[0].querySelector(":scope > .detail"), "opening another task closes the first");
+  k.click(btnOf(rows()[1]));
+  ok(openRows().length === 0 && !rows()[1].querySelector(":scope > .detail"), "tapping the open task closes it");
+  // Tasks tapped from an open task closes it and leaves the scroll where it was
+  const calls = []; k.w.scrollTo = (x, y) => calls.push(y);
+  Object.defineProperty(k.w, "pageYOffset", { value: 420, configurable: true });
+  k.click(btnOf(rows()[2]));
+  calls.length = 0;
+  k.tab("schedule");
+  ok(openRows().length === 0 && !calls.includes(0) && calls[calls.length - 1] === 420, "tapping Tasks from an open task closes it and keeps the scroll position (" + calls + ")");
+}
+{
+  // Wide: tapping Tasks with a task selected does not send the page back to the top either
+  const k = kit(await mk({ settings: { hideWelcome: true } }));
+  k.tab("schedule");
+  const rows = () => [...k.d.querySelectorAll('#view [id^="ttask-"]')];
+  k.click(rows()[2].querySelector(":scope > button.item"));
+  const selected = () => k.d.querySelector('#view .listpane [aria-current="true"]');
+  const before = selected().parentNode.id;
+  const calls = []; k.w.scrollTo = (x, y) => calls.push(y);
+  Object.defineProperty(k.w, "pageYOffset", { value: 380, configurable: true });
+  k.tab("schedule");
+  ok(!calls.includes(0) && selected().parentNode.id === before && !!k.d.querySelector("#view .detailpane .detail"), "on a wide screen, tapping Tasks keeps the scroll position and the selected task");
 }
 console.log(fails ? ("\n" + fails + " FAILED") : "\nALL PASSED");
 process.exit(fails ? 1 : 0);

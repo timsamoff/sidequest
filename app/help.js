@@ -44,13 +44,12 @@ setHelpOpener(openTermHelp);
 export function helpTopics() {
   return [
     ["How Sidequest works", [
-      "**Web and installed version:** Your quest data is stored in the browser and on the device you’re using. This means your data is available on that device, including when you’re offline. Installing Sidequest does not create a separate set of quests from the browser version.",
-      "**Backups:** If your browser’s local storage is cleared, you will lose all of your quest data, so back up your quests periodically.",
+      "**Web and installed version:** Your quest data is stored in the browser and on the device you’re using. This means your data is available on that device, whether you’re online or offline. Installing Sidequest does not create a separate set of quests from the browser version.",
+      ">**Backups:** If your browser’s local storage is cleared, you will lose all of your quest data, so back up your quests periodically.",
       "**Artifact version:** The Artifact version works as a Claude artifact or a Muse space. When you use Sidequest this way, your quest data is stored with your account. You can access your quests from the web, the app, or a mobile device where you’re signed in. You need an internet connection.",
       "**Artifact updates:** The Artifact version tells you when an update is available and how to install it without losing any data."
     ]],
     ["Terms", [
-      "{#active-quest}**Active quest:** A quest that has been promoted from a candidate. If it has scheduled tasks, it appears in the **In progress** section. Otherwise, it appears in the **Pending** section. See “Quests page”.",
       "{#actual}**Actual:** The burndown line showing the tasks you have left. See “Timeline page”.",
       "{#badge-added}**Added badge:** Marks a task added after the quest started. See “Inside a quest”.",
       "{#adventurer}**Adventurer:** Your contact information and brandmark, used on exports. See “Options page”.",
@@ -58,26 +57,25 @@ export function helpTopics() {
       "{#before-you-launch}**Before you launch:** The section that lists a quest’s **Launch critical** tasks. These tasks must be completed before launch. See “Inside a quest”.",
       "{#bounty}**Bounty:** The amount a quest pays. This does not appear on exports. See “Quest giver and Quest links”.",
       "{#candidate-quest}**Candidate quest:** A quest you’re considering but haven’t started. See “Quests page”.",
+      "{#complete}**Complete:** A quest you’ve finished. See “The quest lifecycle”.",
       "{#copy-ai-prompt}**Copy AI prompt:** Copies a prompt to paste into any AI chat. Describe your job, answer its questions, and the AI will generate a quest in JSON format. Results may vary depending on the AI tool you use. See “Quests page”.",
       "{#decision}**Decision:** A question attached to a step. Answering it completes the step. See “Inside a quest”.",
       "{#errand}**Errand:** One item on the **Errands** page. See “Errands page”.",
       "{#errands-deck}**Errands deck:** Incomplete errands you can add to your hand to give them higher priority. See “Errands page”.",
       "{#forecast}**Forecast:** The dotted burndown line estimating when you’ll finish. See “Timeline page”.",
-      "{#gathering-dust}**Gathering dust:** A badge for an active quest nobody has changed for a while. See “Options page”.",
+      "{#gathering-dust}**Gathering dust:** A badge for a quest in progress that nobody has changed for a while. See “Options page”.",
       "{#hand}**Your hand:** Choose up to three errands to keep in your hand. See “Errands page”.",
       "{#idea}**Idea:** A note in the **Workshop** that hasn’t become a quest. See “Workshop page”.",
       "{#ideal}**Ideal:** The burndown line showing your planned pace. See “Timeline page”.",
       "{#import-quest}**Import quest:** Imports a quest from an AI-generated JSON file or pasted text. Sidequest checks the quest, identifies problems by task, and adds it to Candidate quests once you confirm the import. See “Quests page”.",
-      "{#in-progress}**In progress:** An active quest with at least one incomplete task that has a due date. See “Quests page”.",
+      "{#in-progress}**In progress:** A quest you’re currently working on. See “Quests page”.",
       "{#issue}**Issue:** A problem associated with a quest, such as a bug. An issue doesn’t need a due date. See “Inside a quest”.",
       "{#launch-critical}**Launch critical:** A task that must be completed before launch. These tasks are grouped in the **Before you launch** section. See “Inside a quest”.",
       "{#make-candidate}**Make quest:** Turns an idea into a candidate quest. See “The quest lifecycle”.",
       "{#milestone}**Milestone:** A task with a date that appears on the **Timeline**. See “Inside a quest”.",
       "{#next-up}**Next up:** The earliest-starting incomplete task across all open quests. See “Today page”.",
-      "{#pending}**Pending:** An active quest with no incomplete tasks that have due dates. See “Quests page”.",
       "{#pin}**Pin:** Adds a shortcut to a quest in the sidebar. See “Quests page”.",
-      "{#prepared}**Prepared by and Prepared for:** The export’s letterhead, showing your information first and the Quest giver’s second. See “Quest giver and Quest links”.",
-      "{#promote-demote}**Promote and Demote:** **Promote** moves a candidate quest to active. **Demote** moves it back to candidate. See “The quest lifecycle”.",
+      "{#prepared}**Prepared by** and **Prepared for:** The export’s letterhead, showing your information first and the Quest giver’s second. See “Quest giver and Quest links”.",
       "{#quest}**Quest:** A project, from the initial idea through completion. See “The quest lifecycle”.",
       "{#quest-giver}**Quest giver:** The client or contact for this quest. See “Quest giver and Quest links”.",
       "{#quest-giver-export}**Quest giver export:** Creates a read-only, interactive web page you can share with your client. It includes everything entered in this quest except the **Bounty**. Choose which additional items to include in the export. See “Quest giver and Quest links”.",
@@ -100,10 +98,10 @@ export function helpTopics() {
       "**Undo:** Removing an item or sending it to the **Vault** shows an **Undo** button for a few seconds."
     ]],
     ["The quest lifecycle", [
-      "Ideas live in the **Workshop** until you’re ready to consider pursuing them. Making an idea a candidate quest moves it to the **Candidate quests** section on the **Quests** page.",
-      "A promoted quest is an active quest. It lands in **In progress** only if it has incomplete scheduled tasks. Otherwise it goes to **Pending**. You can later complete an active quest, demote it back to a candidate, or vault it.",
+      "Ideas stay in the **Workshop** until you’re ready to consider pursuing them. Making an idea a candidate quest moves it to the **Candidate quests** section on the **Quests** page.",
+      "When you’re ready to work on a candidate quest, choose **In progress** in its status dropdown. You can change a quest’s status in the dropdown beside its name, on its page or in its row on the **Quests** page. From the same dropdown, you can complete a quest in progress, change it back to a candidate, or vault any quest.",
       "If you already know what you want to pursue, you can create a candidate quest directly with the **+** button.",
-      "Finishing the last step of a task completes the task, and completing the last task of a quest (including its backlog tasks) completes the quest. You can also mark a task or quest complete manually. A quest has **Mark complete** and **Reopen** buttons on its page.",
+      "Finishing the last step of a task completes the task, and completing the last task of a quest (including its backlog tasks) completes the quest. You can also mark a task or quest complete manually. To complete a quest, choose **Complete** in its status dropdown. To reopen it, choose **In progress**.",
       ">An open issue doesn’t prevent a quest from being completed unless it’s launch critical or has a due date.",
       "The **Vault** stores old ideas and quests, either permanently or for a specified period of time (see the **Options** section for more)."
     ]],
@@ -111,14 +109,13 @@ export function helpTopics() {
       "The **Today** page shows your most pressing task, and any overdue tasks. The **Burndown** chart shows how many tasks remain in all open quests (see the **Timeline** page for more). The **Stats** section displays all remaining and backlogged tasks."
     ]],
     ["Quests page", [
-      "**In progress:** This section lists the quests you’re working on. Each quest appears as a row with its name, its next scheduled task and that task’s start date, and the number of incomplete scheduled tasks it has left. If the quest has open issues, the row shows their count.",
-      ">Rows are ordered by the start date of each quest’s next task, from earliest to latest. A quest appears here only if it has incomplete scheduled tasks. Backlog tasks don’t count.",
-      "**Pending:** These are promoted quests with no incomplete scheduled tasks. This includes new quests with no tasks, and quests whose only open tasks are backlogged. When it has an incomplete task with a due date, a quest moves up to **In progress**.",
+      "**In progress:** This section lists the quests you’re working on. Each quest appears as a row with its name, its next scheduled task and that task’s start date, and the number of incomplete scheduled tasks it has left. If the quest has open issues, the row shows their count. A quest with no scheduled tasks says so.",
+      ">Rows are ordered by the start date of each quest’s next task, from earliest to latest. Quests with no scheduled tasks come last.",
       "**Completed:** This section lists completed quests.",
-      "**Candidate quests:** These are quests you’re considering but aren’t working on. You can demote an active quest back to a candidate quest in the **Quest details**. Before promoting a candidate quest, you can add tasks, steps, and decisions to it.",
-      ">A candidate quest keeps the links it had when it was demoted.",
-      "**New quest, Copy AI prompt, and Import quest:** These buttons appear to the right of the **Candidate quests** heading. **New quest** opens the same dialog as the **+** button. **Copy AI prompt** copies a prompt to use in any AI chat. Results may vary depending on the AI tool you use. **Import quest** loads the JSON file the AI generates and adds the quest to **Candidate quests** for review.",
-      "**Pinned quests:** You can pin in progress, pending, and completed quests that are still on the **Quests** page. Pinning places a shortcut to that quest in the sidebar (or the **Main menu** on mobile). Completing a quest unpins it automatically. Reopening a formerly pinned quest restores the pin."
+      "**Candidate quests:** These are quests you’re considering but aren’t working on. Their tasks stay on the quest’s page and are left out of **Today**, **Tasks**, **Timeline**, and the burndown. A candidate quest can’t be pinned. Before you start one, you can add tasks, steps, and decisions to it. Choose **In progress** in its status dropdown to move it there, or choose **Candidate** in the dropdown of a quest in progress to move it back.",
+      ">A candidate quest keeps the links it had when it was moved back to **Candidate**.",
+      "**New quest**, **Copy AI prompt**, and **Import quest:** These buttons appear to the right of the **Candidate quests** heading. **New quest** opens the same dialog as the **+** button. **Copy AI prompt** copies a prompt to use in any AI chat. Results may vary depending on the AI tool you use. **Import quest** loads the JSON file the AI generates and adds the quest to **Candidate quests** for review.",
+      "**Pinned quests:** Only quests in progress can be pinned. Pinning places a shortcut to the quest in the sidebar (or the **Main menu** on mobile). Changing a quest’s status to **Candidate** or **Complete** removes its pin. Reopening a completed quest that was previously pinned restores the pin."
     ]],
     ["Inside a quest", [
       "**Quest details:** Tapping a quest title on the **Quests** page opens the quest details for editing.",
@@ -139,10 +136,10 @@ export function helpTopics() {
     ]],
     ["Quest giver and Quest links", [
       "**Quest giver:** The Quest giver is the client for a quest. You can also enter a **Bounty** (a monetary value), either as an hourly rate or a fixed payment for the quest.",
-      "**Quest giver export:** Includes everything entered in the quest except the **Bounty** and creates a read-only, interactive web page you can share with the client. Before exporting, you can choose whether to include **Prepared by** (your contact information and brandmark), quest issues, or both. Included issues appear in their own **Issues** section, with their statuses and notes, rather than in the task list. The export button appears at the bottom of in-progress, completed, or vaulted quest’s details, but not on candidate quests.",
-      "**Quest links:** When a job requires more than one quest, link them. Use **Link quest** to link a quest to any quest that is in progress, pending, or completed.",
+      "**Quest giver export:** Includes everything entered in the quest except the **Bounty** and creates a read-only, interactive web page you can share with the client. Before exporting, you can choose whether to include **Prepared by** (your contact information and brandmark), quest issues, or both. Included issues appear in their own **Issues** section, with their statuses and notes, rather than in the task list. The export button appears at the bottom of the details for quests in progress, completed, or vaulted, but not on candidate quests.",
+      "**Quest links:** When a job requires more than one quest, link them. Use **Link quest** to link a quest to any quest that is in progress or completed.",
       ">A candidate quest can add links the same way, but other quests can’t link to a candidate quest. Links to a candidate or vaulted quest show as plain text, and you can follow links to other quests.",
-      ">Vaulting or demoting a quest keeps its links, and promoting or restoring it makes them active again."
+      ">Vaulting a quest or moving it back to **Candidate** keeps its links. Moving it to **In progress** or restoring it makes them work again."
     ]],
     ["A quest’s Schedule and Timeline", [
       "**Schedule:** Quests can have start and due dates, and stretch of work durations (see the **Options** section for more). A quest’s start and due dates divide its total time into stretches of work.",
@@ -176,17 +173,17 @@ export function helpTopics() {
       "**Delete forever:** Permanently deletes an errand. Select **Undo** right away to restore it."
     ]],
     ["Workshop page", [
-      "All ideas live here. Use them to think through new quests or prospects. You can either select **Make quest** to turn an idea into a candidate quest or **Vault** it."
+      "All ideas are stored here. Use them to think through new quests or prospects. You can either select **Make quest** to turn an idea into a candidate quest or **Vault** it."
     ]],
     ["Vault page", [
-      "The **Vault** is a place to store ideas and quests you’re no longer actively working with but may want to keep. You can use **Restore** or **Delete forever** on vaulted items. You can also choose to have the **Vault** automatically delete old items after a set period."
+      "The **Vault** is a place to send ideas and quests you’re no longer actively working with but may want to keep. You can use **Restore** or **Delete forever** on vaulted items. You can also choose to have the **Vault** automatically delete old items after a set period."
     ]],
     ["Options page", [
       "**Adventurer:** This is where you can add your contact information and brandmark or logo. You can choose whether or not to include it when creating a **Quest giver export**.",
       "**Schedule defaults:** Set the default length of a **stretch of work**. You can adjust the stretch duration for individual quests.",
       ">You can also choose what to call a stretch of work: Block, Sprint, Iteration, Phase, or Week.",
-      ">**Warn when active quests exceed:** Set the number of active quests you want to allow at a time. If you try to promote another candidate quest past that number, Sidequest warns you, and you can bypass the warning.",
-      ">**Quests begin gathering dust after:** Set how long an active quest can go without progress before it displays a **Gathering dust** badge.",
+      ">**Warn when quests in progress exceed:** Set the maximum number of quests you want to have in progress at a time. If you try to move another quest to **In progress** beyond that number, Sidequest warns you. You can still proceed.",
+      ">**Quests begin gathering dust after:** Set how long a quest in progress can go without progress before it displays a **Gathering dust** badge.",
       "**Appearance and formats:** These settings include **Date format**, **Coin format** (1,234.56 or 1.234,56), **Splash screen on open** (on/off), **Theme** (light and dark mode), **Animated burndown** (on/off), **Animated reroll** (on/off), **Completion effects** (on/off), and **Sound effects** (on/off).",
       "**Vault:** Set how long the **Vault** keeps items before it deletes them: never, or after 7, 30, 60, or 90 days.",
       "**Install Sidequest:** If you’re using Sidequest on the web, you can install it to your device. iPhones and iPads don’t show this button: in Safari, Chrome, or Firefox, tap **Share**, then **Add to Home Screen**. The installed version works offline and displays a **Refresh** button in the top bar.",

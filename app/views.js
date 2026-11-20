@@ -3,11 +3,11 @@ import { go, openTask, renderView } from "./app.js";
 import { drawChart, drawQuestChart, rangeBlock } from "./chart.js";
 import { DAY, TODAY, fmt, fmtY, iso, parseISO } from "./dates.js";
 import { ideaDialog, questDialog } from "./dialogs.js";
-import { $, el, helpLink, isHosted, notify, on, scrollTop, uid } from "./dom.js";
+import { $, el, helpLink, isHosted, isNarrow, notify, on, scrollTop, uid } from "./dom.js";
 import { backupControls, backupReminderDue, daysSinceBackup } from "./files.js";
-import { deleteForever, emptyVault, promoteToActive, removeToVault, restoreEntry, vaultEntries } from "./lifecycle.js";
+import { deleteForever, emptyVault, questStatusSelect, removeToVault, restoreEntry, vaultEntries } from "./lifecycle.js";
 import { questNameTaken, activeQuests, backlogTasks, candidateQuests, checkpointStep, checkpoints, counted, dispQuest, findQuest, findTask, fmtHours, globalActual, isClosed, isDusty, isLate, isPinned, lateTasks, live, liveQuests, nextTask, openIssues, ordered, pinPage, planCounted, planned, pset, questMeta, questRemainingUnits, questTotalUnits, remainingUnits, short, taskEnd, taskStart, totalUnits, unpinPage, validPage, wl } from "./model.js";
-import { addRowControls, buildDetail } from "./quest-page.js";
+import { addRowControls, buildDetail, setRowOpen } from "./quest-page.js";
 import { APP_VERSION, changed, makeQuest, quest, releaseFileUrl, save, state, ui } from "./state.js";
 import { startTutorial } from "./tutorial.js";
 
@@ -224,10 +224,19 @@ export function backupReminder() {
   return box;
 }
 
+// On a phone a task opens and closes in place, one at a time, like a task on its quest's page.
+function toggleTaskRow(t, li) {
+  var prev = ui.sel, open = prev !== t.id;
+  if (open && prev) { var pli = document.getElementById("ttask-" + prev), pt = findTask(prev); if (pli && pt) setRowOpen(pli, pt, false, false); }
+  ui.sel = open ? t.id : null; ui.detail = open;
+  setRowOpen(li, t, open, false);
+}
 export function taskRow(t) {
-  var li = el("li");
+  var narrow = isNarrow(), open = narrow && t.id === ui.sel;
+  var li = el("li", { id: "ttask-" + t.id });
   var b = el("button", { type: "button", "class": "item" + (isClosed(t) ? " done" : ""), title: "View this task" });
-  if (t.id === ui.sel) b.setAttribute("aria-current", "true");
+  if (narrow) b.setAttribute("aria-expanded", open ? "true" : "false");
+  else if (t.id === ui.sel) b.setAttribute("aria-current", "true");
   var l1 = el("div", { "class": "l1 split" }), l1t = el("span"); l1t.appendChild(el("b", null, dispQuest(t)));
   if (t.block !== 0) l1t.appendChild(document.createTextNode(" · " + fmt(taskStart(t)) + " to " + fmt(taskEnd(t))));
   l1.appendChild(l1t);
@@ -245,8 +254,10 @@ export function taskRow(t) {
   stepsAndEst(l3, t);
   if (isLate(t)) l3.appendChild(el("span", { "class": "badge" }, "Overdue"));
   if (l3.childNodes.length) b.appendChild(l3);
-  on(b, "click", function () { ui.sel = t.id; ui.detail = true; renderView(); scrollTop(); });
-  li.appendChild(b); addRowControls(li, t); return li;
+  on(b, "click", function () { if (narrow) toggleTaskRow(t, li); else { ui.sel = t.id; ui.detail = true; renderView(); scrollTop(); } });
+  li.appendChild(b); addRowControls(li, t);
+  if (open) li.appendChild(buildDetail(t, true, false));
+  return li;
 }
 
 // A one-line empty state in the same card the lists use.
@@ -262,8 +273,11 @@ export function renderSchedule(root) {
     root.appendChild(emptyList(planCounted().length ? "No open tasks. A completed quest’s tasks stay on that quest’s page." : "No tasks yet. Use the + button to add one."));
     return;
   }
-  if (!ui.sel || !findTask(ui.sel)) { var nt = nextTask() || o[0] || bl[0]; ui.sel = nt.id; }
-  var split = el("div", { "class": "split" + (ui.detail ? " detail-open" : "") });
+  // A phone starts with every task closed; a wide screen always shows one in the pane.
+  var narrow = isNarrow();
+  if (narrow) { if (ui.sel && !findTask(ui.sel)) ui.sel = null; }
+  else if (!ui.sel || !findTask(ui.sel)) { var nt = nextTask() || o[0] || bl[0]; ui.sel = nt.id; }
+  var split = el("div", { "class": "split" + (!narrow && ui.detail ? " detail-open" : "") });
   var lp = el("div", { "class": "listpane" });
   var ul = el("ul", { "class": "tlist" });
   if (!o.length) ul.appendChild(el("li", { "class": "plain" }, "Nothing is scheduled. Choose a " + wl() + " for an item in the Backlog."));
@@ -276,12 +290,16 @@ export function renderSchedule(root) {
     bl.forEach(function (t) { bul.appendChild(taskRow(t)); });
     lp.appendChild(bul);
   }
+  split.appendChild(lp); root.appendChild(split);
+  if (narrow) return;
   var dp = el("div", { "class": "detailpane" }); dp.appendChild(buildDetail(findTask(ui.sel)));
-  split.appendChild(lp); split.appendChild(dp); root.appendChild(split);
+  split.appendChild(dp);
   // A pane taller than the window scrolls with the page until its bottom shows, then pins.
   dp.style.top = Math.min(84, window.innerHeight - dp.offsetHeight - 16) + "px";
 }
 
+// The status dropdown in its own cell, so a narrow row can center it on the title's first two lines (styles.css).
+function statusCell(q) { var c = el("div", { "class": "qsel" }); c.appendChild(questStatusSelect(q, "queststatus-" + q.id)); return c; }
 // Pin/Unpin for a quest, shared by In progress and the Quests list.
 export function questPinButton(key, name) {
   var pinned = isPinned(key);
@@ -292,25 +310,28 @@ export function dustChip() { return el("span", { "class": "chip dust", style: "m
 
 export function questRow(r) {
   var li = el("li", { "data-quest": r.id }), row = el("div", { "class": "crow oneline" });
-  var nm = el("div", { style: "flex:1 1 200px" });
+  var nm = el("div", { "class": "qname" }), title = el("div", { "class": "qtitle" });
   var link = el("button", { type: "button", "class": "textbtn qlink", style: "font-weight:600", title: "View this quest" }, r.name);
   on(link, "click", function () { go(r.key); });
-  nm.appendChild(link);
-  if (r.complete) nm.appendChild(el("span", { "class": "chip questcomplete", style: "margin-left:8px" }, "Complete"));
+  title.appendChild(link);
   var rq = findQuest(r.key.slice(6));
-  if (rq && isDusty(rq)) nm.appendChild(dustChip());
+  if (rq && isDusty(rq)) title.appendChild(dustChip());
+  nm.appendChild(title);
   nm.appendChild(el("p", { "class": "hint", style: "margin-top:2px" }, r.meta));
   row.appendChild(nm);
-  var acts = el("div", { "class": "li-actions" });
-  acts.appendChild(questPinButton(r.key, r.name));
+  var acts = el("div", { "class": "li-actions stack" });
+  var sq = findQuest(r.key.slice(6));
+  if (sq) acts.appendChild(statusCell(sq));
+  // A completed quest is unpinned when it completes, so it has no Pin button.
+  if (!r.complete) acts.appendChild(questPinButton(r.key, r.name));
   row.appendChild(acts);
   li.appendChild(row);
   return li;
 }
 
-// Quests that are not In progress and not Candidates: Pending (Active with no open tasks yet) and Completed.
+// Quests that are not In progress and not Candidates: the Completed ones.
 export function questRowsOutsideProgress(excludeIds) {
-  return liveQuests().filter(function (p) { return p.status !== "candidate" && (!excludeIds || excludeIds.indexOf(p.id) < 0); }).map(function (p) { return { id: p.id, key: "quest:" + p.id, name: p.name, meta: questMeta(p), complete: p.status === "complete" }; });
+  return liveQuests().filter(function (p) { return p.status === "complete" && (!excludeIds || excludeIds.indexOf(p.id) < 0); }).map(function (p) { return { id: p.id, key: "quest:" + p.id, name: p.name, meta: questMeta(p), complete: p.status === "complete" }; });
 }
 
 // Puts a "?" button inside a heading, after its text.
@@ -325,20 +346,23 @@ export function questListSection(title, rows, first, term) {
   return sec;
 }
 
-export function pendingSection(rows, first) { return questListSection("Pending", rows, first, ["pending", "Pending"]); }
-
 export function completedSection(rows, first) { return questListSection("Completed", rows, first); }
 
 export function standingBlock() {
+  // Every Active quest is In progress, whether or not it has open dated tasks.
   var groups = {}, order = [];
+  activeQuests().forEach(function (q) { var g = { questId: q.id, name: q.name, open: 0, first: null }; groups[q.id] = g; order.push(g); });
   ordered().forEach(function (t) {
     if (isClosed(t)) return;
-    var quest = findQuest(t.questId);
-    if (!quest || quest.status !== "active") return;
-    var g = groups[t.questId]; if (!g) { g = groups[t.questId] = { questId: t.questId, name: dispQuest(t), open: 0, first: t }; order.push(g); }
-    g.open++;
+    var g = groups[t.questId]; if (!g) return;
+    g.open++; if (!g.first) g.first = t;
   });
-  order.sort(function (a, b) { return taskStart(a.first) - taskStart(b.first); });
+  // Quests with a next task come first, soonest first; the rest follow by name.
+  order.sort(function (x, y) {
+    if (x.first && y.first) return taskStart(x.first) - taskStart(y.first);
+    if (x.first || y.first) return x.first ? -1 : 1;
+    return x.name < y.name ? -1 : x.name > y.name ? 1 : 0;
+  });
   var questIds = order.map(function (g) { return g.questId; });
   if (!order.length) return { node: null, questIds: questIds };
   var wrap = el("div");
@@ -346,20 +370,27 @@ export function standingBlock() {
   var box = el("div", { "class": "box", style: "margin-top:10px" });
   var ul = el("ul", { "class": "standing" });
   order.forEach(function (g) {
-    var li = el("li", { "data-quest": g.questId }), row = el("div", { "class": "srow" }), textWrap = el("div", { style: "flex:1 1 200px" });
+    var li = el("li", { "data-quest": g.questId }), row = el("div", { "class": "srow" }), textWrap = el("div", { "class": "qname" });
     var nm = el("button", { type: "button", "class": "textbtn qlink", title: "View this quest" }, g.name);
     on(nm, "click", function () { go(validPage("quest:" + g.questId) ? "quest:" + g.questId : "projects"); });
-    textWrap.appendChild(nm);
+    var qt = el("div", { "class": "qtitle" }); qt.appendChild(nm); textWrap.appendChild(qt);
     var dq = findQuest(g.questId);
-    if (dq && isDusty(dq)) textWrap.appendChild(dustChip());
-    var nx = el("div", { "class": "snext" }), oi = openIssues(g.questId).length; nx.appendChild(document.createTextNode("Next up: "));
-    var tl = el("button", { type: "button", "class": "textbtn", title: "View this task" }, short(g.first.what, 90));
-    on(tl, "click", function () { openTask(g.first.id); });
-    nx.appendChild(tl);
+    if (dq && isDusty(dq)) qt.appendChild(dustChip());
+    var nx = el("div", { "class": "snext" }), oi = openIssues(g.questId).length;
+    var issues = oi ? " · " + oi + " open " + (oi === 1 ? "issue" : "issues") : "";
+    if (g.first) {
+      nx.appendChild(document.createTextNode("Next up: "));
+      var tl = el("button", { type: "button", "class": "textbtn", title: "View this task" }, short(g.first.what, 90));
+      on(tl, "click", function () { openTask(g.first.id); });
+      nx.appendChild(tl);
+      // The date and counts follow Next up on a wide screen and take their own line on a narrow one (styles.css).
+      nx.appendChild(el("span", { "class": "sdetail" }, fmt(taskStart(g.first)) + " · " + g.open + " open " + (g.open === 1 ? "task" : "tasks") + issues));
+    } else nx.appendChild(el("span", { "class": "sdetail alone" }, "No scheduled tasks" + issues));
     textWrap.appendChild(nx);
-    // The date and counts follow Next up on a wide screen and take their own line on a narrow one (styles.css).
-    nx.appendChild(el("span", { "class": "sdetail" }, fmt(taskStart(g.first)) + " · " + g.open + " open " + (g.open === 1 ? "task" : "tasks") + (oi ? " · " + oi + " open " + (oi === 1 ? "issue" : "issues") : "")));
-    row.appendChild(textWrap); row.appendChild(questPinButton("quest:" + g.questId, g.name));
+    var acts = el("div", { "class": "li-actions stack" });
+    if (dq) acts.appendChild(statusCell(dq));
+    acts.appendChild(questPinButton("quest:" + g.questId, g.name));
+    row.appendChild(textWrap); row.appendChild(acts);
     li.appendChild(row); ul.appendChild(li);
   });
   box.appendChild(ul); wrap.appendChild(box);
@@ -379,19 +410,15 @@ export function candidatesSection(first) {
   if (!cs.length) list.appendChild(el("li", { "class": "hint" }, "No candidate quests yet. Start one with the + button."));
   cs.forEach(function (cd) {
     var li = el("li", { "data-quest": cd.id }), row = el("div", { "class": "crow oneline" });
-    var nmWrap = el("div", { style: "flex:1 1 200px" });
+    var nmWrap = el("div", { "class": "qname" });
     var nm = el("button", { type: "button", "class": "textbtn qlink", title: "View this candidate" }, cd.name);
     on(nm, "click", function () { go("quest:" + cd.id); });
-    nmWrap.appendChild(nm);
+    var ct = el("div", { "class": "qtitle" }); ct.appendChild(nm); nmWrap.appendChild(ct);
     if (cd.notes) nmWrap.appendChild(el("p", { "class": "cnote notetext noteclamp", style: "margin-left:0" }, cd.notes));
     row.appendChild(nmWrap);
-    var acts = el("div", { "class": "li-actions" });
-    var pr = el("button", { type: "button", "class": "small", title: "Promote to quest" }, "Promote");
-    on(pr, "click", function () { promoteToActive(cd.id); });
-    acts.appendChild(pr);
-    var rm = el("button", { type: "button", "class": "small danger", title: "Send this candidate to the Vault" }, "Vault");
-    on(rm, "click", function () { removeToVault(cd, "Quest"); });
-    acts.appendChild(rm); row.appendChild(acts); li.appendChild(row);
+    var acts = el("div", { "class": "li-actions stack" });
+    acts.appendChild(statusCell(cd));
+    row.appendChild(acts); li.appendChild(row);
     list.appendChild(li);
   });
   sec.appendChild(list);
@@ -401,13 +428,11 @@ export function candidatesSection(first) {
 export function renderQuests(root) {
   var standing = standingBlock();
   var rows = questRowsOutsideProgress(standing.questIds);
-  var pending = rows.filter(function (r) { return !r.complete; }), complete = rows.filter(function (r) { return r.complete; });
   var first = true;
   function lead() { var f = first; first = false; return f; }
   if (standing.node) { root.appendChild(standing.node); first = false; }
-  if (pending.length) root.appendChild(pendingSection(pending, lead()));
   root.appendChild(candidatesSection(lead()));
-  if (complete.length) root.appendChild(completedSection(complete, false));
+  if (rows.length) root.appendChild(completedSection(rows, false));
 }
 
 // Each idea carries the offsets and curl size it was given when it was created (newPin in dom.js).
@@ -528,6 +553,7 @@ export function renderVault(root) {
       info.appendChild(tl);
     } else info.appendChild(el("span", { style: "font-weight:600" }, e.title));
     info.appendChild(el("span", { "class": "chip", style: "margin-left:8px" }, KIND_LABEL[e.kind]));
+    if (e.kind === "quest" && e.item.status === "complete") info.appendChild(el("span", { "class": "chip questcomplete", style: "margin-left:8px" }, "Complete"));
     info.appendChild(el("p", { "class": "hint", style: "margin-top:4px" }, (e.item.vault.why === "done" ? "Completed " : "Vaulted ") + fmtY(parseISO(e.item.vault.at))));
     row.appendChild(info);
     var acts = el("div", { "class": "li-actions" });

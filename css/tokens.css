@@ -28,6 +28,9 @@
   --space-26: 26px;
   --space-30: 30px;
   --control-min: 34px;
+  --control-small: 32px;
+  /* The height a small button renders at; status dropdowns match it. */
+  --control-select: 36px;
   /* Corner radii, named by role rather than size. */
   --radius-track: 4px;
   --radius-input: 6px;

@@ -7,8 +7,8 @@ import { phoneField } from "./phone.js";
 import { autosize, emailField, editInline, el, formatMoney, helpLink, moneyInput, notify, on, pencilButton, playSfx, scrollToRow, setFocusKey, uid, setMsg } from "./dom.js";
 import { buildExportSnapshot, exportFileName, exportHasIssues, exportSides, renderExportDocument } from "./export.js";
 import { saveFile } from "./files.js";
-import { completionDialog, demoteToCandidate, promoteToActive, removeNow, removeToVault, restoreEntry, vaultQuest } from "./lifecycle.js";
-import { blockForDate, dateProblems, decisionFor, dispQuest, estimateWarning, findQuest, fmtHoursLong, isClosed, isDusty, isLate, isPinned, launchItems, linkedQuests, liveQuests, pset, questEstimate, questMeta, questTasks, setStatus, short, sortTasks, syncFromSteps, taskEnd, taskStart, unlinkQuests, wd, wl } from "./model.js";
+import { removeNow, restoreEntry } from "./lifecycle.js";
+import { blockForDate, dateProblems, decisionFor, dispQuest, estimateWarning, findQuest, fmtHoursLong, isClosed, isDusty, isLate, launchItems, linkedQuests, liveQuests, pset, questEstimate, questMeta, questTasks, setStatus, short, sortTasks, syncFromSteps, taskEnd, taskStart, unlinkQuests, wd, wl } from "./model.js";
 import { STATUSES, UNPURSUED, changed, isISO, save, state, ui } from "./state.js";
 import { addedChip, burnParts, stepsAndEst, wireMilestoneDiamonds, withHelp } from "./views.js";
 
@@ -71,7 +71,7 @@ export function addRowControls(li, t) {
   li.classList.add("hasstatus"); li.appendChild(sel);
 }
 // Shows or hides one row's detail without a redraw, so no scroll correction is needed. Keeps one row open per quest.
-function setRowOpen(li, t, open, readOnly) {
+export function setRowOpen(li, t, open, readOnly) {
   var b = li.querySelector(".item"), d = li.querySelector(".detail");
   if (b) b.setAttribute("aria-expanded", open ? "true" : "false");
   if (open && !d) li.appendChild(buildDetail(t, true, readOnly));
@@ -465,7 +465,6 @@ export function renderQuestPage(root, id) {
   // Active/complete: two columns (page content left, Schedule/Timeline/Burndown right), stacked on a phone.
   var page = root, split = null;
   var metaLine = el("p", { "class": "hint" });
-  if (p.status === "complete") metaLine.appendChild(el("span", { "class": "chip questcomplete", style: "margin-right:8px" }, "Complete"));
   if (isDusty(p)) metaLine.appendChild(el("span", { "class": "chip dust", style: "margin-right:8px", title: "No activity for a while" }, "Gathering dust"));
   metaLine.appendChild(document.createTextNode(questMeta(p)));
   if (!readOnly) {
@@ -474,6 +473,7 @@ export function renderQuestPage(root, id) {
     root = el("div", { "class": "questmain" });
     split.appendChild(root); page.appendChild(split);
   } else {
+    if (p.status === "complete") metaLine.insertBefore(el("span", { "class": "chip questcomplete", style: "margin-right:8px" }, "Complete"), metaLine.firstChild);
     root.appendChild(metaLine);
     root.appendChild(el("p", { "class": "hint" }, "In the Vault. Restore it to make changes."));
   }
@@ -494,7 +494,7 @@ export function renderQuestPage(root, id) {
   metaRow.appendChild(metaLine);
   if (est.total > 0) metaRow.appendChild(el("span", { "class": "hint estleft" }, "Est. " + fmtHoursLong(est.left) + " remaining"));
   tsec.appendChild(metaRow);
-  if (!readOnly && p.status === "complete") tsec.appendChild(el("p", { "class": "hint" }, "Its tasks are not included in Tasks, Timeline, or Today while this quest is Complete. Reopen it to bring them back."));
+  if (!readOnly && p.status === "complete") tsec.appendChild(el("p", { "class": "hint" }, "Its tasks are not included in Tasks, Timeline, or Today while this quest is Complete. Set its status to In progress to bring them back."));
   // questTasks(), not ordered()/backlogTasks()/live() -- a quest's page keeps
   // showing its tasks even while Complete or vaulted, when cross-quest lists exclude them.
   var shownTs = visibleItems(p, "tasks", ts);
@@ -595,36 +595,11 @@ export function renderQuestPage(root, id) {
     root.appendChild(xa);
   }
 
+  // The status dropdown is in the page title row (app.js); only a vaulted quest needs a button here.
   var ar = el("div", { "class": "actions questactions", style: "margin-top:14px" });
-  if (readOnly) {
-    ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Bring back to Quests" }, "Restore"), "click", function () { restoreEntry({ kind: "quest", list: "quests", item: p }); }));
-  } else if (p.status === "candidate") {
-    ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Promote to quest" }, "Promote"), "click", function () { promoteToActive(p.id); }));
-    ar.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Send this candidate to the Vault" }, "Vault"), "click", function () { removeToVault(p, "Quest"); }));
-  } else {
-    if (p.status === "active") {
-      ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Mark complete" }, "Mark complete"), "click", function () {
-        // Manual path, equal in standing to the auto-trigger, not a fallback.
-        p.status = "complete"; changed(); completionDialog(p);
-      }));
-      ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Send this quest back to Candidates" }, "Demote"), "click", function () { demoteToCandidate(p.id); }));
-    } else if (p.status === "complete") {
-      // No auto-revert -- Reopen is the only way back to Active.
-      ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Reopen this quest" }, "Reopen"), "click", function () {
-        p.status = "active";
-        // Lets sweepQuestCompletion() skip this quest once, so reopening one
-        // whose tasks are all still Completed doesn't immediately re-fire it.
-        p.justReopened = true;
-        // Restore a pin completionDialog() auto-removed on completion.
-        if (p.wasPinned) { var key = "quest:" + p.id; if (!isPinned(key)) state.pins.push(key); p.wasPinned = false; }
-        changed(); notify("Reopened.");
-        if (state.settings.audio) playSfx("../assets/sfx/quest.mp3");
-      }));
-    }
-    ar.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Send this quest to the Vault" }, "Vault"), "click", function () { vaultQuest(p); }));
-  }
+  if (readOnly) ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Bring back to Quests" }, "Restore"), "click", function () { restoreEntry({ kind: "quest", list: "quests", item: p }); }));
   // Sits outside .questmain so it renders last when stacked; CSS puts it back under the left column on wide screens.
-  if (split) { split.appendChild(questChartsPanel(p)); split.appendChild(ar); } else { root.appendChild(ar); }
+  if (split) { split.appendChild(questChartsPanel(p)); if (ar.firstChild) split.appendChild(ar); } else { root.appendChild(ar); }
 }
 
 // `first` zeroes the heading's top margin; `extraBtn` rides its heading row.

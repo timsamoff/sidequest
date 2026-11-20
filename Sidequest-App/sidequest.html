@@ -38,6 +38,9 @@
   --space-26: 26px;
   --space-30: 30px;
   --control-min: 34px;
+  --control-small: 32px;
+  /* The height a small button renders at; status dropdowns match it. */
+  --control-select: 36px;
   /* Corner radii, named by role rather than size. */
   --radius-track: 4px;
   --radius-input: 6px;
@@ -326,6 +329,7 @@ button[data-armed="1"] { border-color: var(--late); color: var(--late); }
 .hbody ul { list-style: none; margin: 0; padding: 0; }
 .hbody li { position: relative; padding-left: var(--space-18); margin-top: var(--space-6); }
 .hbody li::before { content: ""; position: absolute; left: 0; top: .6em; width: 7px; height: 7px; background: var(--brass); border-radius: 1px; transform: rotate(45deg); }
+.hbody li li::before { box-sizing: border-box; background: transparent; border: 1.5px solid var(--brass); }
 /* Bold text inside a Field guide section is the dark blue; the section headings stay as they are. */
 .hbody b, .hbody strong { color: var(--planned); }
 kbd { font: inherit; font-size: .9em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 var(--space-6); background: var(--bg); }
@@ -339,6 +343,7 @@ kbd { font: inherit; font-size: .9em; border: 1px solid var(--line); border-bott
 .qlink:hover, .qlink:focus-visible { text-decoration: underline; }
 .snext { margin-top: var(--space-2); color: var(--muted); font-size: var(--text-sm); }
 .snext .sdetail::before { content: " · "; }
+.snext .sdetail.alone::before { content: none; }
 @media (max-width: 639px) { .snext .sdetail { display: block; } .snext .sdetail::before { content: none; } }
 .tbleft { display: flex; align-items: center; gap: var(--space-10); min-width: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -499,7 +504,7 @@ select.status { border: 1px solid var(--line); border-radius: var(--radius-contr
 /* A task row's status pulldown sits beside the row's button, on the title line; alignStatuses() sets its top. */
 /* The row is the container, so a narrow column on a wide screen gets the compact layout too. */
 .tlist li.hasstatus { position: relative; container-type: inline-size; }
-select.rowstatus { position: absolute; top: calc(var(--row-l2, 40px) - 1px); right: var(--space-14); z-index: 1; width: 124px; min-height: 32px; padding: var(--space-2) var(--space-10); font-size: var(--text-sm); }
+select.rowstatus { position: absolute; top: calc(var(--row-l2, 40px) - 3px); right: var(--space-14); z-index: 1; width: 124px; min-height: var(--control-select); padding: var(--space-2) var(--space-10); font-size: var(--text-sm); }
 button.rowpencil { position: absolute; z-index: 1; top: calc(var(--row-l2, 40px) - 3px); right: calc(var(--space-14) + 132px); }
 .tlist li.hasstatus > .item .l2 { padding-right: 172px; }
 /* The pencil stays beside the pulldown at every width; a narrow row only shrinks the pulldown and lets the title take a third line. */
@@ -541,7 +546,7 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; margin:
 /* prefers-reduced-motion's blanket `animation: none !important` rule already
    covers this -- the icon just jumps straight to reloading instead of spinning. */
 #refreshBtn.spinning svg { animation: spin .6s linear infinite; }
-.toast .toastbtn { background: transparent; border: 1px solid currentColor; color: inherit; min-height: 32px; padding: var(--space-2) var(--space-12); }
+.toast .toastbtn { background: transparent; border: 1px solid currentColor; color: inherit; min-height: var(--control-small); padding: var(--space-2) var(--space-12); }
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-8); margin-top: var(--space-12); }
 .chipbtn { border-radius: var(--radius-control); min-height: 36px; padding: var(--space-4) var(--space-14); }
 .chipbtn[aria-pressed="true"] { background: var(--sel); border-color: var(--planned); color: var(--planned); font-weight: 600; }
@@ -632,6 +637,18 @@ html { scrollbar-gutter: stable; }
 .handfoot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-12); margin-top: var(--space-14); position: sticky; bottom: calc(-1 * var(--space-20)); margin-bottom: calc(-1 * var(--space-20)); padding: var(--space-12) 0 var(--space-20); background: var(--surface); border-top: 1px solid var(--line); z-index: 2; }
 .handfoot .handcount { margin: 0; }
 .li-actions { display: flex; gap: var(--space-8); align-items: center; }
+/* A quest row's status dropdown sits left of its Pin button, both at the right edge. */
+.li-actions.stack { margin-left: auto; }
+.qname { flex: 1 1 200px; }
+/* Narrow: the dropdown and Pin stack at the right edge, centered in the row with 20px between them (about 48px on a phone screenshot). */
+@media (max-width: 639px), (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (not (pointer: coarse)) {
+  .srow:has(.li-actions.stack) > .qname, .crow:has(.li-actions.stack) > .qname { flex-basis: 120px; min-width: 0; }
+  .li-actions.stack { flex-direction: column; align-items: flex-end; gap: var(--space-20); }
+  .li-actions.stack select { font-size: 16px; }
+}
+select.status.questsel { width: auto; min-height: var(--control-select); padding: var(--space-2) var(--space-10); font-size: var(--text-sm); flex: none; }
+/* In the page title row the dropdown stays at the right edge of the row. */
+.titlerow select.questsel { margin-left: auto; }
 .dq { font-weight: 500; }
 .dstate { font-size: var(--text-sm); color: var(--muted); margin-left: var(--space-8); }
 .dstate.ok { color: var(--planned); }
@@ -751,7 +768,7 @@ svg.chart.nofocusring { outline: none; }
 .modal { width: 100%; max-width: 520px; max-height: calc(100vh - 32px); overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: var(--space-18) var(--space-20) var(--space-20); }
 .mhead { display: flex; align-items: center; justify-content: space-between; gap: var(--space-12); margin-bottom: var(--space-4); position: sticky; top: calc(-1 * var(--space-18)); margin-top: calc(-1 * var(--space-18)); padding-top: var(--space-18); padding-bottom: var(--space-4); background: var(--surface); z-index: 2; }
 .mhead h2 { margin: 0; }
-.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: calc(100vw - 32px); background: var(--ink); color: var(--bg); padding: var(--space-10) var(--space-16); border-radius: var(--radius-card); z-index: 60; font-size: var(--text-sm); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-8) var(--space-12); text-align: left; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: calc(100vw - 32px); background: var(--btn); color: var(--on-btn); padding: var(--space-10) var(--space-16); border-radius: var(--radius-card); z-index: 60; font-size: var(--text-sm); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-8) var(--space-12); text-align: left; }
 .toast:empty { display: none; }
 .toast.problem { background: var(--late); color: var(--bg); }
 
@@ -1272,6 +1289,9 @@ function scrollToRow(node) {
   node.style.scrollMarginTop = (head + (sh ? sh.offsetHeight : 0) + 12) + "px";
   try { node.scrollIntoView({ block: "start" }); } catch (e) { /* ignore */ }
 }
+// The phone layout test; styles.css has the same media query, so the two agree.
+var NARROW_QUERY = "(max-width: 639px), (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (not (pointer: coarse))";
+function isNarrow() { try { return typeof window.matchMedia === "function" && window.matchMedia(NARROW_QUERY).matches; } catch (e) { return false; } }
 // Navigation only. A framed copy scrolls the host page, not this window, so every
 // scroller is zeroed, the app's top is scrolled into view, and it repeats after paint.
 function scrollTop() {
@@ -1468,6 +1488,8 @@ function rerollPick(open, handIds, rnd) {
 function isJobLate(j) { return !j.done && !!j.due && parseISO(j.due) < TODAY; }
 function liveQuests() { return live(state.quests); }
 function activeQuests() { return liveQuests().filter(function (p) { return p.status === "active"; }); }
+// The name the status dropdown shows: Candidate, In progress, Complete, or Vaulted.
+function questState(p) { return p.vault ? "Vaulted" : p.status === "candidate" ? "Candidate" : p.status === "complete" ? "Complete" : "In progress"; }
 function candidateQuests() { return liveQuests().filter(function (p) { return p.status === "candidate"; }); }
 function completeQuests() { return liveQuests().filter(function (p) { return p.status === "complete"; }); }
 // A Candidate quest's tasks count nowhere across quests (Today, Tasks, Timeline, burndown) until it is promoted; they still show on its own page.
@@ -1802,7 +1824,7 @@ var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 var UNPURSUED = "Unpursued";
 var CHECKPOINTS = 7;
-var APP_VERSION = "1.3.7";
+var APP_VERSION = "1.4.0";
 var APP_NAME = "Sidequest";
 
 function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -1846,7 +1868,7 @@ function sampleData() {
     quest("pCli", "Sample Command-Line Tool", "candidate", { notes: "Would save time on your own quests" }),
     // Demonstrates a Complete quest: drops out of In progress but still shows in the plain Quests list.
     quest("pDone", "Sample Finished Quest", "complete", { start: day(-28), notes: "Shipped and wrapped up.", hist: doneHistory }),
-    // Demonstrates a promoted-but-task-less Active quest, which lands under Pending instead of In progress; untouched for 45 days, so it also shows Gathering dust.
+    // Demonstrates an In progress quest with nothing scheduled yet; untouched for 45 days, so it also shows Gathering dust.
     quest("pNext", "Sample Next Quest", "active", { touched: new Date(n.getTime() - 45 * D).toISOString().slice(0, 10), notes: "Chosen, but nothing scheduled yet." })
   ];
   var tasks = [
@@ -2002,7 +2024,8 @@ function normalize(s) {
       var xc = x.client && typeof x.client === "object" ? x.client : {};
       return {
         id: S(x.id, 40), name: S(x.name, 120),
-        status: (x.status === "active" || x.status === "candidate" || x.status === "complete") ? x.status : "candidate",
+        // A short-lived build had a Pending state (an Active quest with started: false); it is a Candidate now.
+        status: x.status === "active" && x.started === false ? "candidate" : (x.status === "active" || x.status === "candidate" || x.status === "complete") ? x.status : "candidate",
         start: isISO(x.start) ? x.start : "", days: days,
         due: isISO(x.due) ? x.due : "",
         notes: (oldNote && body ? oldNote + "\n\n" + body : oldNote || body).slice(0, 5000), vault: validVault(x.vault || x.arch), hist: cleanHist(x.hist),
@@ -2125,7 +2148,8 @@ function normalize(s) {
   }
   // Pins used to route to a quest's page via "proj:" + id; migrate any saved
   // pin to "quest:" + id so an old sidebar pin keeps working after the rename.
-  if (Array.isArray(s.pins)) d.pins = s.pins.filter(function (k) { return typeof k === "string" && k.length < 130; }).map(function (k) { return k.indexOf("proj:") === 0 ? "quest:" + k.slice(5) : k; }).slice(0, 30);
+  var candidateKeys = {}; /* a Candidate cannot be pinned */ d.quests.forEach(function (p) { if (p.status === "candidate") candidateKeys["quest:" + p.id] = true; });
+  if (Array.isArray(s.pins)) d.pins = s.pins.filter(function (k) { return typeof k === "string" && k.length < 130; }).map(function (k) { return k.indexOf("proj:") === 0 ? "quest:" + k.slice(5) : k; }).filter(function (k) { return !candidateKeys[k]; }).slice(0, 30);
   return d;
 }
 // Storage adapter: localStorage is synchronous and always available; Claude's
@@ -4110,11 +4134,10 @@ var STEPS = [
     done: function (c) { return hasTask(c) || promoted(c); } },
   { title: "Start the quest",
     view: function (c) {
-      var btn = 'button[title="Promote to quest"]';
-      if (onQuestPage(c)) return { target: document.querySelector("#view " + btn), text: "Find the **Promote** button at the bottom of the Quest details." };
+      if (onQuestPage(c)) return { target: document.querySelector("#questStatusSel"), text: "Use the status dropdown beside the quest’s name. Choose **In progress**." };
       var row = candidateRow(c);
-      if (row) return { target: row.querySelector(btn), text: "Select **Promote** next to your quest under **Candidate quests**." };
-      return { target: tab("projects"), text: "Open **Quests**, then select **Promote** next to your quest under **Candidate quests**." };
+      if (row) return { target: row.querySelector("select.questsel"), text: "Use the status dropdown next to your quest under **Candidate quests**. Choose **In progress**." };
+      return { target: tab("projects"), text: "Open **Quests**, then use the status dropdown next to your quest under **Candidate quests**." };
     },
     done: promoted },
   { title: "See your plan",
@@ -4243,7 +4266,7 @@ function completionDialog(p) {
   openModal("Quest complete", function (body) {
     body.appendChild(el("p", { "class": "first" }, "“" + p.name + "” is marked complete. Send it to the Vault now, or leave it in Quests."));
     var openTasks = questRemainingUnits(p);
-    if (openTasks) body.appendChild(el("p", { "class": "hint" }, openTasks + (openTasks === 1 ? " open task is" : " open tasks are") + " no longer counted in the main burndown. Reopen the quest to count " + (openTasks === 1 ? "it" : "them") + " again."));
+    if (openTasks) body.appendChild(el("p", { "class": "hint" }, openTasks + (openTasks === 1 ? " open task is" : " open tasks are") + " no longer counted in the main burndown. Set the quest back to In progress to count " + (openTasks === 1 ? "it" : "them") + " again."));
     var oi = openIssues(p.id).length;
     if (oi) body.appendChild(el("p", { "class": "hint" }, oi + (oi === 1 ? " issue is" : " issues are") + " still open."));
     var acts = el("div", { "class": "actions" });
@@ -4263,7 +4286,7 @@ function promoteToActive(id) {
   if (!p) return;
   var n = activeQuests().length;
   if (overWip() && p.status !== "active") {
-    confirmDialog("Promote past your limit?", "You already have " + n + " active " + (n === 1 ? "quest" : "quests") + ". Promote it anyway?", "Promote anyway", function () { doPromote(p); });
+    confirmDialog("Quest limit reached", "You already have " + n + (n === 1 ? " quest" : " quests") + " in progress. Do you want to move this quest to In progress anyway?", "Continue anyway", function () { doPromote(p); });
     return;
   }
   doPromote(p);
@@ -4277,13 +4300,64 @@ function doPromote(p) {
   if (state.settings.audio) playSfx(SFX_QUEST);
 }
 
-// Sends an active quest back to Candidates. Its links are kept, shown read-only, and live again on promotion.
+// Sends an active quest back to Candidates, keeping its links. A Candidate cannot be pinned, so its pin goes.
 function demoteToCandidate(id) {
   var p = findQuest(id);
   if (!p) return;
   p.status = "candidate";
+  var pinKey = "quest:" + p.id; state.pins = state.pins.filter(function (k) { return k !== pinKey; });
   changed();
   notify("Sent back to Candidates.");
+}
+
+// Brings a Complete quest back to Active, and restores a pin completionDialog() removed.
+function reopenQuest(p) {
+  p.status = "active";
+  // Lets sweepQuestCompletion() skip this quest once, so reopening one whose tasks are all Completed does not refire.
+  p.justReopened = true;
+  if (p.wasPinned) { var key = "quest:" + p.id; if (!isPinned(key)) state.pins.push(key); p.wasPinned = false; }
+  changed(); notify("Reopened.");
+  if (state.settings.audio) playSfx(SFX_QUEST);
+}
+
+// What each state's dropdown offers, in this order.
+var STATE_ORDER = ["Candidate", "In progress", "Complete", "Vault"];
+var STATE_CHOICES = {
+  "Candidate": ["Candidate", "In progress", "Vault"],
+  "In progress": ["Candidate", "In progress", "Complete", "Vault"],
+  "Complete": ["In progress", "Complete", "Vault"]
+};
+// The status chip colors reuse the task pill styles in styles.css.
+var STATE_PILL = { "Candidate": "Unpursued", "In progress": "In progress", "Complete": "Completed" };
+
+// Moves a quest to a chosen state through the same handlers the old buttons used.
+function setQuestState(p, to) {
+  var from = questState(p);
+  if (to === from || p.vault || STATE_ORDER.indexOf(to) < 0) return;
+  if (to === "Vault") { if (p.status === "candidate") removeToVault(p, "Quest"); else vaultQuest(p); return; }
+  if (to === "Candidate") { demoteToCandidate(p.id); return; }
+  if (to === "Complete") { p.status = "complete"; changed(); completionDialog(p); return; }
+  if (from === "Candidate") promoteToActive(p.id);
+  else if (from === "Complete") reopenQuest(p);
+}
+
+// The status dropdown for a quest (not used for a vaulted one). It shows the current state until a change takes effect.
+function questStatusSelect(p, focusKey) {
+  var cur = questState(p);
+  var sel = el("select", { "class": "status questsel", "aria-label": "Status of " + short(p.name, 40), title: "Change this quest’s status", "data-v": STATE_PILL[cur], "data-focus": focusKey });
+  STATE_CHOICES[cur].forEach(function (s) { var o = el("option", { value: s }, s); if (s === cur) o.selected = true; sel.appendChild(o); });
+  // Focus returns to the select only for keyboard use; after a tap or click it would look still open.
+  var byPointer = false;
+  on(sel, "pointerdown", function () { byPointer = true; });
+  on(sel, "keydown", function () { byPointer = false; });
+  on(sel, "change", function () {
+    var to = sel.value;
+    // A choice that opens a dialog or is canceled leaves the quest as it was, so show that.
+    sel.value = cur;
+    if (!byPointer) setFocusKey(focusKey);
+    setQuestState(p, to);
+  });
+  return sel;
 }
 
 // Only Quests and Ideas go to the Vault independently -- see removeNow() for the rest.
@@ -5128,13 +5202,12 @@ setHelpOpener(openTermHelp);
 function helpTopics() {
   return [
     ["How Sidequest works", [
-      "**Web and installed version:** Your quest data is stored in the browser and on the device you’re using. This means your data is available on that device, including when you’re offline. Installing Sidequest does not create a separate set of quests from the browser version.",
-      "**Backups:** If your browser’s local storage is cleared, you will lose all of your quest data, so back up your quests periodically.",
+      "**Web and installed version:** Your quest data is stored in the browser and on the device you’re using. This means your data is available on that device, whether you’re online or offline. Installing Sidequest does not create a separate set of quests from the browser version.",
+      ">**Backups:** If your browser’s local storage is cleared, you will lose all of your quest data, so back up your quests periodically.",
       "**Artifact version:** The Artifact version works as a Claude artifact or a Muse space. When you use Sidequest this way, your quest data is stored with your account. You can access your quests from the web, the app, or a mobile device where you’re signed in. You need an internet connection.",
       "**Artifact updates:** The Artifact version tells you when an update is available and how to install it without losing any data."
     ]],
     ["Terms", [
-      "{#active-quest}**Active quest:** A quest that has been promoted from a candidate. If it has scheduled tasks, it appears in the **In progress** section. Otherwise, it appears in the **Pending** section. See “Quests page”.",
       "{#actual}**Actual:** The burndown line showing the tasks you have left. See “Timeline page”.",
       "{#badge-added}**Added badge:** Marks a task added after the quest started. See “Inside a quest”.",
       "{#adventurer}**Adventurer:** Your contact information and brandmark, used on exports. See “Options page”.",
@@ -5142,26 +5215,25 @@ function helpTopics() {
       "{#before-you-launch}**Before you launch:** The section that lists a quest’s **Launch critical** tasks. These tasks must be completed before launch. See “Inside a quest”.",
       "{#bounty}**Bounty:** The amount a quest pays. This does not appear on exports. See “Quest giver and Quest links”.",
       "{#candidate-quest}**Candidate quest:** A quest you’re considering but haven’t started. See “Quests page”.",
+      "{#complete}**Complete:** A quest you’ve finished. See “The quest lifecycle”.",
       "{#copy-ai-prompt}**Copy AI prompt:** Copies a prompt to paste into any AI chat. Describe your job, answer its questions, and the AI will generate a quest in JSON format. Results may vary depending on the AI tool you use. See “Quests page”.",
       "{#decision}**Decision:** A question attached to a step. Answering it completes the step. See “Inside a quest”.",
       "{#errand}**Errand:** One item on the **Errands** page. See “Errands page”.",
       "{#errands-deck}**Errands deck:** Incomplete errands you can add to your hand to give them higher priority. See “Errands page”.",
       "{#forecast}**Forecast:** The dotted burndown line estimating when you’ll finish. See “Timeline page”.",
-      "{#gathering-dust}**Gathering dust:** A badge for an active quest nobody has changed for a while. See “Options page”.",
+      "{#gathering-dust}**Gathering dust:** A badge for a quest in progress that nobody has changed for a while. See “Options page”.",
       "{#hand}**Your hand:** Choose up to three errands to keep in your hand. See “Errands page”.",
       "{#idea}**Idea:** A note in the **Workshop** that hasn’t become a quest. See “Workshop page”.",
       "{#ideal}**Ideal:** The burndown line showing your planned pace. See “Timeline page”.",
       "{#import-quest}**Import quest:** Imports a quest from an AI-generated JSON file or pasted text. Sidequest checks the quest, identifies problems by task, and adds it to Candidate quests once you confirm the import. See “Quests page”.",
-      "{#in-progress}**In progress:** An active quest with at least one incomplete task that has a due date. See “Quests page”.",
+      "{#in-progress}**In progress:** A quest you’re currently working on. See “Quests page”.",
       "{#issue}**Issue:** A problem associated with a quest, such as a bug. An issue doesn’t need a due date. See “Inside a quest”.",
       "{#launch-critical}**Launch critical:** A task that must be completed before launch. These tasks are grouped in the **Before you launch** section. See “Inside a quest”.",
       "{#make-candidate}**Make quest:** Turns an idea into a candidate quest. See “The quest lifecycle”.",
       "{#milestone}**Milestone:** A task with a date that appears on the **Timeline**. See “Inside a quest”.",
       "{#next-up}**Next up:** The earliest-starting incomplete task across all open quests. See “Today page”.",
-      "{#pending}**Pending:** An active quest with no incomplete tasks that have due dates. See “Quests page”.",
       "{#pin}**Pin:** Adds a shortcut to a quest in the sidebar. See “Quests page”.",
-      "{#prepared}**Prepared by and Prepared for:** The export’s letterhead, showing your information first and the Quest giver’s second. See “Quest giver and Quest links”.",
-      "{#promote-demote}**Promote and Demote:** **Promote** moves a candidate quest to active. **Demote** moves it back to candidate. See “The quest lifecycle”.",
+      "{#prepared}**Prepared by** and **Prepared for:** The export’s letterhead, showing your information first and the Quest giver’s second. See “Quest giver and Quest links”.",
       "{#quest}**Quest:** A project, from the initial idea through completion. See “The quest lifecycle”.",
       "{#quest-giver}**Quest giver:** The client or contact for this quest. See “Quest giver and Quest links”.",
       "{#quest-giver-export}**Quest giver export:** Creates a read-only, interactive web page you can share with your client. It includes everything entered in this quest except the **Bounty**. Choose which additional items to include in the export. See “Quest giver and Quest links”.",
@@ -5184,10 +5256,10 @@ function helpTopics() {
       "**Undo:** Removing an item or sending it to the **Vault** shows an **Undo** button for a few seconds."
     ]],
     ["The quest lifecycle", [
-      "Ideas live in the **Workshop** until you’re ready to consider pursuing them. Making an idea a candidate quest moves it to the **Candidate quests** section on the **Quests** page.",
-      "A promoted quest is an active quest. It lands in **In progress** only if it has incomplete scheduled tasks. Otherwise it goes to **Pending**. You can later complete an active quest, demote it back to a candidate, or vault it.",
+      "Ideas stay in the **Workshop** until you’re ready to consider pursuing them. Making an idea a candidate quest moves it to the **Candidate quests** section on the **Quests** page.",
+      "When you’re ready to work on a candidate quest, choose **In progress** in its status dropdown. You can change a quest’s status in the dropdown beside its name, on its page or in its row on the **Quests** page. From the same dropdown, you can complete a quest in progress, change it back to a candidate, or vault any quest.",
       "If you already know what you want to pursue, you can create a candidate quest directly with the **+** button.",
-      "Finishing the last step of a task completes the task, and completing the last task of a quest (including its backlog tasks) completes the quest. You can also mark a task or quest complete manually. A quest has **Mark complete** and **Reopen** buttons on its page.",
+      "Finishing the last step of a task completes the task, and completing the last task of a quest (including its backlog tasks) completes the quest. You can also mark a task or quest complete manually. To complete a quest, choose **Complete** in its status dropdown. To reopen it, choose **In progress**.",
       ">An open issue doesn’t prevent a quest from being completed unless it’s launch critical or has a due date.",
       "The **Vault** stores old ideas and quests, either permanently or for a specified period of time (see the **Options** section for more)."
     ]],
@@ -5195,14 +5267,13 @@ function helpTopics() {
       "The **Today** page shows your most pressing task, and any overdue tasks. The **Burndown** chart shows how many tasks remain in all open quests (see the **Timeline** page for more). The **Stats** section displays all remaining and backlogged tasks."
     ]],
     ["Quests page", [
-      "**In progress:** This section lists the quests you’re working on. Each quest appears as a row with its name, its next scheduled task and that task’s start date, and the number of incomplete scheduled tasks it has left. If the quest has open issues, the row shows their count.",
-      ">Rows are ordered by the start date of each quest’s next task, from earliest to latest. A quest appears here only if it has incomplete scheduled tasks. Backlog tasks don’t count.",
-      "**Pending:** These are promoted quests with no incomplete scheduled tasks. This includes new quests with no tasks, and quests whose only open tasks are backlogged. When it has an incomplete task with a due date, a quest moves up to **In progress**.",
+      "**In progress:** This section lists the quests you’re working on. Each quest appears as a row with its name, its next scheduled task and that task’s start date, and the number of incomplete scheduled tasks it has left. If the quest has open issues, the row shows their count. A quest with no scheduled tasks says so.",
+      ">Rows are ordered by the start date of each quest’s next task, from earliest to latest. Quests with no scheduled tasks come last.",
       "**Completed:** This section lists completed quests.",
-      "**Candidate quests:** These are quests you’re considering but aren’t working on. You can demote an active quest back to a candidate quest in the **Quest details**. Before promoting a candidate quest, you can add tasks, steps, and decisions to it.",
-      ">A candidate quest keeps the links it had when it was demoted.",
-      "**New quest, Copy AI prompt, and Import quest:** These buttons appear to the right of the **Candidate quests** heading. **New quest** opens the same dialog as the **+** button. **Copy AI prompt** copies a prompt to use in any AI chat. Results may vary depending on the AI tool you use. **Import quest** loads the JSON file the AI generates and adds the quest to **Candidate quests** for review.",
-      "**Pinned quests:** You can pin in progress, pending, and completed quests that are still on the **Quests** page. Pinning places a shortcut to that quest in the sidebar (or the **Main menu** on mobile). Completing a quest unpins it automatically. Reopening a formerly pinned quest restores the pin."
+      "**Candidate quests:** These are quests you’re considering but aren’t working on. Their tasks stay on the quest’s page and are left out of **Today**, **Tasks**, **Timeline**, and the burndown. A candidate quest can’t be pinned. Before you start one, you can add tasks, steps, and decisions to it. Choose **In progress** in its status dropdown to move it there, or choose **Candidate** in the dropdown of a quest in progress to move it back.",
+      ">A candidate quest keeps the links it had when it was moved back to **Candidate**.",
+      "**New quest**, **Copy AI prompt**, and **Import quest:** These buttons appear to the right of the **Candidate quests** heading. **New quest** opens the same dialog as the **+** button. **Copy AI prompt** copies a prompt to use in any AI chat. Results may vary depending on the AI tool you use. **Import quest** loads the JSON file the AI generates and adds the quest to **Candidate quests** for review.",
+      "**Pinned quests:** Only quests in progress can be pinned. Pinning places a shortcut to the quest in the sidebar (or the **Main menu** on mobile). Changing a quest’s status to **Candidate** or **Complete** removes its pin. Reopening a completed quest that was previously pinned restores the pin."
     ]],
     ["Inside a quest", [
       "**Quest details:** Tapping a quest title on the **Quests** page opens the quest details for editing.",
@@ -5223,10 +5294,10 @@ function helpTopics() {
     ]],
     ["Quest giver and Quest links", [
       "**Quest giver:** The Quest giver is the client for a quest. You can also enter a **Bounty** (a monetary value), either as an hourly rate or a fixed payment for the quest.",
-      "**Quest giver export:** Includes everything entered in the quest except the **Bounty** and creates a read-only, interactive web page you can share with the client. Before exporting, you can choose whether to include **Prepared by** (your contact information and brandmark), quest issues, or both. Included issues appear in their own **Issues** section, with their statuses and notes, rather than in the task list. The export button appears at the bottom of in-progress, completed, or vaulted quest’s details, but not on candidate quests.",
-      "**Quest links:** When a job requires more than one quest, link them. Use **Link quest** to link a quest to any quest that is in progress, pending, or completed.",
+      "**Quest giver export:** Includes everything entered in the quest except the **Bounty** and creates a read-only, interactive web page you can share with the client. Before exporting, you can choose whether to include **Prepared by** (your contact information and brandmark), quest issues, or both. Included issues appear in their own **Issues** section, with their statuses and notes, rather than in the task list. The export button appears at the bottom of the details for quests in progress, completed, or vaulted, but not on candidate quests.",
+      "**Quest links:** When a job requires more than one quest, link them. Use **Link quest** to link a quest to any quest that is in progress or completed.",
       ">A candidate quest can add links the same way, but other quests can’t link to a candidate quest. Links to a candidate or vaulted quest show as plain text, and you can follow links to other quests.",
-      ">Vaulting or demoting a quest keeps its links, and promoting or restoring it makes them active again."
+      ">Vaulting a quest or moving it back to **Candidate** keeps its links. Moving it to **In progress** or restoring it makes them work again."
     ]],
     ["A quest’s Schedule and Timeline", [
       "**Schedule:** Quests can have start and due dates, and stretch of work durations (see the **Options** section for more). A quest’s start and due dates divide its total time into stretches of work.",
@@ -5260,17 +5331,17 @@ function helpTopics() {
       "**Delete forever:** Permanently deletes an errand. Select **Undo** right away to restore it."
     ]],
     ["Workshop page", [
-      "All ideas live here. Use them to think through new quests or prospects. You can either select **Make quest** to turn an idea into a candidate quest or **Vault** it."
+      "All ideas are stored here. Use them to think through new quests or prospects. You can either select **Make quest** to turn an idea into a candidate quest or **Vault** it."
     ]],
     ["Vault page", [
-      "The **Vault** is a place to store ideas and quests you’re no longer actively working with but may want to keep. You can use **Restore** or **Delete forever** on vaulted items. You can also choose to have the **Vault** automatically delete old items after a set period."
+      "The **Vault** is a place to send ideas and quests you’re no longer actively working with but may want to keep. You can use **Restore** or **Delete forever** on vaulted items. You can also choose to have the **Vault** automatically delete old items after a set period."
     ]],
     ["Options page", [
       "**Adventurer:** This is where you can add your contact information and brandmark or logo. You can choose whether or not to include it when creating a **Quest giver export**.",
       "**Schedule defaults:** Set the default length of a **stretch of work**. You can adjust the stretch duration for individual quests.",
       ">You can also choose what to call a stretch of work: Block, Sprint, Iteration, Phase, or Week.",
-      ">**Warn when active quests exceed:** Set the number of active quests you want to allow at a time. If you try to promote another candidate quest past that number, Sidequest warns you, and you can bypass the warning.",
-      ">**Quests begin gathering dust after:** Set how long an active quest can go without progress before it displays a **Gathering dust** badge.",
+      ">**Warn when quests in progress exceed:** Set the maximum number of quests you want to have in progress at a time. If you try to move another quest to **In progress** beyond that number, Sidequest warns you. You can still proceed.",
+      ">**Quests begin gathering dust after:** Set how long a quest in progress can go without progress before it displays a **Gathering dust** badge.",
       "**Appearance and formats:** These settings include **Date format**, **Coin format** (1,234.56 or 1.234,56), **Splash screen on open** (on/off), **Theme** (light and dark mode), **Animated burndown** (on/off), **Animated reroll** (on/off), **Completion effects** (on/off), and **Sound effects** (on/off).",
       "**Vault:** Set how long the **Vault** keeps items before it deletes them: never, or after 7, 30, 60, or 90 days.",
       "**Install Sidequest:** If you’re using Sidequest on the web, you can install it to your device. iPhones and iPads don’t show this button: in Safari, Chrome, or Firefox, tap **Share**, then **Add to Home Screen**. The installed version works offline and displays a **Refresh** button in the top bar.",
@@ -6206,7 +6277,6 @@ function renderQuestPage(root, id) {
   // Active/complete: two columns (page content left, Schedule/Timeline/Burndown right), stacked on a phone.
   var page = root, split = null;
   var metaLine = el("p", { "class": "hint" });
-  if (p.status === "complete") metaLine.appendChild(el("span", { "class": "chip questcomplete", style: "margin-right:8px" }, "Complete"));
   if (isDusty(p)) metaLine.appendChild(el("span", { "class": "chip dust", style: "margin-right:8px", title: "No activity for a while" }, "Gathering dust"));
   metaLine.appendChild(document.createTextNode(questMeta(p)));
   if (!readOnly) {
@@ -6215,6 +6285,7 @@ function renderQuestPage(root, id) {
     root = el("div", { "class": "questmain" });
     split.appendChild(root); page.appendChild(split);
   } else {
+    if (p.status === "complete") metaLine.insertBefore(el("span", { "class": "chip questcomplete", style: "margin-right:8px" }, "Complete"), metaLine.firstChild);
     root.appendChild(metaLine);
     root.appendChild(el("p", { "class": "hint" }, "In the Vault. Restore it to make changes."));
   }
@@ -6235,7 +6306,7 @@ function renderQuestPage(root, id) {
   metaRow.appendChild(metaLine);
   if (est.total > 0) metaRow.appendChild(el("span", { "class": "hint estleft" }, "Est. " + fmtHoursLong(est.left) + " remaining"));
   tsec.appendChild(metaRow);
-  if (!readOnly && p.status === "complete") tsec.appendChild(el("p", { "class": "hint" }, "Its tasks are not included in Tasks, Timeline, or Today while this quest is Complete. Reopen it to bring them back."));
+  if (!readOnly && p.status === "complete") tsec.appendChild(el("p", { "class": "hint" }, "Its tasks are not included in Tasks, Timeline, or Today while this quest is Complete. Set its status to In progress to bring them back."));
   // questTasks(), not ordered()/backlogTasks()/live() -- a quest's page keeps
   // showing its tasks even while Complete or vaulted, when cross-quest lists exclude them.
   var shownTs = visibleItems(p, "tasks", ts);
@@ -6336,36 +6407,11 @@ function renderQuestPage(root, id) {
     root.appendChild(xa);
   }
 
+  // The status dropdown is in the page title row (app.js); only a vaulted quest needs a button here.
   var ar = el("div", { "class": "actions questactions", style: "margin-top:14px" });
-  if (readOnly) {
-    ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Bring back to Quests" }, "Restore"), "click", function () { restoreEntry({ kind: "quest", list: "quests", item: p }); }));
-  } else if (p.status === "candidate") {
-    ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Promote to quest" }, "Promote"), "click", function () { promoteToActive(p.id); }));
-    ar.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Send this candidate to the Vault" }, "Vault"), "click", function () { removeToVault(p, "Quest"); }));
-  } else {
-    if (p.status === "active") {
-      ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Mark complete" }, "Mark complete"), "click", function () {
-        // Manual path, equal in standing to the auto-trigger, not a fallback.
-        p.status = "complete"; changed(); completionDialog(p);
-      }));
-      ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Send this quest back to Candidates" }, "Demote"), "click", function () { demoteToCandidate(p.id); }));
-    } else if (p.status === "complete") {
-      // No auto-revert -- Reopen is the only way back to Active.
-      ar.appendChild(on(el("button", { type: "button", "class": "small", title: "Reopen this quest" }, "Reopen"), "click", function () {
-        p.status = "active";
-        // Lets sweepQuestCompletion() skip this quest once, so reopening one
-        // whose tasks are all still Completed doesn't immediately re-fire it.
-        p.justReopened = true;
-        // Restore a pin completionDialog() auto-removed on completion.
-        if (p.wasPinned) { var key = "quest:" + p.id; if (!isPinned(key)) state.pins.push(key); p.wasPinned = false; }
-        changed(); notify("Reopened.");
-        if (state.settings.audio) playSfx(SFX_QUEST);
-      }));
-    }
-    ar.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Send this quest to the Vault" }, "Vault"), "click", function () { vaultQuest(p); }));
-  }
+  if (readOnly) ar.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Bring back to Quests" }, "Restore"), "click", function () { restoreEntry({ kind: "quest", list: "quests", item: p }); }));
   // Sits outside .questmain so it renders last when stacked; CSS puts it back under the left column on wide screens.
-  if (split) { split.appendChild(questChartsPanel(p)); split.appendChild(ar); } else { root.appendChild(ar); }
+  if (split) { split.appendChild(questChartsPanel(p)); if (ar.firstChild) split.appendChild(ar); } else { root.appendChild(ar); }
 }
 
 // `first` zeroes the heading's top margin; `extraBtn` rides its heading row.
@@ -6658,7 +6704,7 @@ function renderSettings(page) {
   var wipSel = el("select", { id: "set-wip", "class": "plain" });
   [[0, "No limit"], [2, "2"], [3, "3"], [4, "4"], [5, "5"]].forEach(function (o) { var op = el("option", { value: String(o[0]) }, o[1]); if (o[0] === state.settings.wipLimit) op.selected = true; wipSel.appendChild(op); });
   on(wipSel, "change", function () { state.settings.wipLimit = parseInt(wipSel.value, 10); changed(); });
-  fieldOf("set-wip", "Warn when active quests exceed", wipSel);
+  fieldOf("set-wip", "Warn when quests in progress exceed", wipSel);
   fieldOf("set-dust", "Quests begin gathering dust after", dustSel);
   scheduleBox.appendChild(grid); scheduleBox.appendChild(msg); root.appendChild(scheduleBox);
 
@@ -7060,10 +7106,19 @@ function backupReminder() {
   return box;
 }
 
+// On a phone a task opens and closes in place, one at a time, like a task on its quest's page.
+function toggleTaskRow(t, li) {
+  var prev = ui.sel, open = prev !== t.id;
+  if (open && prev) { var pli = document.getElementById("ttask-" + prev), pt = findTask(prev); if (pli && pt) setRowOpen(pli, pt, false, false); }
+  ui.sel = open ? t.id : null; ui.detail = open;
+  setRowOpen(li, t, open, false);
+}
 function taskRow(t) {
-  var li = el("li");
+  var narrow = isNarrow(), open = narrow && t.id === ui.sel;
+  var li = el("li", { id: "ttask-" + t.id });
   var b = el("button", { type: "button", "class": "item" + (isClosed(t) ? " done" : ""), title: "View this task" });
-  if (t.id === ui.sel) b.setAttribute("aria-current", "true");
+  if (narrow) b.setAttribute("aria-expanded", open ? "true" : "false");
+  else if (t.id === ui.sel) b.setAttribute("aria-current", "true");
   var l1 = el("div", { "class": "l1 split" }), l1t = el("span"); l1t.appendChild(el("b", null, dispQuest(t)));
   if (t.block !== 0) l1t.appendChild(document.createTextNode(" · " + fmt(taskStart(t)) + " to " + fmt(taskEnd(t))));
   l1.appendChild(l1t);
@@ -7081,8 +7136,10 @@ function taskRow(t) {
   stepsAndEst(l3, t);
   if (isLate(t)) l3.appendChild(el("span", { "class": "badge" }, "Overdue"));
   if (l3.childNodes.length) b.appendChild(l3);
-  on(b, "click", function () { ui.sel = t.id; ui.detail = true; renderView(); scrollTop(); });
-  li.appendChild(b); addRowControls(li, t); return li;
+  on(b, "click", function () { if (narrow) toggleTaskRow(t, li); else { ui.sel = t.id; ui.detail = true; renderView(); scrollTop(); } });
+  li.appendChild(b); addRowControls(li, t);
+  if (open) li.appendChild(buildDetail(t, true, false));
+  return li;
 }
 
 // A one-line empty state in the same card the lists use.
@@ -7098,8 +7155,11 @@ function renderSchedule(root) {
     root.appendChild(emptyList(planCounted().length ? "No open tasks. A completed quest’s tasks stay on that quest’s page." : "No tasks yet. Use the + button to add one."));
     return;
   }
-  if (!ui.sel || !findTask(ui.sel)) { var nt = nextTask() || o[0] || bl[0]; ui.sel = nt.id; }
-  var split = el("div", { "class": "split" + (ui.detail ? " detail-open" : "") });
+  // A phone starts with every task closed; a wide screen always shows one in the pane.
+  var narrow = isNarrow();
+  if (narrow) { if (ui.sel && !findTask(ui.sel)) ui.sel = null; }
+  else if (!ui.sel || !findTask(ui.sel)) { var nt = nextTask() || o[0] || bl[0]; ui.sel = nt.id; }
+  var split = el("div", { "class": "split" + (!narrow && ui.detail ? " detail-open" : "") });
   var lp = el("div", { "class": "listpane" });
   var ul = el("ul", { "class": "tlist" });
   if (!o.length) ul.appendChild(el("li", { "class": "plain" }, "Nothing is scheduled. Choose a " + wl() + " for an item in the Backlog."));
@@ -7112,12 +7172,16 @@ function renderSchedule(root) {
     bl.forEach(function (t) { bul.appendChild(taskRow(t)); });
     lp.appendChild(bul);
   }
+  split.appendChild(lp); root.appendChild(split);
+  if (narrow) return;
   var dp = el("div", { "class": "detailpane" }); dp.appendChild(buildDetail(findTask(ui.sel)));
-  split.appendChild(lp); split.appendChild(dp); root.appendChild(split);
+  split.appendChild(dp);
   // A pane taller than the window scrolls with the page until its bottom shows, then pins.
   dp.style.top = Math.min(84, window.innerHeight - dp.offsetHeight - 16) + "px";
 }
 
+// The status dropdown in its own cell, so a narrow row can center it on the title's first two lines (styles.css).
+function statusCell(q) { var c = el("div", { "class": "qsel" }); c.appendChild(questStatusSelect(q, "queststatus-" + q.id)); return c; }
 // Pin/Unpin for a quest, shared by In progress and the Quests list.
 function questPinButton(key, name) {
   var pinned = isPinned(key);
@@ -7128,25 +7192,28 @@ function dustChip() { return el("span", { "class": "chip dust", style: "margin-l
 
 function questRow(r) {
   var li = el("li", { "data-quest": r.id }), row = el("div", { "class": "crow oneline" });
-  var nm = el("div", { style: "flex:1 1 200px" });
+  var nm = el("div", { "class": "qname" }), title = el("div", { "class": "qtitle" });
   var link = el("button", { type: "button", "class": "textbtn qlink", style: "font-weight:600", title: "View this quest" }, r.name);
   on(link, "click", function () { go(r.key); });
-  nm.appendChild(link);
-  if (r.complete) nm.appendChild(el("span", { "class": "chip questcomplete", style: "margin-left:8px" }, "Complete"));
+  title.appendChild(link);
   var rq = findQuest(r.key.slice(6));
-  if (rq && isDusty(rq)) nm.appendChild(dustChip());
+  if (rq && isDusty(rq)) title.appendChild(dustChip());
+  nm.appendChild(title);
   nm.appendChild(el("p", { "class": "hint", style: "margin-top:2px" }, r.meta));
   row.appendChild(nm);
-  var acts = el("div", { "class": "li-actions" });
-  acts.appendChild(questPinButton(r.key, r.name));
+  var acts = el("div", { "class": "li-actions stack" });
+  var sq = findQuest(r.key.slice(6));
+  if (sq) acts.appendChild(statusCell(sq));
+  // A completed quest is unpinned when it completes, so it has no Pin button.
+  if (!r.complete) acts.appendChild(questPinButton(r.key, r.name));
   row.appendChild(acts);
   li.appendChild(row);
   return li;
 }
 
-// Quests that are not In progress and not Candidates: Pending (Active with no open tasks yet) and Completed.
+// Quests that are not In progress and not Candidates: the Completed ones.
 function questRowsOutsideProgress(excludeIds) {
-  return liveQuests().filter(function (p) { return p.status !== "candidate" && (!excludeIds || excludeIds.indexOf(p.id) < 0); }).map(function (p) { return { id: p.id, key: "quest:" + p.id, name: p.name, meta: questMeta(p), complete: p.status === "complete" }; });
+  return liveQuests().filter(function (p) { return p.status === "complete" && (!excludeIds || excludeIds.indexOf(p.id) < 0); }).map(function (p) { return { id: p.id, key: "quest:" + p.id, name: p.name, meta: questMeta(p), complete: p.status === "complete" }; });
 }
 
 // Puts a "?" button inside a heading, after its text.
@@ -7161,20 +7228,23 @@ function questListSection(title, rows, first, term) {
   return sec;
 }
 
-function pendingSection(rows, first) { return questListSection("Pending", rows, first, ["pending", "Pending"]); }
-
 function completedSection(rows, first) { return questListSection("Completed", rows, first); }
 
 function standingBlock() {
+  // Every Active quest is In progress, whether or not it has open dated tasks.
   var groups = {}, order = [];
+  activeQuests().forEach(function (q) { var g = { questId: q.id, name: q.name, open: 0, first: null }; groups[q.id] = g; order.push(g); });
   ordered().forEach(function (t) {
     if (isClosed(t)) return;
-    var quest = findQuest(t.questId);
-    if (!quest || quest.status !== "active") return;
-    var g = groups[t.questId]; if (!g) { g = groups[t.questId] = { questId: t.questId, name: dispQuest(t), open: 0, first: t }; order.push(g); }
-    g.open++;
+    var g = groups[t.questId]; if (!g) return;
+    g.open++; if (!g.first) g.first = t;
   });
-  order.sort(function (a, b) { return taskStart(a.first) - taskStart(b.first); });
+  // Quests with a next task come first, soonest first; the rest follow by name.
+  order.sort(function (x, y) {
+    if (x.first && y.first) return taskStart(x.first) - taskStart(y.first);
+    if (x.first || y.first) return x.first ? -1 : 1;
+    return x.name < y.name ? -1 : x.name > y.name ? 1 : 0;
+  });
   var questIds = order.map(function (g) { return g.questId; });
   if (!order.length) return { node: null, questIds: questIds };
   var wrap = el("div");
@@ -7182,20 +7252,27 @@ function standingBlock() {
   var box = el("div", { "class": "box", style: "margin-top:10px" });
   var ul = el("ul", { "class": "standing" });
   order.forEach(function (g) {
-    var li = el("li", { "data-quest": g.questId }), row = el("div", { "class": "srow" }), textWrap = el("div", { style: "flex:1 1 200px" });
+    var li = el("li", { "data-quest": g.questId }), row = el("div", { "class": "srow" }), textWrap = el("div", { "class": "qname" });
     var nm = el("button", { type: "button", "class": "textbtn qlink", title: "View this quest" }, g.name);
     on(nm, "click", function () { go(validPage("quest:" + g.questId) ? "quest:" + g.questId : "projects"); });
-    textWrap.appendChild(nm);
+    var qt = el("div", { "class": "qtitle" }); qt.appendChild(nm); textWrap.appendChild(qt);
     var dq = findQuest(g.questId);
-    if (dq && isDusty(dq)) textWrap.appendChild(dustChip());
-    var nx = el("div", { "class": "snext" }), oi = openIssues(g.questId).length; nx.appendChild(document.createTextNode("Next up: "));
-    var tl = el("button", { type: "button", "class": "textbtn", title: "View this task" }, short(g.first.what, 90));
-    on(tl, "click", function () { openTask(g.first.id); });
-    nx.appendChild(tl);
+    if (dq && isDusty(dq)) qt.appendChild(dustChip());
+    var nx = el("div", { "class": "snext" }), oi = openIssues(g.questId).length;
+    var issues = oi ? " · " + oi + " open " + (oi === 1 ? "issue" : "issues") : "";
+    if (g.first) {
+      nx.appendChild(document.createTextNode("Next up: "));
+      var tl = el("button", { type: "button", "class": "textbtn", title: "View this task" }, short(g.first.what, 90));
+      on(tl, "click", function () { openTask(g.first.id); });
+      nx.appendChild(tl);
+      // The date and counts follow Next up on a wide screen and take their own line on a narrow one (styles.css).
+      nx.appendChild(el("span", { "class": "sdetail" }, fmt(taskStart(g.first)) + " · " + g.open + " open " + (g.open === 1 ? "task" : "tasks") + issues));
+    } else nx.appendChild(el("span", { "class": "sdetail alone" }, "No scheduled tasks" + issues));
     textWrap.appendChild(nx);
-    // The date and counts follow Next up on a wide screen and take their own line on a narrow one (styles.css).
-    nx.appendChild(el("span", { "class": "sdetail" }, fmt(taskStart(g.first)) + " · " + g.open + " open " + (g.open === 1 ? "task" : "tasks") + (oi ? " · " + oi + " open " + (oi === 1 ? "issue" : "issues") : "")));
-    row.appendChild(textWrap); row.appendChild(questPinButton("quest:" + g.questId, g.name));
+    var acts = el("div", { "class": "li-actions stack" });
+    if (dq) acts.appendChild(statusCell(dq));
+    acts.appendChild(questPinButton("quest:" + g.questId, g.name));
+    row.appendChild(textWrap); row.appendChild(acts);
     li.appendChild(row); ul.appendChild(li);
   });
   box.appendChild(ul); wrap.appendChild(box);
@@ -7215,19 +7292,15 @@ function candidatesSection(first) {
   if (!cs.length) list.appendChild(el("li", { "class": "hint" }, "No candidate quests yet. Start one with the + button."));
   cs.forEach(function (cd) {
     var li = el("li", { "data-quest": cd.id }), row = el("div", { "class": "crow oneline" });
-    var nmWrap = el("div", { style: "flex:1 1 200px" });
+    var nmWrap = el("div", { "class": "qname" });
     var nm = el("button", { type: "button", "class": "textbtn qlink", title: "View this candidate" }, cd.name);
     on(nm, "click", function () { go("quest:" + cd.id); });
-    nmWrap.appendChild(nm);
+    var ct = el("div", { "class": "qtitle" }); ct.appendChild(nm); nmWrap.appendChild(ct);
     if (cd.notes) nmWrap.appendChild(el("p", { "class": "cnote notetext noteclamp", style: "margin-left:0" }, cd.notes));
     row.appendChild(nmWrap);
-    var acts = el("div", { "class": "li-actions" });
-    var pr = el("button", { type: "button", "class": "small", title: "Promote to quest" }, "Promote");
-    on(pr, "click", function () { promoteToActive(cd.id); });
-    acts.appendChild(pr);
-    var rm = el("button", { type: "button", "class": "small danger", title: "Send this candidate to the Vault" }, "Vault");
-    on(rm, "click", function () { removeToVault(cd, "Quest"); });
-    acts.appendChild(rm); row.appendChild(acts); li.appendChild(row);
+    var acts = el("div", { "class": "li-actions stack" });
+    acts.appendChild(statusCell(cd));
+    row.appendChild(acts); li.appendChild(row);
     list.appendChild(li);
   });
   sec.appendChild(list);
@@ -7237,13 +7310,11 @@ function candidatesSection(first) {
 function renderQuests(root) {
   var standing = standingBlock();
   var rows = questRowsOutsideProgress(standing.questIds);
-  var pending = rows.filter(function (r) { return !r.complete; }), complete = rows.filter(function (r) { return r.complete; });
   var first = true;
   function lead() { var f = first; first = false; return f; }
   if (standing.node) { root.appendChild(standing.node); first = false; }
-  if (pending.length) root.appendChild(pendingSection(pending, lead()));
   root.appendChild(candidatesSection(lead()));
-  if (complete.length) root.appendChild(completedSection(complete, false));
+  if (rows.length) root.appendChild(completedSection(rows, false));
 }
 
 // Each idea carries the offsets and curl size it was given when it was created (newPin in dom.js).
@@ -7364,6 +7435,7 @@ function renderVault(root) {
       info.appendChild(tl);
     } else info.appendChild(el("span", { style: "font-weight:600" }, e.title));
     info.appendChild(el("span", { "class": "chip", style: "margin-left:8px" }, KIND_LABEL[e.kind]));
+    if (e.kind === "quest" && e.item.status === "complete") info.appendChild(el("span", { "class": "chip questcomplete", style: "margin-left:8px" }, "Complete"));
     info.appendChild(el("p", { "class": "hint", style: "margin-top:4px" }, (e.item.vault.why === "done" ? "Completed " : "Vaulted ") + fmtY(parseISO(e.item.vault.at))));
     row.appendChild(info);
     var acts = el("div", { "class": "li-actions" });
@@ -7766,6 +7838,7 @@ function playSplash(showSplash, done, audio, pickIndex, opts) {
 
 
 
+
 /* navigation */
 function leaveSearch() { if (ui.view === "search") { ui.query = ""; var b = $("searchBox"); if (b) b.value = ""; } }
 // Returning to Quests from a quest keeps the list's scroll; any other arrival goes to the top.
@@ -7799,7 +7872,7 @@ function openTask(id) {
 // After a search or link opens a task, scrolls its row to just under the header. It waits for the page-top reset.
 function landOnTask(id) {
   setTimeout(function () {
-    var row = document.getElementById("ptask-" + id) || document.getElementById("itask-" + id) || document.querySelector('#view .listpane [aria-current="true"]');
+    var row = document.getElementById("ptask-" + id) || document.getElementById("itask-" + id) || document.getElementById("ttask-" + id) || document.querySelector('#view .listpane [aria-current="true"]');
     scrollToRow(row);
   }, 80);
 }
@@ -7817,9 +7890,12 @@ function buildMoreMenu(pinned) {
   m.appendChild(el("hr"));
   BOTTOM.forEach(function (c) { item(c[0], c[1]); });
 }
-// A tab or menu entry for the page already showing does nothing, except Tasks with a task open, which goes back to its list.
+// A tab or menu entry for the page already showing does nothing, except Tasks with a task open: that closes it in place and keeps the scroll position.
 function goTab(key) {
-  if (key === ui.view && !(key === "schedule" && ui.detail)) return;
+  if (key === ui.view) {
+    if (key === "schedule" && ui.detail) { ui.detail = false; if (isNarrow()) ui.sel = null; renderView(); }
+    return;
+  }
   go(key);
 }
 function renderChrome() {
@@ -7857,6 +7933,9 @@ function renderChrome() {
   // The pencil next to the title renames the quest (not shown for a vaulted one).
   var cur = ui.view.indexOf("quest:") === 0 ? findQuest(ui.view.slice(6)) : null;
   $("renameBtn").hidden = !(cur && !cur.vault);
+  // The quest's status dropdown follows the pencil in the title row; it moves with the title between the bar and the heading.
+  var oldSel = $("questStatusSel"); if (oldSel) oldSel.remove();
+  if (cur && !cur.vault) { var qs = questStatusSelect(cur, "queststatus-" + cur.id); qs.id = "questStatusSel"; $("titleRow").appendChild(qs); }
   document.title = title + " · " + APP_NAME;
 }
 // Names are edited in place: safe to change because tasks, pins, links, and
@@ -7865,6 +7944,7 @@ function renameCurrentQuest() {
   var p = ui.view.indexOf("quest:") === 0 ? findQuest(ui.view.slice(6)) : null;
   if (!p || p.vault) return;
   $("renameBtn").hidden = true;
+  if ($("questStatusSel")) $("questStatusSel").hidden = true;
   editInline($("viewTitle"), {
     label: "Quest name", max: 120, value: function () { return p.name; },
     onSave: function (v) {
@@ -7873,16 +7953,16 @@ function renameCurrentQuest() {
       p.name = v.slice(0, 120); changed();
     },
     onEmpty: function () { notify("A quest needs a title.", null, "problem"); },
-    onDone: function () { $("renameBtn").hidden = false; }
+    onDone: function () { $("renameBtn").hidden = false; if ($("questStatusSel")) $("questStatusSel").hidden = false; }
   });
 }
 on($("renameBtn"), "click", renameCurrentQuest);
 // On narrow screens the page name is a heading under the leather header; on wide ones it sits in the bar.
 if (typeof window.matchMedia === "function") {
-  var narrowBar = window.matchMedia("(max-width: 639px), (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (not (pointer: coarse))");
+  var narrowBar = window.matchMedia(NARROW_QUERY);
   var placeTitle = function () { ($("pageHead") && narrowBar.matches ? $("pageHead") : document.querySelector(".tbleft")).appendChild($("titleRow")); };
   placeTitle();
-  if (narrowBar.addEventListener) narrowBar.addEventListener("change", placeTitle);
+  if (narrowBar.addEventListener) narrowBar.addEventListener("change", function () { placeTitle(); if (ui.view === "schedule") renderView(); });
 }
 
 // Installed PWA only (display-mode or navigator.standalone), computed once per session since it cannot change.

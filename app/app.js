@@ -1,6 +1,6 @@
 import { state, ui, save, changed, autoVault, purgeOldVault, APP_NAME, APP_VERSION, loadFromDbIfAvailable, checkForAppUpdate, pickAffirmation } from "./state.js";
 import { CORE, BOTTOM, isCore, validPage, pageTitle, findAnyTask, findQuest, isLooseIssue, lateTasks, questNameTaken } from "./model.js";
-import { $, el, on, focusKey, setFocusKey, scrollTop, scrollToRow, notify, editInline, playSfx, inClaude, isStandalone } from "./dom.js";
+import { $, el, on, focusKey, setFocusKey, scrollTop, scrollToRow, notify, editInline, playSfx, inClaude, isStandalone, isNarrow, NARROW_QUERY } from "./dom.js";
 import { TODAY } from "./dates.js";
 import { renderJobs } from "./errands.js";
 import { renderHelp } from "./help.js";
@@ -14,6 +14,7 @@ import {
 import { playSplash } from "./splash.js";
 import { noteBurnView } from "./chart.js";
 import { stopTutorial } from "./tutorial.js";
+import { questStatusSelect } from "./lifecycle.js";
 
 /* navigation */
 export function leaveSearch() { if (ui.view === "search") { ui.query = ""; var b = $("searchBox"); if (b) b.value = ""; } }
@@ -48,7 +49,7 @@ export function openTask(id) {
 // After a search or link opens a task, scrolls its row to just under the header. It waits for the page-top reset.
 function landOnTask(id) {
   setTimeout(function () {
-    var row = document.getElementById("ptask-" + id) || document.getElementById("itask-" + id) || document.querySelector('#view .listpane [aria-current="true"]');
+    var row = document.getElementById("ptask-" + id) || document.getElementById("itask-" + id) || document.getElementById("ttask-" + id) || document.querySelector('#view .listpane [aria-current="true"]');
     scrollToRow(row);
   }, 80);
 }
@@ -66,9 +67,12 @@ export function buildMoreMenu(pinned) {
   m.appendChild(el("hr"));
   BOTTOM.forEach(function (c) { item(c[0], c[1]); });
 }
-// A tab or menu entry for the page already showing does nothing, except Tasks with a task open, which goes back to its list.
+// A tab or menu entry for the page already showing does nothing, except Tasks with a task open: that closes it in place and keeps the scroll position.
 export function goTab(key) {
-  if (key === ui.view && !(key === "schedule" && ui.detail)) return;
+  if (key === ui.view) {
+    if (key === "schedule" && ui.detail) { ui.detail = false; if (isNarrow()) ui.sel = null; renderView(); }
+    return;
+  }
   go(key);
 }
 export function renderChrome() {
@@ -106,6 +110,9 @@ export function renderChrome() {
   // The pencil next to the title renames the quest (not shown for a vaulted one).
   var cur = ui.view.indexOf("quest:") === 0 ? findQuest(ui.view.slice(6)) : null;
   $("renameBtn").hidden = !(cur && !cur.vault);
+  // The quest's status dropdown follows the pencil in the title row; it moves with the title between the bar and the heading.
+  var oldSel = $("questStatusSel"); if (oldSel) oldSel.remove();
+  if (cur && !cur.vault) { var qs = questStatusSelect(cur, "queststatus-" + cur.id); qs.id = "questStatusSel"; $("titleRow").appendChild(qs); }
   document.title = title + " · " + APP_NAME;
 }
 // Names are edited in place: safe to change because tasks, pins, links, and
@@ -114,6 +121,7 @@ function renameCurrentQuest() {
   var p = ui.view.indexOf("quest:") === 0 ? findQuest(ui.view.slice(6)) : null;
   if (!p || p.vault) return;
   $("renameBtn").hidden = true;
+  if ($("questStatusSel")) $("questStatusSel").hidden = true;
   editInline($("viewTitle"), {
     label: "Quest name", max: 120, value: function () { return p.name; },
     onSave: function (v) {
@@ -122,16 +130,16 @@ function renameCurrentQuest() {
       p.name = v.slice(0, 120); changed();
     },
     onEmpty: function () { notify("A quest needs a title.", null, "problem"); },
-    onDone: function () { $("renameBtn").hidden = false; }
+    onDone: function () { $("renameBtn").hidden = false; if ($("questStatusSel")) $("questStatusSel").hidden = false; }
   });
 }
 on($("renameBtn"), "click", renameCurrentQuest);
 // On narrow screens the page name is a heading under the leather header; on wide ones it sits in the bar.
 if (typeof window.matchMedia === "function") {
-  var narrowBar = window.matchMedia("(max-width: 639px), (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (not (pointer: coarse))");
+  var narrowBar = window.matchMedia(NARROW_QUERY);
   var placeTitle = function () { ($("pageHead") && narrowBar.matches ? $("pageHead") : document.querySelector(".tbleft")).appendChild($("titleRow")); };
   placeTitle();
-  if (narrowBar.addEventListener) narrowBar.addEventListener("change", placeTitle);
+  if (narrowBar.addEventListener) narrowBar.addEventListener("change", function () { placeTitle(); if (ui.view === "schedule") renderView(); });
 }
 
 // Installed PWA only (display-mode or navigator.standalone), computed once per session since it cannot change.

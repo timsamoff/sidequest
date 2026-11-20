@@ -53,6 +53,8 @@ export function rerollPick(open, handIds, rnd) {
 export function isJobLate(j) { return !j.done && !!j.due && parseISO(j.due) < TODAY; }
 export function liveQuests() { return live(state.quests); }
 export function activeQuests() { return liveQuests().filter(function (p) { return p.status === "active"; }); }
+// The name the status dropdown shows: Candidate, In progress, Complete, or Vaulted.
+export function questState(p) { return p.vault ? "Vaulted" : p.status === "candidate" ? "Candidate" : p.status === "complete" ? "Complete" : "In progress"; }
 export function candidateQuests() { return liveQuests().filter(function (p) { return p.status === "candidate"; }); }
 export function completeQuests() { return liveQuests().filter(function (p) { return p.status === "complete"; }); }
 // A Candidate quest's tasks count nowhere across quests (Today, Tasks, Timeline, burndown) until it is promoted; they still show on its own page.
