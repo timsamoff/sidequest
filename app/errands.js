@@ -28,19 +28,32 @@ export function renderJobs(root) {
   root.appendChild(bar); root.appendChild(msg);
   stopFlip();
   var open = openJobs(), done = state.jobs.filter(function (j) { return j.done; });
-  var hand = handJobs(), deck = deckJobs();
-  if (open.length) handSection(root, hand, open);
+  var hand = handJobs(), deck = deckJobs(), tog = doneToggle(done.length);
+  var shownDone = state.settings.hideDoneErrands ? [] : done;
+  if (open.length) handSection(root, hand, open, tog);
+  else if (done.length) deckHead(root, [tog]);
   var ul = el("ul", { "class": "list jobs", style: "margin-top:12px" });
-  if (!open.length) ul.appendChild(el("li", { "class": "hint" }, "No errands yet. Add one with the Add errand button."));
+  if (!open.length) ul.appendChild(el("li", { "class": "hint" }, done.length ? "No open errands." : "No errands yet. Add one with the Add errand button."));
   deck.forEach(function (j) { ul.appendChild(jobRow(j)); });
-  if (deck.length || !open.length) root.appendChild(ul);
-  if (done.length) {
-    root.appendChild(el("h2", null, "Completed"));
-    var dl = el("ul", { "class": "list jobs" });
-    done.forEach(function (j) { dl.appendChild(jobRow(j)); });
-    root.appendChild(dl);
-  }
+  shownDone.forEach(function (j) { ul.appendChild(jobRow(j)); });
+  if (deck.length || shownDone.length || !open.length) root.appendChild(ul);
   landJob(); landArrival();
+}
+
+// Hides or shows completed errands at the bottom of the deck. The choice is saved in settings.
+function doneToggle(n) {
+  if (!n) return null;
+  var hidden = state.settings.hideDoneErrands === true, verb = hidden ? "Show" : "Hide";
+  var b = el("button", { type: "button", "class": "small", "data-focus": "hidedone-jobs", title: verb + " completed errands" }, verb + " completed (" + n + ")");
+  return on(b, "click", function () { state.settings.hideDoneErrands = !hidden; setFocusKey("hidedone-jobs"); changed(); });
+}
+
+function deckHead(root, buttons) {
+  var dhead = el("div", { "class": "handhead deckhead" }), btns = el("div", { "class": "handbtns" });
+  dhead.appendChild(withHelp(el("h2", { "class": "handlabel decklabel" }, HAND.deck), "errands-deck", "Errands deck"));
+  buttons.forEach(function (b) { if (b) btns.appendChild(b); });
+  dhead.appendChild(btns);
+  root.appendChild(dhead);
 }
 
 export var CALENDAR = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>';
@@ -247,7 +260,7 @@ export function rerollHand() {
   notify(prev.length ? HAND.rerolled : HAND.rolled, function () { swapHand(prev); });
 }
 
-export function handSection(root, hand, open) {
+export function handSection(root, hand, open, doneBtn) {
   if (state.settings.audio) warmSfx(REROLL_SFX);
   var head = el("div", { "class": "handhead" });
   head.appendChild(el("h2", { "class": "handlabel" }, HAND.label));
@@ -266,10 +279,7 @@ export function handSection(root, hand, open) {
     hand.forEach(function (j) { cl.appendChild(jobRow(j, { card: true })); });
     root.appendChild(cl);
   }
-  var dhead = el("div", { "class": "handhead deckhead" });
-  dhead.appendChild(withHelp(el("h2", { "class": "handlabel decklabel" }, HAND.deck), "errands-deck", "Errands deck"));
-  dhead.appendChild(eb);
-  root.appendChild(dhead);
+  deckHead(root, [eb, doneBtn]);
 }
 
 // One row of a hand dialog: the errand, its date, and whatever buttons the dialog gives it.

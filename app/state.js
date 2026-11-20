@@ -10,7 +10,7 @@ export var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 export var UNPURSUED = "Unpursued";
 export var CHECKPOINTS = 7;
-export var APP_VERSION = "1.4.0";
+export var APP_VERSION = "1.4.1";
 export var APP_NAME = "Sidequest";
 
 export function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -151,7 +151,7 @@ export function defaults() {
     tasks: d.tasks, hist: d.hist,
     decisions: d.decisions, quests: d.quests, workshop: d.workshop, jobs: d.jobs, hand: [],
     pins: ["quest:pApp"],
-    settings: { theme: "auto", dateFormat: "us", coinFormat: "us", blockWord: "Sprint", hideWelcome: false, showSplash: true, animatedBurndown: true, animatedReroll: true, lastBackup: "", since: iso(TODAY), vaultPurgeDays: 0, dustDays: 30, wipLimit: 0, contact: { name: "", company: "", phone: "", email: "", address: "", website: "" }, brandmark: "", audio: true, completionFx: true, dialCode: "1", affirmationBucket: [], dismissedUpdateVersion: "", seenVersion: "" }
+    settings: { theme: "auto", dateFormat: "us", coinFormat: "us", blockWord: "Sprint", hideWelcome: false, showSplash: true, animatedBurndown: true, animatedReroll: true, lastBackup: "", since: iso(TODAY), vaultPurgeDays: 0, dustDays: 30, wipLimit: 0, contact: { name: "", company: "", phone: "", email: "", address: "", website: "" }, brandmark: "", audio: true, completionFx: true, hideDoneErrands: false, dialCode: "1", affirmationBucket: [], dismissedUpdateVersion: "", seenVersion: "" }
   };
 }
 
@@ -320,6 +320,7 @@ export function normalize(s) {
     if ([0, 7, 14, 30, 60].indexOf(s.settings.dustDays) >= 0) d.settings.dustDays = s.settings.dustDays;
     if (typeof s.settings.audio === "boolean") d.settings.audio = s.settings.audio;
     if (typeof s.settings.completionFx === "boolean") d.settings.completionFx = s.settings.completionFx;
+    if (typeof s.settings.hideDoneErrands === "boolean") d.settings.hideDoneErrands = s.settings.hideDoneErrands;
     if (isDialCode(s.settings.dialCode)) d.settings.dialCode = s.settings.dialCode;
     if (typeof s.settings.dismissedUpdateVersion === "string") d.settings.dismissedUpdateVersion = S(s.settings.dismissedUpdateVersion, 20);
     if (typeof s.settings.seenVersion === "string") d.settings.seenVersion = S(s.settings.seenVersion, 20);

@@ -1824,7 +1824,7 @@ var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 var UNPURSUED = "Unpursued";
 var CHECKPOINTS = 7;
-var APP_VERSION = "1.4.0";
+var APP_VERSION = "1.4.1";
 var APP_NAME = "Sidequest";
 
 function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -1965,7 +1965,7 @@ function defaults() {
     tasks: d.tasks, hist: d.hist,
     decisions: d.decisions, quests: d.quests, workshop: d.workshop, jobs: d.jobs, hand: [],
     pins: ["quest:pApp"],
-    settings: { theme: "auto", dateFormat: "us", coinFormat: "us", blockWord: "Sprint", hideWelcome: false, showSplash: true, animatedBurndown: true, animatedReroll: true, lastBackup: "", since: iso(TODAY), vaultPurgeDays: 0, dustDays: 30, wipLimit: 0, contact: { name: "", company: "", phone: "", email: "", address: "", website: "" }, brandmark: "", audio: true, completionFx: true, dialCode: "1", affirmationBucket: [], dismissedUpdateVersion: "", seenVersion: "" }
+    settings: { theme: "auto", dateFormat: "us", coinFormat: "us", blockWord: "Sprint", hideWelcome: false, showSplash: true, animatedBurndown: true, animatedReroll: true, lastBackup: "", since: iso(TODAY), vaultPurgeDays: 0, dustDays: 30, wipLimit: 0, contact: { name: "", company: "", phone: "", email: "", address: "", website: "" }, brandmark: "", audio: true, completionFx: true, hideDoneErrands: false, dialCode: "1", affirmationBucket: [], dismissedUpdateVersion: "", seenVersion: "" }
   };
 }
 
@@ -2134,6 +2134,7 @@ function normalize(s) {
     if ([0, 7, 14, 30, 60].indexOf(s.settings.dustDays) >= 0) d.settings.dustDays = s.settings.dustDays;
     if (typeof s.settings.audio === "boolean") d.settings.audio = s.settings.audio;
     if (typeof s.settings.completionFx === "boolean") d.settings.completionFx = s.settings.completionFx;
+    if (typeof s.settings.hideDoneErrands === "boolean") d.settings.hideDoneErrands = s.settings.hideDoneErrands;
     if (isDialCode(s.settings.dialCode)) d.settings.dialCode = s.settings.dialCode;
     if (typeof s.settings.dismissedUpdateVersion === "string") d.settings.dismissedUpdateVersion = S(s.settings.dismissedUpdateVersion, 20);
     if (typeof s.settings.seenVersion === "string") d.settings.seenVersion = S(s.settings.seenVersion, 20);
@@ -5326,7 +5327,8 @@ function helpTopics() {
       "**Manage errands:** Choose errands for your hand, arrange their order, or discard them. **Empty hand** clears your hand, with the option to undo. You can also move errands without due dates up or down in the deck.",
       "**Choose** and **Discard:** **Choose** adds an errand to your hand and **Discard** returns it to the deck. **Discard** never deletes an errand. Your hand holds three errands, so **Choose** turns off when it’s full.",
       "**Roll** and **Reroll:** With an empty hand, the button reads **Roll** and deals your first hand. Once you have a hand, it reads **Reroll** and replaces your entire hand, including any errands you chose yourself. Select **Undo** right away to restore your previous hand. **Roll** requires at least one open errand, while **Reroll** requires at least two. With **Sound effects** on, rolling plays a sound. Turn off **Animated reroll** in **Options** to disable the animation.",
-      "**Complete errand:** Check the box next to an errand to mark it complete. It moves to the **Completed** section.",
+      "**Complete errand:** Check the box next to an errand to mark it complete. It moves below the open errands in the deck.",
+      "**Hide completed:** Hides completed errands from the deck. The count shows how many errands are completed. Your preference is saved. **Show completed** restores them.",
       "**Restore errand:** Uncheck a completed errand to move it back to the **Errands deck**.",
       "**Delete forever:** Permanently deletes an errand. Select **Undo** right away to restore it."
     ]],
@@ -5501,19 +5503,32 @@ function renderJobs(root) {
   root.appendChild(bar); root.appendChild(msg);
   stopFlip();
   var open = openJobs(), done = state.jobs.filter(function (j) { return j.done; });
-  var hand = handJobs(), deck = deckJobs();
-  if (open.length) handSection(root, hand, open);
+  var hand = handJobs(), deck = deckJobs(), tog = doneToggle(done.length);
+  var shownDone = state.settings.hideDoneErrands ? [] : done;
+  if (open.length) handSection(root, hand, open, tog);
+  else if (done.length) deckHead(root, [tog]);
   var ul = el("ul", { "class": "list jobs", style: "margin-top:12px" });
-  if (!open.length) ul.appendChild(el("li", { "class": "hint" }, "No errands yet. Add one with the Add errand button."));
+  if (!open.length) ul.appendChild(el("li", { "class": "hint" }, done.length ? "No open errands." : "No errands yet. Add one with the Add errand button."));
   deck.forEach(function (j) { ul.appendChild(jobRow(j)); });
-  if (deck.length || !open.length) root.appendChild(ul);
-  if (done.length) {
-    root.appendChild(el("h2", null, "Completed"));
-    var dl = el("ul", { "class": "list jobs" });
-    done.forEach(function (j) { dl.appendChild(jobRow(j)); });
-    root.appendChild(dl);
-  }
+  shownDone.forEach(function (j) { ul.appendChild(jobRow(j)); });
+  if (deck.length || shownDone.length || !open.length) root.appendChild(ul);
   landJob(); landArrival();
+}
+
+// Hides or shows completed errands at the bottom of the deck. The choice is saved in settings.
+function doneToggle(n) {
+  if (!n) return null;
+  var hidden = state.settings.hideDoneErrands === true, verb = hidden ? "Show" : "Hide";
+  var b = el("button", { type: "button", "class": "small", "data-focus": "hidedone-jobs", title: verb + " completed errands" }, verb + " completed (" + n + ")");
+  return on(b, "click", function () { state.settings.hideDoneErrands = !hidden; setFocusKey("hidedone-jobs"); changed(); });
+}
+
+function deckHead(root, buttons) {
+  var dhead = el("div", { "class": "handhead deckhead" }), btns = el("div", { "class": "handbtns" });
+  dhead.appendChild(withHelp(el("h2", { "class": "handlabel decklabel" }, HAND.deck), "errands-deck", "Errands deck"));
+  buttons.forEach(function (b) { if (b) btns.appendChild(b); });
+  dhead.appendChild(btns);
+  root.appendChild(dhead);
 }
 
 var CALENDAR = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>';
@@ -5720,7 +5735,7 @@ function rerollHand() {
   notify(prev.length ? HAND.rerolled : HAND.rolled, function () { swapHand(prev); });
 }
 
-function handSection(root, hand, open) {
+function handSection(root, hand, open, doneBtn) {
   if (state.settings.audio) warmSfx(REROLL_SFX);
   var head = el("div", { "class": "handhead" });
   head.appendChild(el("h2", { "class": "handlabel" }, HAND.label));
@@ -5739,10 +5754,7 @@ function handSection(root, hand, open) {
     hand.forEach(function (j) { cl.appendChild(jobRow(j, { card: true })); });
     root.appendChild(cl);
   }
-  var dhead = el("div", { "class": "handhead deckhead" });
-  dhead.appendChild(withHelp(el("h2", { "class": "handlabel decklabel" }, HAND.deck), "errands-deck", "Errands deck"));
-  dhead.appendChild(eb);
-  root.appendChild(dhead);
+  deckHead(root, [eb, doneBtn]);
 }
 
 // One row of a hand dialog: the errand, its date, and whatever buttons the dialog gives it.

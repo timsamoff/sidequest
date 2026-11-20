@@ -80,7 +80,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.4.0"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.4.1"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -2979,7 +2979,12 @@ async function exportClick(k, projectName) {
   const open = [...k.d.querySelectorAll("#view ul.jobs")][0].textContent;
   ok(open.indexOf("Renew the domain name") < open.indexOf("Back up the photos folder") && open.indexOf("Back up the photos folder") < open.indexOf("Reply to the print shop"), "dated jobs sort first, earliest first, then undated jobs");
   ok(k.d.querySelectorAll("#view .badge").length === 2 && [...k.d.querySelectorAll("#view .badge")].every(b => b.textContent === "Overdue"), "only the two past-due open jobs show an Overdue badge");
-  ok(k.$("view").textContent.includes("Completed") && [...k.d.querySelectorAll("#view ul.jobs")][1].textContent.includes("Update the email signature"), "a completed job is in the Completed section");
+  ok(!k.d.querySelector("#view h2:not(.handlabel)") && open.indexOf("Update the email signature") > open.indexOf("Reply to the print shop"), "a completed job sits below the open jobs in the deck, with no Completed section");
+  ok(k.btn(k.$("view"), "Hide completed (3)"), "the deck head has a Hide completed toggle with the count");
+  k.click(k.btn(k.$("view"), "Hide completed (3)"));
+  ok(k.saved().settings.hideDoneErrands === true && !k.$("view").textContent.includes("Update the email signature") && k.btn(k.$("view"), "Show completed (3)"), "Hide completed hides completed errands and saves the choice");
+  k.click(k.btn(k.$("view"), "Show completed (3)"));
+  ok(k.saved().settings.hideDoneErrands === false && k.$("view").textContent.includes("Update the email signature"), "Show completed brings them back");
   // add
   k.$("job-new").value = "Water the plants"; k.click(k.btn(k.$("view"), "Add errand"));
   ok(k.saved().jobs.some(j => j.text === "Water the plants" && !j.done && j.due === ""), "Add job saves a new undated job");

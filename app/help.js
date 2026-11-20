@@ -168,7 +168,8 @@ export function helpTopics() {
       "**Manage errands:** Choose errands for your hand, arrange their order, or discard them. **Empty hand** clears your hand, with the option to undo. You can also move errands without due dates up or down in the deck.",
       "**Choose** and **Discard:** **Choose** adds an errand to your hand and **Discard** returns it to the deck. **Discard** never deletes an errand. Your hand holds three errands, so **Choose** turns off when it’s full.",
       "**Roll** and **Reroll:** With an empty hand, the button reads **Roll** and deals your first hand. Once you have a hand, it reads **Reroll** and replaces your entire hand, including any errands you chose yourself. Select **Undo** right away to restore your previous hand. **Roll** requires at least one open errand, while **Reroll** requires at least two. With **Sound effects** on, rolling plays a sound. Turn off **Animated reroll** in **Options** to disable the animation.",
-      "**Complete errand:** Check the box next to an errand to mark it complete. It moves to the **Completed** section.",
+      "**Complete errand:** Check the box next to an errand to mark it complete. It moves below the open errands in the deck.",
+      "**Hide completed:** Hides completed errands from the deck. The count shows how many errands are completed. Your preference is saved. **Show completed** restores them.",
       "**Restore errand:** Uncheck a completed errand to move it back to the **Errands deck**.",
       "**Delete forever:** Permanently deletes an errand. Select **Undo** right away to restore it."
     ]],
