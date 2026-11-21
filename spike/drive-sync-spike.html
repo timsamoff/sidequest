@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Drive Sync Spike</title>
+<meta name="theme-color" content="#3b2f22">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root {
+  --bg: #f4efe6;
+  --card: #fffdf8;
+  --ink: #2b241c;
+  --muted: #6e6253;
+  --line: #d9cfbf;
+  --accent: #3b2f22;
+  --accent-ink: #fffdf8;
+  --ok: #2f6b3a;
+  --bad: #9b2c2c;
+  --warn: #8a5a12;
+  --code: #efe7da;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1c1915;
+    --card: #26221c;
+    --ink: #ece4d6;
+    --muted: #a99c89;
+    --line: #3d362c;
+    --accent: #d8c3a0;
+    --accent-ink: #1c1915;
+    --ok: #7fc28b;
+    --bad: #e58b8b;
+    --warn: #e0b56a;
+    --code: #322c24;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1c1915;
+  --card: #26221c;
+  --ink: #ece4d6;
+  --muted: #a99c89;
+  --line: #3d362c;
+  --accent: #d8c3a0;
+  --accent-ink: #1c1915;
+  --ok: #7fc28b;
+  --bad: #e58b8b;
+  --warn: #e0b56a;
+  --code: #322c24;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+header, main { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 20px; }
+h1 { margin: 0 0 4px; font-size: 1.5rem; }
+h2 { margin: 0 0 8px; font-size: 1.05rem; }
+.sub, .hint { color: var(--muted); margin: 4px 0 10px; }
+.hint { font-size: 0.88rem; }
+.env { font-size: 0.82rem; color: var(--muted); font-family: ui-monospace, Consolas, monospace; }
+code { background: var(--code); padding: 1px 4px; border-radius: 3px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 0 0 14px;
+}
+details.card summary { cursor: pointer; font-weight: 600; }
+details.card[open] summary { margin-bottom: 10px; }
+.main-card { padding: 18px 20px; }
+.main-card h2 { font-size: 1.2rem; }
+h3 { margin: 18px 0 4px; font-size: 0.95rem; }
+.sub-card { border-top: 1px solid var(--line); padding: 12px 0 4px; }
+button[hidden] { display: none; }
+button.quiet { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+label { display: block; margin: 0 0 8px; font-size: 0.9rem; }
+label.inline { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
+input:not([type="checkbox"]), select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 6px 8px;
+}
+label > input:not([type="checkbox"]) { display: block; width: 100%; margin-top: 3px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.row > input { flex: 1 1 200px; min-width: 0; }
+button {
+  font: inherit;
+  font-size: 0.9rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 5px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+.status { font-weight: 600; margin: 4px 0; }
+.status.ok { color: var(--ok); }
+.status.bad { color: var(--bad); }
+.status.warn { color: var(--warn); }
+
+.doc, .table { font-size: 0.85rem; overflow-x: auto; }
+.doc ul { margin: 6px 0; padding-left: 18px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+
+.log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  font: 0.8rem/1.4 ui-monospace, Consolas, monospace;
+}
+.log li { padding: 3px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.log li.ok { color: var(--ok); }
+.log li.bad { color: var(--bad); }
+.log li.warn { color: var(--warn); }
+.log time { color: var(--muted); margin-right: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Drive sync spike</h1>
+  <p class="sub">A test of Sidequest’s Google Drive sync. No Sidequest code or data.</p>
+</header>
+
+<main>
+  <section class="card main-card">
+    <h2>Sync to Google Drive</h2>
+    <p id="main-status" class="status">Not connected.</p>
+    <div class="row">
+      <button id="main-go">Authorize</button>
+      <button id="main-disconnect" hidden>Disconnect</button>
+    </div>
+    <p id="main-last" class="hint"></p>
+
+    <h3>Notes</h3>
+    <div class="row">
+      <input id="note-text" placeholder="Add a note, then see it on your other device" aria-label="Note text">
+      <button id="btn-note">Add</button>
+    </div>
+    <div id="local-doc" class="doc"></div>
+  </section>
+
+  <details id="tests" class="card tests">
+    <summary>Tests</summary>
+    <p id="env" class="env"></p>
+
+    <section class="sub-card">
+      <h2>Setup</h2>
+      <label>OAuth client ID <input id="cfg-client" autocomplete="off" spellcheck="false"></label>
+      <label>API key (for the picker) <input id="cfg-key" autocomplete="off" spellcheck="false"></label>
+      <label>Project number (for the picker) <input id="cfg-app" autocomplete="off" spellcheck="false" inputmode="numeric"></label>
+      <label>Device name <input id="cfg-device" autocomplete="off"></label>
+      <label>Sync keeps data in
+        <select id="cfg-mode">
+          <option value="appdata">A hidden app folder (no file to see)</option>
+          <option value="visible">A file in My Drive</option>
+        </select>
+      </label>
+      <div class="row"><button id="cfg-save">Save setup</button></div>
+      <p class="hint">Blank fields use the values built into the page. Stored in this browser only.</p>
+    </section>
+
+    <section class="sub-card">
+      <h2>1. Sign-in and token</h2>
+      <p id="tok-status" class="status">Not signed in.</p>
+      <div class="row">
+        <button id="btn-signin">Sign in with consent prompt</button>
+        <button id="btn-redirect">Sign in (redirect)</button>
+        <button id="btn-untapped">Try a reconnect without a tap</button>
+        <button id="btn-expire">Forget token</button>
+      </div>
+      <p class="hint">“Without a tap” waits two seconds, then asks for a token outside a user action, to see whether the browser blocks it.</p>
+    </section>
+
+    <section class="sub-card">
+      <h2>2. Hidden app folder (one file per device)</h2>
+      <div class="row">
+        <button id="btn-ad-write">Write my device file</button>
+        <button id="btn-ad-list">List app folder</button>
+        <button id="btn-ad-merge">Read and merge all</button>
+        <button id="btn-ad-delete">Delete my device file</button>
+      </div>
+      <div id="ad-list" class="table"></div>
+    </section>
+
+    <section class="sub-card">
+      <h2>3. File in My Drive</h2>
+      <p id="sf-status" class="status">No file chosen.</p>
+      <div class="row">
+        <button id="btn-sf-create">Create file</button>
+        <button id="btn-sf-pick">Choose with picker</button>
+        <button id="btn-sf-sync">Sync file</button>
+        <button id="btn-sf-meta">Refresh details</button>
+        <button id="btn-sf-forget">Forget file</button>
+      </div>
+      <div class="row">
+        <input id="share-email" type="email" placeholder="Collaborator’s Google address" aria-label="Collaborator’s Google address">
+        <button id="btn-share">Share as editor</button>
+      </div>
+      <div class="row">
+        <button id="btn-ifmatch">Test If-Match with a stale value</button>
+      </div>
+    </section>
+
+    <section class="sub-card">
+      <h2>4. Shared folder</h2>
+      <p id="fd-status" class="status">No folder chosen.</p>
+      <div class="row">
+        <button id="btn-fd-pick">Choose folder with picker</button>
+        <button id="btn-fd-list">List folder</button>
+        <button id="btn-fd-create">Create a file in folder</button>
+      </div>
+      <div id="fd-list" class="table"></div>
+    </section>
+
+    <section class="sub-card">
+      <h2>5. Change detection and polling</h2>
+      <div class="row">
+        <button id="btn-ch-start">Get change token</button>
+        <button id="btn-ch-list">List changes since token</button>
+        <button id="btn-poll-meta">Check file details once</button>
+      </div>
+      <div class="row">
+        <label class="inline">Extra polling
+          <select id="poll-every">
+            <option value="0">Off</option>
+            <option value="15">Every 15 seconds</option>
+            <option value="60">Every minute</option>
+          </select>
+        </label>
+        <label class="inline">Method
+          <select id="poll-method">
+            <option value="meta">File details</option>
+            <option value="changes">Changes list</option>
+          </select>
+        </label>
+        <label class="inline"><input type="checkbox" id="poll-autosync"> Sync when a change is seen</label>
+      </div>
+      <div class="row">
+        <label class="inline">Upload on page hide
+          <select id="hide-target">
+            <option value="off">Off</option>
+            <option value="shared">File in My Drive</option>
+            <option value="appdata">My app-folder file</option>
+          </select>
+        </label>
+        <button id="btn-reset-local">Clear local notes</button>
+      </div>
+      <p id="req-count" class="status">Requests this session: 0</p>
+    </section>
+
+    <section class="sub-card">
+      <h2>Log</h2>
+      <div class="row">
+        <button id="btn-copy-log">Copy log</button>
+        <button id="btn-clear-log">Clear log</button>
+      </div>
+      <ol id="log" class="log" aria-live="polite"></ol>
+    </section>
+  </details>
+</main>
+
+<script type="module">
+// Drive sync spike: tests sign-in, storage, merging, and polling for Sidequest's Drive brief (14.1).
+// Throwaway code. Nothing here is meant to move into the app as is.
+
+// drive.install lets the app appear in Drive's Open with menu (Drive UI integration).
+var SCOPES = "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.install";
+var API = "https://www.googleapis.com/drive/v3/";
+var UPLOAD = "https://www.googleapis.com/upload/drive/v3/";
+var FIELDS = "id,name,mimeType,modifiedTime,md5Checksum,version,headRevisionId,parents,owners(emailAddress),capabilities(canEdit,canShare)";
+var SHARED_NAME = "Sidequest sync.json";
+var SYNC_EVERY = 5 * 60 * 1000;
+
+// Paste the values from the Google Cloud project here once, so users never see a setup screen.
+var BUILT_IN = { clientId: "54932813609-phh2imr7q7hnsqd42125qevgu5mdd961.apps.googleusercontent.com", apiKey: "AIzaSyC3GcJgUf3s-6MEvZaqyz0vS356aQ4taG4", appId: "54932813609" };
+
+var LS = {
+  get: function (k, d) { try { var v = window.localStorage.getItem("spike-" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set: function (k, v) { try { window.localStorage.setItem("spike-" + k, JSON.stringify(v)); } catch (e) {} },
+  del: function (k) { try { window.localStorage.removeItem("spike-" + k); } catch (e) {} }
+};
+
+var $ = function (s) { return document.querySelector(s); };
+var token = null; // { value, expiresAt, scopes }, memory only
+var tokenClient = null;
+var who = "";
+var reqCount = 0;
+var pollTimer = 0;
+var lastSeen = { meta: null };
+
+var deviceId = LS.get("device-id", "");
+if (!deviceId) { deviceId = "d" + Math.random().toString(36).slice(2, 10); LS.set("device-id", deviceId); }
+
+// ---------- logging ----------
+
+var lines = [];
+// The log is kept in the browser so a reload or relaunch does not lose a test's history.
+var LOG_MAX = 1000;
+var saved = LS.get("log", []);
+
+function log(msg, kind) {
+  var t = new Date();
+  var stamp = t.toISOString().replace("T", " ").slice(0, 19);
+  addLine(stamp, msg, kind);
+  saved.push([stamp, msg, kind || ""]);
+  if (saved.length > LOG_MAX) saved = saved.slice(-LOG_MAX);
+  LS.set("log", saved);
+  console.log("[spike] " + msg);
+}
+function addLine(stamp, msg, kind) {
+  lines.push(stamp + "  " + msg);
+  var li = document.createElement("li");
+  if (kind) li.className = kind;
+  var tm = document.createElement("time");
+  tm.textContent = stamp;
+  li.appendChild(tm);
+  li.appendChild(document.createTextNode(msg));
+  var ol = $("#log");
+  ol.insertBefore(li, ol.firstChild);
+}
+saved.forEach(function (l) { addLine(l[0], l[1], l[2]); });
+if (saved.length) log("---- page loaded ----");
+function fail(what, e) { log(what + " failed: " + (e && e.message ? e.message : e), "bad"); }
+
+// ---------- config ----------
+
+function cfg() {
+  return {
+    clientId: LS.get("client-id", "") || BUILT_IN.clientId,
+    apiKey: LS.get("api-key", "") || BUILT_IN.apiKey,
+    appId: LS.get("app-id", "") || BUILT_IN.appId,
+    device: LS.get("device-name", "") || ("Device " + deviceId.slice(1, 5)),
+    mode: LS.get("mode", "appdata")
+  };
+}
+function loadSetup() {
+  var c = cfg();
+  $("#cfg-client").value = LS.get("client-id", "");
+  $("#cfg-key").value = LS.get("api-key", "");
+  $("#cfg-app").value = LS.get("app-id", "");
+  $("#cfg-client").placeholder = BUILT_IN.clientId || "Not built in yet";
+  $("#cfg-device").value = LS.get("device-name", "");
+  $("#cfg-device").placeholder = c.device;
+  $("#cfg-mode").value = c.mode;
+}
+function saveSetup() {
+  LS.set("client-id", $("#cfg-client").value.trim());
+  LS.set("api-key", $("#cfg-key").value.trim());
+  LS.set("app-id", $("#cfg-app").value.trim());
+  LS.set("device-name", $("#cfg-device").value.trim());
+  LS.set("mode", $("#cfg-mode").value);
+  tokenClient = null;
+  log("Setup saved. Device: " + cfg().device + " (" + deviceId + "), sync keeps data in " + (cfg().mode === "appdata" ? "the hidden app folder" : "a file in My Drive"), "ok");
+  renderMain();
+}
+
+function envLine() {
+  var standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  $("#env").textContent = [
+    standalone ? "installed (standalone)" : "browser tab",
+    window.navigator.onLine ? "online" : "offline",
+    "device " + deviceId,
+    window.location.origin
+  ].join(" · ");
+}
+
+// ---------- scripts ----------
+
+function loadScript(src) {
+  return new Promise(function (res, rej) {
+    if (document.querySelector('script[src="' + src + '"]')) return res();
+    var s = document.createElement("script");
+    s.src = src; s.async = true;
+    s.onload = res;
+    s.onerror = function () { rej(new Error("could not load " + src)); };
+    document.head.appendChild(s);
+  });
+}
+var gisReady = loadScript("https://accounts.google.com/gsi/client");
+var gapiReady = loadScript("https://apis.google.com/js/api.js");
+
+// ---------- auth ----------
+
+function getTokenClient() {
+  var id = cfg().clientId;
+  if (!id) throw new Error("add an OAuth client ID in Setup first");
+  if (!window.google || !window.google.accounts) throw new Error("Google sign-in script has not loaded");
+  if (!tokenClient) {
+    tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: id,
+      scope: SCOPES,
+      callback: onToken,
+      error_callback: function (err) { log("Token request error: " + (err.type || "") + " " + (err.message || ""), "bad"); }
+    });
+  }
+  return tokenClient;
+}
+
+function requestToken(prompt, label) {
+  gisReady.then(function () {
+    try {
+      log(label + ": asking for a token");
+      getTokenClient().requestAccessToken({ prompt: prompt });
+    } catch (e) { fail(label, e); }
+  }, function (e) { fail(label, e); });
+}
+
+function onToken(resp) {
+  if (resp.error) { log("Token refused: " + resp.error + " " + (resp.error_description || ""), "bad"); return; }
+  setToken(resp.access_token, Number(resp.expires_in), resp.scope || "");
+}
+
+function setToken(value, expiresIn, scope) {
+  token = { value: value, expiresAt: Date.now() + expiresIn * 1000, scopes: scope };
+  var hasAppdata = scope.indexOf("drive.appdata") >= 0;
+  var hasFile = scope.indexOf("drive.file") >= 0;
+  log("Token received, lasts " + Math.round(expiresIn / 60) + " min. appdata: " + (hasAppdata ? "yes" : "NO") + ", file: " + (hasFile ? "yes" : "NO"), hasAppdata && hasFile ? "ok" : "warn");
+  openedFromDrive = "";
+  renderMain();
+  whoAmI().then(checkPagehide).then(function () { return mainSync("sign-in"); });
+}
+
+function redirectSignIn() {
+  var c = cfg();
+  if (!c.clientId) { fail("Redirect sign-in", "add an OAuth client ID in Setup first"); return; }
+  var state = Math.random().toString(36).slice(2);
+  LS.set("oauth-state", state);
+  var back = window.location.origin + window.location.pathname;
+  var url = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
+    client_id: c.clientId, redirect_uri: back, response_type: "token",
+    scope: SCOPES, include_granted_scopes: "true", state: state
+  }).toString();
+  log("Redirecting to Google. Return URI: " + back);
+  window.location.assign(url);
+}
+
+function readRedirectResult() {
+  if (window.location.hash.indexOf("access_token=") < 0 && window.location.hash.indexOf("error=") < 0) return;
+  var p = new URLSearchParams(window.location.hash.slice(1));
+  window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  if (p.get("error")) { log("Redirect sign-in refused: " + p.get("error"), "bad"); return; }
+  if (p.get("state") !== LS.get("oauth-state", "")) { log("Redirect sign-in: state did not match, token ignored", "bad"); return; }
+  LS.del("oauth-state");
+  log("Redirect sign-in returned", "ok");
+  setToken(p.get("access_token"), Number(p.get("expires_in") || 3600), p.get("scope") || "");
+}
+
+// Drive's Open with sends ?state={"ids":[...],"action":"open"} and grants the app that file.
+var openedFromDrive = "";
+function readDriveState() {
+  var raw = new URLSearchParams(window.location.search).get("state");
+  if (!raw) return;
+  window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+  var st;
+  try { st = JSON.parse(raw); } catch (e) { log("Opened from Drive, but its state was unreadable: " + raw, "bad"); return; }
+  log("Opened from Drive: action " + st.action + ", file " + (st.ids || []).join(", ") + (st.userId ? ", Drive user " + st.userId : ""), "ok");
+  if (st.action !== "open" || !st.ids || !st.ids[0]) return;
+  LS.set("shared-file-id", st.ids[0]);
+  LS.set("mode", "visible");
+  $("#cfg-mode").value = "visible";
+  lastSeen.meta = null;
+  openedFromDrive = st.ids[0];
+  showShared();
+}
+
+function tokenStatus() {
+  var el = $("#tok-status");
+  if (!token) { el.textContent = "Not signed in."; el.className = "status"; return; }
+  var left = token.expiresAt - Date.now();
+  if (left <= 0) { el.textContent = "Token expired. Reconnect needed." + (who ? " (" + who + ")" : ""); el.className = "status bad"; return; }
+  var m = Math.floor(left / 60000), s = Math.floor(left / 1000) % 60;
+  el.textContent = "Signed in" + (who ? " as " + who : "") + ". Token expires in " + m + ":" + String(s).padStart(2, "0") + ".";
+  el.className = "status " + (left < 300000 ? "warn" : "ok");
+}
+
+// Disconnect revokes access and stops syncing. Files stay in Drive.
+function disconnect() {
+  if (!token) return;
+  var v = token.value;
+  token = null; who = "";
+  LS.set("connected", false);
+  renderMain();
+  window.google.accounts.oauth2.revoke(v, function () { log("Disconnected. Access revoked; Drive files kept.", "ok"); });
+}
+
+// ---------- the user flow ----------
+
+var syncing = false;
+
+function tokenOk() { return !!token && Date.now() < token.expiresAt; }
+
+function renderMain() {
+  var st = $("#main-status"), go = $("#main-go"), dis = $("#main-disconnect");
+  if (!cfg().clientId) {
+    st.textContent = "This page has no OAuth client ID yet. Add one under Tests > Setup.";
+    st.className = "status warn"; go.disabled = true; dis.hidden = true;
+  } else if (syncing) {
+    st.textContent = "Syncing…"; st.className = "status"; go.disabled = true;
+  } else if (tokenOk()) {
+    st.textContent = "Connected" + (who ? " as " + who : "") + ".";
+    st.className = "status ok"; go.textContent = "Sync now"; go.disabled = false; dis.hidden = false;
+  } else if (openedFromDrive) {
+    st.textContent = "Opened a file from Google Drive. Tap Authorize to start syncing it.";
+    st.className = "status warn"; go.textContent = "Authorize"; go.disabled = false; dis.hidden = true;
+  } else if (token || LS.get("connected", false)) {
+    st.textContent = "Sync paused. Tap to reconnect.";
+    st.className = "status warn"; go.textContent = "Reconnect"; go.disabled = false; dis.hidden = true;
+  } else {
+    st.textContent = "Not connected. Your notes stay on this device.";
+    st.className = "status"; go.textContent = "Authorize"; go.disabled = false; dis.hidden = true;
+  }
+  var last = LS.get("last-sync", "");
+  $("#main-last").textContent = last ? "Last sync on " + last.slice(0, 10) + ", at " + last.slice(11, 16) + " UTC." : "";
+}
+
+function mainGo() {
+  if (tokenOk()) { mainSync("Sync now"); return; }
+  requestToken(undefined, token || LS.get("connected", false) ? "Reconnect" : "Authorize");
+}
+
+function mainSync(reason) {
+  if (!tokenOk() || syncing) { renderMain(); return Promise.resolve(); }
+  if (!window.navigator.onLine) { log("Sync skipped (" + reason + "): offline"); return Promise.resolve(); }
+  syncing = true;
+  renderMain();
+  var t0 = Date.now();
+  var run = cfg().mode === "visible" ? syncVisible() : syncAppFolder();
+  return run.then(function () {
+    LS.set("last-sync", new Date().toISOString());
+    LS.set("connected", true);
+    log("Synced (" + reason + ", " + (cfg().mode === "visible" ? "file in My Drive" : "app folder") + ", " + (Date.now() - t0) + " ms)", "ok");
+  }, function (e) { fail("Sync (" + reason + ")", e); }).then(function () { syncing = false; renderMain(); });
+}
+
+function syncAppFolder() {
+  return mergeAppFiles().then(writeMyAppFile);
+}
+
+// Finds the app's file by name when this device has none on record. Under drive.file this tests
+// whether a file made on another device is visible without a picker.
+function syncVisible() {
+  var id = sharedId();
+  var find = id ? Promise.resolve(id) : api("files?fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc&q=" +
+    encodeURIComponent("name = " + q(SHARED_NAME) + " and trashed = false")).then(function (r) {
+      var f = r.body.files[0];
+      if (f) { LS.set("shared-file-id", f.id); log("Found “" + SHARED_NAME + "” in Drive without a picker (" + r.body.files.length + " match)", "ok"); return f.id; }
+      return "";
+    });
+  return find.then(function (fid) {
+    if (fid) return sharedSync(true);
+    stampSelf("file in My Drive");
+    saveDoc();
+    return createFile({ name: SHARED_NAME, mimeType: "application/json" }, doc).then(function (r) {
+      LS.set("shared-file-id", r.body.id);
+      lastSeen.meta = r.body;
+      showShared(r.body);
+      log("No sync file found, so created “" + SHARED_NAME + "” in My Drive", "ok");
+    });
+  });
+}
+
+// ---------- Drive helpers ----------
+
+function api(path, opts) {
+  opts = opts || {};
+  if (!token) return Promise.reject(new Error("not signed in"));
+  if (Date.now() > token.expiresAt) return Promise.reject(new Error("token expired, reconnect needed"));
+  var url = /^https:/.test(path) ? path : API + path;
+  var headers = Object.assign({ Authorization: "Bearer " + token.value }, opts.headers || {});
+  reqCount++;
+  $("#req-count").textContent = "Requests this session: " + reqCount;
+  var t0 = window.performance.now();
+  return window.fetch(url, Object.assign({}, opts, { headers: headers })).then(function (res) {
+    return res.text().then(function (text) {
+      var body = null;
+      try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
+      var ms = Math.round(window.performance.now() - t0);
+      if (!res.ok) {
+        var msg = body && body.error ? (body.error.message || body.error) : res.statusText;
+        var err = new Error(res.status + " " + msg + " (" + ms + " ms)");
+        err.status = res.status;
+        throw err;
+      }
+      return { body: body, ms: ms, res: res };
+    });
+  });
+}
+
+function multipart(meta, content) {
+  var b = "spike" + Math.random().toString(36).slice(2);
+  return {
+    type: "multipart/related; boundary=" + b,
+    body: "--" + b + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" + JSON.stringify(meta) +
+      "\r\n--" + b + "\r\nContent-Type: application/json\r\n\r\n" + JSON.stringify(content) + "\r\n--" + b + "--"
+  };
+}
+function createFile(meta, content) {
+  var m = multipart(meta, content);
+  return api(UPLOAD + "files?uploadType=multipart&fields=" + FIELDS, { method: "POST", headers: { "Content-Type": m.type }, body: m.body });
+}
+function writeContent(id, content, extra) {
+  return api(UPLOAD + "files/" + id + "?uploadType=media&fields=" + FIELDS, {
+    method: "PATCH", headers: Object.assign({ "Content-Type": "application/json" }, extra || {}), body: JSON.stringify(content)
+  });
+}
+function readContent(id) { return api("files/" + id + "?alt=media"); }
+function getMeta(id) { return api("files/" + id + "?fields=" + FIELDS); }
+function q(s) { return "'" + String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'"; }
+
+function whoAmI() {
+  return api("about?fields=user(emailAddress,displayName)").then(function (r) {
+    who = r.body.user.emailAddress;
+    log("Account: " + r.body.user.displayName + " <" + who + "> (" + r.ms + " ms)");
+  }, function (e) { fail("Account lookup", e); });
+}
+
+// ---------- the test document and its merge ----------
+
+function emptyDoc() { return { kind: "sidequest-spike", entries: {}, notes: {}, pagehide: {} }; }
+var doc = LS.get("doc", null) || emptyDoc();
+if (!doc.pagehide) doc.pagehide = {};
+
+function saveDoc() { LS.set("doc", doc); renderDoc(); }
+
+// Per-key merge, newer "at" wins. Enough to see convergence; the real engine uses hybrid clocks.
+function mergeMaps(a, b) {
+  var out = Object.assign({}, a);
+  Object.keys(b || {}).forEach(function (k) {
+    if (!out[k] || String(b[k].at) > String(out[k].at)) out[k] = b[k];
+  });
+  return out;
+}
+function merge(a, b) {
+  if (!b || b.kind !== "sidequest-spike") return a;
+  return {
+    kind: "sidequest-spike",
+    entries: mergeMaps(a.entries, b.entries),
+    notes: mergeMaps(a.notes, b.notes),
+    pagehide: mergeMaps(a.pagehide, b.pagehide)
+  };
+}
+function stampSelf(how) {
+  var prev = doc.entries[deviceId];
+  doc.entries[deviceId] = {
+    device: cfg().device, account: who, writes: (prev ? prev.writes : 0) + 1,
+    via: how, at: new Date().toISOString()
+  };
+}
+
+function renderDoc() {
+  var el = $("#local-doc");
+  el.textContent = "";
+  var notes = Object.keys(doc.notes).map(function (k) { return doc.notes[k]; }).sort(function (a, b) { return a.at < b.at ? -1 : 1; });
+  var entries = Object.keys(doc.entries).map(function (k) { return [k, doc.entries[k]]; });
+  var h = document.createElement("p");
+  h.textContent = notes.length + " note(s), " + entries.length + " device(s) seen.";
+  el.appendChild(h);
+  if (notes.length) {
+    var ul = document.createElement("ul");
+    notes.forEach(function (n) {
+      var li = document.createElement("li");
+      li.textContent = n.text + "  (" + n.by + ", " + n.at.slice(0, 19).replace("T", " ") + " UTC)";
+      ul.appendChild(li);
+    });
+    el.appendChild(ul);
+  }
+  if (entries.length) {
+    el.appendChild(table(["Device", "Account", "Writes", "Last write (UTC)", "Via"], entries.map(function (e) {
+      var v = e[1];
+      return [v.device + (e[0] === deviceId ? " (this one)" : ""), v.account || "", v.writes, v.at.slice(0, 19).replace("T", " "), v.via || ""];
+    })));
+  }
+}
+
+function table(head, rows) {
+  var t = document.createElement("table");
+  var tr = document.createElement("tr");
+  head.forEach(function (h) { var th = document.createElement("th"); th.textContent = h; tr.appendChild(th); });
+  t.appendChild(tr);
+  rows.forEach(function (r) {
+    var row = document.createElement("tr");
+    r.forEach(function (c) { var td = document.createElement("td"); td.textContent = c == null ? "" : String(c); row.appendChild(td); });
+    t.appendChild(row);
+  });
+  return t;
+}
+
+function addNote() {
+  var text = $("#note-text").value.trim();
+  if (!text) return;
+  var id = "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  doc.notes[id] = { text: text, by: cfg().device, at: new Date().toISOString() };
+  $("#note-text").value = "";
+  saveDoc();
+  log("Note added locally: “" + text + "”");
+  // Sync shortly after an edit, so a burst of notes goes up in one write.
+  window.clearTimeout(noteTimer);
+  noteTimer = window.setTimeout(function () { mainSync("note added"); }, 3000);
+}
+var noteTimer = 0;
+
+// ---------- 2. hidden app folder ----------
+
+function myAppFileName() { return "device-" + deviceId + ".json"; }
+
+function findMyAppFile() {
+  var cached = LS.get("appdata-file-id", "");
+  if (cached) return Promise.resolve(cached);
+  return api("files?spaces=appDataFolder&fields=files(id,name)&q=" + encodeURIComponent("name = " + q(myAppFileName()))).then(function (r) {
+    var f = r.body.files[0];
+    if (f) LS.set("appdata-file-id", f.id);
+    return f ? f.id : "";
+  });
+}
+
+function writeMyAppFile() {
+  stampSelf("app folder");
+  saveDoc();
+  return findMyAppFile().then(function (id) {
+    if (id) return writeContent(id, doc).then(function (r) { log("App folder: updated " + myAppFileName() + ", version " + r.body.version + " (" + r.ms + " ms)", "ok"); });
+    return createFile({ name: myAppFileName(), parents: ["appDataFolder"], mimeType: "application/json" }, doc).then(function (r) {
+      LS.set("appdata-file-id", r.body.id);
+      log("App folder: created " + myAppFileName() + " (" + r.ms + " ms)", "ok");
+    });
+  }).catch(function (e) {
+    if (e.status === 404) LS.del("appdata-file-id");
+    throw e;
+  });
+}
+function appWrite() { writeMyAppFile().catch(function (e) { fail("App folder write", e); }); }
+
+function appList() {
+  return api("files?spaces=appDataFolder&pageSize=100&fields=files(id,name,modifiedTime,size,version)").then(function (r) {
+    var files = r.body.files;
+    var box = $("#ad-list");
+    box.textContent = "";
+    box.appendChild(table(["Name", "Modified (UTC)", "Size", "Version"], files.map(function (f) {
+      return [f.name + (f.name === myAppFileName() ? " (this device)" : ""), f.modifiedTime.slice(0, 19).replace("T", " "), f.size, f.version];
+    })));
+    log("App folder: " + files.length + " file(s) (" + r.ms + " ms)", "ok");
+    return files;
+  });
+}
+
+function mergeAppFiles() {
+  return appList().then(function (files) {
+    var reads = files.filter(function (f) { return /^device-.*\.json$/.test(f.name); }).map(function (f) {
+      return readContent(f.id).then(function (r) { return r.body; }, function (e) { fail("Read " + f.name, e); return null; });
+    });
+    return Promise.all(reads).then(function (docs) {
+      var before = Object.keys(doc.notes).length;
+      docs.forEach(function (d) { doc = merge(doc, d); });
+      saveDoc();
+      log("App folder: merged " + docs.length + " file(s). Notes " + before + " → " + Object.keys(doc.notes).length, "ok");
+    });
+  });
+}
+function appMerge() { mergeAppFiles().catch(function (e) { fail("App folder merge", e); }); }
+
+function appDelete() {
+  findMyAppFile().then(function (id) {
+    if (!id) { log("App folder: this device has no file"); return; }
+    return api("files/" + id, { method: "DELETE" }).then(function (r) {
+      LS.del("appdata-file-id");
+      log("App folder: deleted " + myAppFileName() + " (" + r.ms + " ms)", "ok");
+    });
+  }).catch(function (e) { fail("App folder delete", e); });
+}
+
+// ---------- 3. visible shared file ----------
+
+function sharedId() { return LS.get("shared-file-id", ""); }
+
+function showShared(meta) {
+  var el = $("#sf-status");
+  if (!sharedId()) { el.textContent = "No file chosen."; el.className = "status"; return; }
+  if (!meta) { el.textContent = "File " + sharedId() + " (details not loaded)"; el.className = "status"; return; }
+  var owner = meta.owners && meta.owners[0] ? meta.owners[0].emailAddress : "unknown owner";
+  el.textContent = meta.name + " · owner " + owner + " · version " + meta.version + " · " +
+    (meta.capabilities && meta.capabilities.canEdit ? "can edit" : "read only") + " · modified " + meta.modifiedTime.slice(0, 19).replace("T", " ") + " UTC";
+  el.className = "status ok";
+}
+
+function sharedCreate() {
+  stampSelf("shared file");
+  saveDoc();
+  createFile({ name: SHARED_NAME, mimeType: "application/json" }, doc).then(function (r) {
+    LS.set("shared-file-id", r.body.id);
+    lastSeen.meta = r.body;
+    showShared(r.body);
+    log("Shared file created in My Drive: " + r.body.id + " (" + r.ms + " ms)", "ok");
+  }, function (e) { fail("Create shared file", e); });
+}
+
+function sharedMeta(quiet) {
+  var id = sharedId();
+  if (!id) { if (!quiet) log("No shared file chosen", "warn"); return Promise.resolve(null); }
+  return getMeta(id).then(function (r) {
+    showShared(r.body);
+    if (!quiet) log("Shared file details: version " + r.body.version + ", md5 " + (r.body.md5Checksum || "none") + " (" + r.ms + " ms)", "ok");
+    return r;
+  }, function (e) {
+    fail("Shared file details", e);
+    if (e.status === 404) log("A 404 under drive.file can mean deleted OR no access. This app cannot tell which.", "warn");
+    return null;
+  });
+}
+
+// With rethrow, errors pass to the caller (the user flow) instead of stopping here.
+function sharedSync(rethrow) {
+  rethrow = rethrow === true;
+  var id = sharedId();
+  if (!id) { log("No shared file chosen", "warn"); return Promise.resolve(); }
+  var t0 = Date.now();
+  return readContent(id).then(function (r) {
+    var before = Object.keys(doc.notes).length;
+    doc = merge(doc, r.body);
+    stampSelf("shared file");
+    saveDoc();
+    return writeContent(id, doc).then(function (w) {
+      lastSeen.meta = w.body;
+      showShared(w.body);
+      log("Shared file synced: notes " + before + " → " + Object.keys(doc.notes).length + ", now version " + w.body.version + " (" + (Date.now() - t0) + " ms total)", "ok");
+    });
+  }).catch(function (e) {
+    if (e.status === 404) {
+      log("A 404 under drive.file can mean deleted OR no access. The next sync searches again or creates a new file.", "warn");
+      LS.del("shared-file-id");
+    }
+    if (e.status === 403) log("403: this account can see the file but may not have edit rights, or the app was never granted it.", "warn");
+    if (rethrow) throw e;
+    fail("Shared file sync", e);
+  });
+}
+
+function share() {
+  var email = $("#share-email").value.trim();
+  var id = sharedId();
+  if (!id || !email) { log("Choose a shared file and enter an address first", "warn"); return; }
+  api("files/" + id + "/permissions?sendNotificationEmail=true&fields=id,role,emailAddress", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "user", role: "writer", emailAddress: email })
+  }).then(function (r) { log("Shared with " + email + " as editor (" + r.ms + " ms)", "ok"); }, function (e) { fail("Share", e); });
+}
+
+function ifMatchTest() {
+  var id = sharedId();
+  if (!id) { log("No shared file chosen", "warn"); return; }
+  // The body is the merged local doc, so a write that goes through anyway does no harm.
+  writeContent(id, doc, { "If-Match": "\"spike-stale-etag\"" }).then(function (r) {
+    log("If-Match: the write went through (" + r.res.status + "). Drive ignored the stale precondition.", "warn");
+  }, function (e) {
+    if (e.status === 412) log("If-Match: Drive refused the write with 412. Preconditions are honored.", "ok");
+    else fail("If-Match test", e);
+  });
+}
+
+// ---------- picker ----------
+
+function openPicker(mode) {
+  var c = cfg();
+  if (!token) { log("Sign in before using the picker", "warn"); return; }
+  if (!c.apiKey || !c.appId) { log("The picker needs the API key and project number in Setup", "warn"); return; }
+  gapiReady.then(function () {
+    return new Promise(function (res, rej) { window.gapi.load("picker", { callback: res, onerror: rej }); });
+  }).then(function () {
+    var P = window.google.picker;
+    var b = new P.PickerBuilder().setOAuthToken(token.value).setDeveloperKey(c.apiKey).setAppId(c.appId)
+      .setCallback(function (data) { onPicked(mode, data); });
+    if (mode === "folder") {
+      b.addView(new P.DocsView(P.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true).setMimeTypes("application/vnd.google-apps.folder"));
+      b.addView(new P.DocsView(P.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true).setOwnedByMe(false).setLabel("Shared with me"));
+    } else {
+      b.addView(new P.DocsView(P.ViewId.DOCS).setMimeTypes("application/json").setOwnedByMe(true).setLabel("My files"));
+      // No type filter here: a filtered Shared with me view came up empty for a file Drive showed as shared.
+      b.addView(new P.DocsView(P.ViewId.DOCS).setOwnedByMe(false).setLabel("Shared with me"));
+      b.addView(new P.DocsView(P.ViewId.DOCS).setLabel("All files"));
+    }
+    // The picker can place itself near the top of the page, out of view when the page is scrolled.
+    window.scrollTo(0, 0);
+    b.build().setVisible(true);
+    log("Picker opened (" + mode + ")");
+  }).catch(function (e) { fail("Picker", e); });
+}
+
+function onPicked(mode, data) {
+  var P = window.google.picker;
+  if (data.action === P.Action.LOADED) { log("Picker loaded"); return; }
+  if (data.action === P.Action.CANCEL) { log("Picker canceled"); return; }
+  if (data.action !== P.Action.PICKED) { log("Picker reported: " + data.action); return; }
+  if (data.action !== P.Action.PICKED) return;
+  var d = data.docs[0];
+  log("Picked " + mode + ": “" + d.name + "” (" + d.id + ", " + (d.mimeType || "no type") + ")", "ok");
+  if (mode === "folder") {
+    LS.set("folder", { id: d.id, name: d.name });
+    showFolder();
+  } else {
+    LS.set("shared-file-id", d.id);
+    sharedMeta(false);
+  }
+}
+
+// ---------- 4. folder ----------
+
+function showFolder() {
+  var f = LS.get("folder", null);
+  $("#fd-status").textContent = f ? "Folder “" + f.name + "” (" + f.id + ")" : "No folder chosen.";
+}
+
+function folderList() {
+  var f = LS.get("folder", null);
+  if (!f) { log("No folder chosen", "warn"); return; }
+  api("files?pageSize=100&fields=files(id,name,modifiedTime,owners(emailAddress),capabilities(canEdit))&q=" + encodeURIComponent(q(f.id) + " in parents and trashed = false")).then(function (r) {
+    var box = $("#fd-list");
+    box.textContent = "";
+    box.appendChild(table(["Name", "Owner", "Can edit", "Modified (UTC)"], r.body.files.map(function (x) {
+      return [x.name, x.owners && x.owners[0] ? x.owners[0].emailAddress : "", x.capabilities && x.capabilities.canEdit ? "yes" : "no", x.modifiedTime.slice(0, 19).replace("T", " ")];
+    })));
+    log("Folder lists " + r.body.files.length + " file(s) this app can see (" + r.ms + " ms). Compare with what Drive shows.", "ok");
+  }, function (e) { fail("Folder list", e); });
+}
+
+function folderCreate() {
+  var f = LS.get("folder", null);
+  if (!f) { log("No folder chosen", "warn"); return; }
+  stampSelf("folder file");
+  createFile({ name: "spike-" + cfg().device.replace(/\W+/g, "-") + "-" + deviceId + ".json", parents: [f.id], mimeType: "application/json" }, doc)
+    .then(function (r) { log("Created " + r.body.name + " in the folder (" + r.ms + " ms)", "ok"); }, function (e) { fail("Create in folder", e); });
+}
+
+// ---------- 5. change detection ----------
+
+function changeStart() {
+  return api("changes/startPageToken").then(function (r) {
+    LS.set("change-token", r.body.startPageToken);
+    log("Change token: " + r.body.startPageToken + " (" + r.ms + " ms)", "ok");
+  }, function (e) { fail("Change token", e); });
+}
+
+function changeList(fromPoll) {
+  var tok = LS.get("change-token", "");
+  if (!tok) { if (!fromPoll) log("Get a change token first", "warn"); return changeStart().then(function () { return false; }); }
+  var seen = [];
+  function page(t) {
+    return api("changes?pageSize=100&spaces=drive,appDataFolder&includeRemoved=true&fields=" +
+      encodeURIComponent("nextPageToken,newStartPageToken,changes(fileId,removed,time,changeType,file(name,trashed,modifiedTime))") + "&pageToken=" + encodeURIComponent(t))
+      .then(function (r) {
+        seen = seen.concat(r.body.changes || []);
+        if (r.body.nextPageToken) return page(r.body.nextPageToken);
+        LS.set("change-token", r.body.newStartPageToken);
+        return r;
+      });
+  }
+  return page(tok).then(function (r) {
+    if (!seen.length) { log("Changes: none (" + r.ms + " ms)" + (fromPoll ? " [poll]" : "")); return false; }
+    seen.forEach(function (c) {
+      var name = c.file ? c.file.name : "(no file data)";
+      log("Change: " + name + " · " + c.fileId + (c.removed ? " · REMOVED (deleted or access lost)" : "") + (c.file && c.file.trashed ? " · trashed" : "") + " · " + c.time, c.removed ? "warn" : "");
+    });
+    var sid = sharedId();
+    return seen.some(function (c) { return c.fileId === sid; });
+  }, function (e) { fail("Changes list", e); return false; });
+}
+
+function metaPoll(fromPoll) {
+  var id = sharedId();
+  if (!id) { if (!fromPoll) log("No shared file chosen", "warn"); return Promise.resolve(false); }
+  return getMeta(id).then(function (r) {
+    var prev = lastSeen.meta;
+    var changed = !!prev && (prev.md5Checksum !== r.body.md5Checksum || String(prev.version) !== String(r.body.version));
+    lastSeen.meta = r.body;
+    showShared(r.body);
+    log("File details: " + (prev ? (changed ? "CHANGED, version " + prev.version + " → " + r.body.version : "unchanged") : "baseline version " + r.body.version) + " (" + r.ms + " ms)" + (fromPoll ? " [poll]" : ""), changed ? "ok" : "");
+    return changed;
+  }, function (e) { fail("File details", e); return false; });
+}
+
+function pollOnce(reason) {
+  if (!token || Date.now() > token.expiresAt) { log("Skipped " + reason + ": no valid token", "warn"); return; }
+  if (!window.navigator.onLine) { log("Skipped " + reason + ": offline"); return; }
+  var run = $("#poll-method").value === "changes" ? changeList(true) : metaPoll(true);
+  run.then(function (changed) { if (changed && $("#poll-autosync").checked) sharedSync(); });
+}
+
+function setPoll() {
+  window.clearInterval(pollTimer);
+  var secs = Number($("#poll-every").value);
+  LS.set("poll-every", secs);
+  if (!secs) { log("Auto-poll off"); return; }
+  log("Auto-poll every " + secs + " s, paused while hidden or offline");
+  pollTimer = window.setInterval(function () {
+    if (document.visibilityState !== "visible") return;
+    pollOnce("poll");
+  }, secs * 1000);
+}
+
+// ---------- page hide upload ----------
+
+// A keepalive PATCH is the only kind that can outlive the page. Its body must stay under 64 KB.
+function onPageHide() {
+  var target = $("#hide-target").value;
+  if (target === "off" || !token || Date.now() > token.expiresAt) return;
+  var id = target === "shared" ? sharedId() : LS.get("appdata-file-id", "");
+  if (!id) return;
+  var stamp = new Date().toISOString();
+  doc.pagehide[deviceId] = { at: stamp, device: cfg().device };
+  LS.set("doc", doc);
+  LS.set("pagehide-attempt", { at: stamp, id: id, target: target });
+  try {
+    window.fetch(UPLOAD + "files/" + id + "?uploadType=media", {
+      method: "PATCH", keepalive: true,
+      headers: { Authorization: "Bearer " + token.value, "Content-Type": "application/json" },
+      body: JSON.stringify(doc)
+    });
+  } catch (e) { LS.set("pagehide-error", String(e)); }
+}
+
+function checkPagehide() {
+  var a = LS.get("pagehide-attempt", null);
+  if (!a) return;
+  var err = LS.get("pagehide-error", "");
+  if (err) log("Last page-hide upload threw: " + err, "bad");
+  readContent(a.id).then(function (r) {
+    var got = r.body && r.body.pagehide && r.body.pagehide[deviceId];
+    if (got && got.at === a.at) log("Last page-hide upload (" + a.target + ", " + a.at + ") DID reach Drive", "ok");
+    else log("Last page-hide upload (" + a.target + ", " + a.at + ") did NOT reach Drive" + (got ? " (found " + got.at + ")" : ""), "warn");
+    LS.del("pagehide-attempt"); LS.del("pagehide-error");
+  }, function (e) { fail("Page-hide check", e); });
+}
+
+// ---------- wiring ----------
+
+function on(id, fn) { $(id).addEventListener("click", fn); }
+
+on("#cfg-save", saveSetup);
+on("#main-go", mainGo);
+on("#main-disconnect", disconnect);
+on("#btn-signin", function () { requestToken("consent", "Sign-in with consent prompt"); });
+on("#btn-redirect", redirectSignIn);
+on("#btn-untapped", function () {
+  log("Untapped reconnect in 2 seconds");
+  window.setTimeout(function () { requestToken("", "Untapped reconnect"); }, 2000);
+});
+on("#btn-expire", function () { token = null; who = ""; renderMain(); log("Token forgotten (memory cleared). Reconnect to continue."); });
+on("#btn-note", addNote);
+$("#note-text").addEventListener("keydown", function (e) { if (e.key === "Enter") addNote(); });
+on("#btn-reset-local", function () { doc = emptyDoc(); saveDoc(); LS.del("appdata-file-id"); log("Local data cleared"); });
+on("#btn-ad-write", appWrite);
+on("#btn-ad-list", function () { appList().catch(function (e) { fail("App folder list", e); }); });
+on("#btn-ad-merge", appMerge);
+on("#btn-ad-delete", appDelete);
+on("#btn-sf-create", sharedCreate);
+on("#btn-sf-pick", function () { openPicker("file"); });
+on("#btn-sf-sync", sharedSync);
+on("#btn-sf-meta", function () { sharedMeta(false); });
+on("#btn-sf-forget", function () { LS.del("shared-file-id"); lastSeen.meta = null; showShared(); log("Shared file forgotten on this device"); });
+on("#btn-share", share);
+on("#btn-ifmatch", ifMatchTest);
+on("#btn-fd-pick", function () { openPicker("folder"); });
+on("#btn-fd-list", folderList);
+on("#btn-fd-create", folderCreate);
+on("#btn-ch-start", changeStart);
+on("#btn-ch-list", function () { changeList(false); });
+on("#btn-poll-meta", function () { metaPoll(false); });
+$("#poll-every").addEventListener("change", setPoll);
+$("#hide-target").addEventListener("change", function () { LS.set("hide-target", $("#hide-target").value); });
+on("#btn-copy-log", function () {
+  var text = lines.slice().join("\n");
+  window.navigator.clipboard.writeText(text).then(function () { log("Log copied (" + lines.length + " lines)", "ok"); }, function (e) { fail("Copy log", e); });
+});
+on("#btn-clear-log", function () { lines = []; saved = []; LS.del("log"); $("#log").textContent = ""; });
+
+document.addEventListener("visibilitychange", function () {
+  envLine();
+  if (document.visibilityState === "visible") { log("Page visible again"); mainSync("back in focus"); }
+});
+window.addEventListener("online", function () { envLine(); log("Back online"); mainSync("back online"); });
+window.setInterval(function () { if (document.visibilityState === "visible") mainSync("every 5 minutes"); }, SYNC_EVERY);
+window.addEventListener("offline", function () { envLine(); log("Went offline", "warn"); });
+window.addEventListener("pagehide", onPageHide);
+
+if ("serviceWorker" in window.navigator) window.navigator.serviceWorker.register("sw.js").catch(function () {});
+
+loadSetup();
+envLine();
+renderDoc();
+showShared();
+showFolder();
+$("#hide-target").value = LS.get("hide-target", "off");
+$("#poll-every").value = String(LS.get("poll-every", 0));
+if (!$("#poll-every").value) $("#poll-every").value = "0";
+if (Number($("#poll-every").value)) setPoll();
+window.setInterval(function () { tokenStatus(); if (token && !tokenOk() && !syncing) renderMain(); }, 1000);
+tokenStatus();
+renderMain();
+gisReady.then(function () { log("Google sign-in script loaded"); }, function (e) { fail("Sign-in script", e); });
+readRedirectResult();
+readDriveState();
+renderMain();
+if (LS.get("pagehide-attempt", null)) log("A page-hide upload is waiting to be checked. Sign in to check it.");
+</script>
+</body>
+</html>
