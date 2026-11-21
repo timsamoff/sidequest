@@ -28,7 +28,7 @@ export function renderJobs(root) {
   root.appendChild(bar); root.appendChild(msg);
   stopFlip();
   var open = openJobs(), done = state.jobs.filter(function (j) { return j.done; });
-  var hand = handJobs(), deck = deckJobs(), tog = doneToggle(done.length);
+  var hand = handJobs(), deck = deckJobs(), tog = errandsDoneToggle(done.length);
   var shownDone = state.settings.hideDoneErrands ? [] : done;
   if (open.length) handSection(root, hand, open, tog);
   else if (done.length) deckHead(root, [tog]);
@@ -41,7 +41,7 @@ export function renderJobs(root) {
 }
 
 // Hides or shows completed errands at the bottom of the deck. The choice is saved in settings.
-function doneToggle(n) {
+function errandsDoneToggle(n) {
   if (!n) return null;
   var hidden = state.settings.hideDoneErrands === true, verb = hidden ? "Show" : "Hide";
   var b = el("button", { type: "button", "class": "small", "data-focus": "hidedone-jobs", title: verb + " completed errands" }, verb + " completed (" + n + ")");
