@@ -80,7 +80,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.4.6"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.4.7"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -135,8 +135,7 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   let year = 2000, prev = -Infinity, ordered = true;
   open.forEach(r => { const m = r.match(/([A-Z][a-z]{2}) (\d{1,2}) to /); let t = Date.UTC(year, mons[m[1]], +m[2]); if (t < prev - 180 * 86400000) { year++; t = Date.UTC(year, mons[m[1]], +m[2]); } if (t < prev) ordered = false; prev = t; });
   ok(open.length > 5 && ordered, "the Tasks page lists open scheduled tasks by start date, across quests (" + open.length + " rows)");
-  const firstDone = rows.findIndex(r => r.done), lastOpen = rows.reduce((a, r, i) => (r.done || /Backlog/.test(r.t) ? a : i), -1);
-  ok(firstDone > lastOpen, "completed tasks stay at the bottom of the scheduled list");
+  ok(!rows.some(r => r.done), "completed tasks are not in the scheduled list or the Backlog");
 }
 
 /* ---- sample quests ---- */
@@ -150,8 +149,8 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   ok(k.$("view").textContent.includes("Try a new game engine") && k.$("view").textContent.includes("Write up lessons learned") && !k.$("view").textContent.includes("Redesign the logo"), "Workshop samples (removed one is in the Vault)");
   k.tab("schedule");
   const rows = [...k.d.querySelectorAll(".listpane .tlist")[0].querySelectorAll(".item")].map(b => b.textContent);
-  ok(rows.length === 17, "17 scheduled tasks (Sample Finished Quest's tasks are hidden while it's Complete) (got " + rows.length + ")");
-  ok(k.$("view").textContent.includes("Backlog (2)") && k.$("view").textContent.includes("Add a dark mode") && k.$("view").textContent.includes("Add a level editor"), "backlog has two samples");
+  ok(rows.length === 13, "13 open scheduled tasks (Sample Finished Quest's tasks are hidden while it's Complete) (got " + rows.length + ")");
+  ok(k.btn(k.$("view"), "Hide backlog (2)") && k.$("view").textContent.includes("Add a dark mode") && k.$("view").textContent.includes("Add a level editor"), "backlog has two samples");
   ok(k.d.querySelector('label[for="task-due"]').textContent.includes("Due date"), "the task's schedule field is a due date");
   // per-project schedules
   k.tab("timeline");
@@ -311,14 +310,32 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   const filters = [...k.d.querySelectorAll("#view .chipbtn")].map(b => b.textContent.trim());
   ok(filters.join() === "All (1),Quests (0),Ideas (1)", "Vault filters are just All/Quests/Ideas now (" + filters.join() + ")");
 }
-/* ---- completed tasks stay visible, sorted to the bottom ---- */
+/* ---- Tasks page: completed tasks and issues go to a Completed section, hidden by default ---- */
 {
   const k = kit(await mk()); k.tab("schedule");
-  const rows = [...k.d.querySelectorAll(".listpane .tlist")[0].querySelectorAll(".item")];
-  const statuses = rows.map(b => b.classList.contains("done"));
-  const firstDone = statuses.indexOf(true);
-  ok(firstDone === -1 || statuses.slice(firstDone).every(Boolean), "once a completed task appears, every task after it in the list is also completed (sunk to the bottom)");
-  ok(rows.length === 17, "completed tasks (Sketch the main screens, Build the sign-in flow) stay in the Tasks list, not moved to the Vault (" + rows.length + ")");
+  const view = () => k.$("view").textContent;
+  const doneRows = () => { const h = k.$("h-tasks-done"), ul = h && h.parentNode.nextElementSibling; return ul && ul.matches("ul.tlist") ? [...ul.querySelectorAll(".item")] : []; };
+  ok(k.$("h-tasks-done") && k.$("h-tasks-done").textContent === "Completed", "the Completed section has its heading");
+  ok(k.btn(k.$("view"), "Show completed (4)") && !doneRows().length && !view().includes("Sketch the main screens"), "the section starts hidden, with a Show completed button that carries the count");
+  k.click(k.btn(k.$("view"), "Show completed (4)"));
+  ok(k.saved().settings.hideDoneTasks === false && doneRows().length === 4 && doneRows().every(b => b.classList.contains("done")), "Show completed lists them and saves the choice");
+  ok(view().indexOf("Hide backlog (") < view().indexOf("Hide completed ("), "Completed comes after the Backlog");
+  const byId = Object.fromEntries(k.saved().tasks.map(t => [t.id, t.doneAt || ""]));
+  const dates = doneRows().map(b => byId[b.closest("li").id.slice(6)]);
+  ok(dates.every((d, i) => !i || dates[i - 1] >= d), "most recently completed first (" + dates.join() + ")");
+  k.click(k.btn(k.$("view"), "Hide completed (4)"));
+  ok(k.saved().settings.hideDoneTasks === true && !doneRows().length, "Hide completed hides them again");
+  // The Backlog has the same kind of toggle, shown by default.
+  k.click(k.btn(k.$("view"), "Hide backlog (2)"));
+  ok(k.saved().settings.hideBacklog === true && !view().includes("Add a dark mode") && k.btn(k.$("view"), "Show backlog (2)"), "Hide backlog hides the Backlog list and saves the choice");
+  k.click(k.btn(k.$("view"), "Show backlog (2)"));
+  ok(k.saved().settings.hideBacklog === false && view().includes("Add a dark mode"), "Show backlog brings it back");
+  // A task completed on the page stays where it is until the page changes.
+  const sel = k.d.querySelector(".listpane .tlist select.rowstatus"), id = sel.getAttribute("data-task");
+  sel.value = "Completed"; sel.dispatchEvent(new k.w.Event("change"));
+  ok(k.d.querySelector(".listpane .tlist").querySelector("#ttask-" + id) && k.btn(k.$("view"), "Show completed (4)"), "a task completed here stays in the scheduled list for now");
+  k.tab("today"); k.tab("schedule");
+  ok(!k.d.querySelector(".listpane .tlist").querySelector("#ttask-" + id) && k.btn(k.$("view"), "Show completed (5)"), "after leaving the page, it is in Completed");
 }
 
 /* ---- search works on samples ---- */
@@ -3467,7 +3484,7 @@ async function exportClick(k, projectName) {
   let k = kit(await mk(base([T("t1", { block: 1 }), T("b1"), T("i1", { issue: true, what: "Crash on save" })])));
   ok(/Remaining: 1 of 1 task \| Backlog: 1 unscheduled task$/.test(k.d.querySelector("#view .remaining").textContent), "an issue with no due date is not in the burndown or the Backlog count");
   k.tab("schedule");
-  ok(!k.$("view").textContent.includes("Crash on save") && k.$("view").textContent.includes("Backlog (1)"), "it is not on the Tasks page, in the list or in the Backlog");
+  ok(!k.$("view").textContent.includes("Crash on save") && k.btn(k.$("view"), "Hide backlog (1)"), "it is not on the Tasks page, in the list or in the Backlog");
   k.tab("projects");
   ok(k.$("view").textContent.includes("1 open task · 1 open issue"), "an In progress row counts the quest's open issues apart from its tasks");
   k.click(k.btn(k.$("view"), "Issue Quest"));

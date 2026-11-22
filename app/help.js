@@ -151,9 +151,10 @@ export function helpTopics() {
       ">The **Burndown** works the same way as on the **Timeline** page, but counts only this quest’s tasks."
     ]],
     ["Tasks page", [
-      "**Tasks:** This section shows tasks from all open quests, excluding candidate quests. They are listed by start date, earliest first. Tasks with the same start date are ordered by due date, then by the order they were created. Completed tasks appear at the bottom. You can edit tasks here without returning to the **Quests** page.",
+      "**Tasks:** This section shows tasks from all open quests, excluding candidate quests. They are listed by start date, earliest first. Tasks with the same start date are ordered by due date, then by the order they were created. You can edit tasks here without returning to the **Quests** page.",
       ">Issues with due dates appear here with an **Issue** badge. Issues without due dates remain in their quest’s details.",
-      "**Backlog:** This section shows all open tasks without due dates."
+      "**Backlog:** This section shows all open tasks without due dates. **Hide backlog** hides the list, and **Show backlog** restores it.",
+      "**Completed:** This section lists completed tasks and issues, with the most recently completed first. Completed tasks remain in place until you leave the page. **Hide completed** hides the list, and your preference is saved. **Show completed** restores it."
     ]],
     ["Timeline page", [
       "The **Timeline** page shows the schedules of all open quests. It includes a Gantt chart of open quests and milestones, plus the overall burndown and task counts. A red line shows today’s date when it falls within the displayed schedules.",

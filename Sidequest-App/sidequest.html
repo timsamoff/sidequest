@@ -1828,7 +1828,7 @@ var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 var UNPURSUED = "Unpursued";
 var CHECKPOINTS = 7;
-var APP_VERSION = "1.4.6";
+var APP_VERSION = "1.4.7";
 var APP_NAME = "Sidequest";
 
 function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -1969,7 +1969,7 @@ function defaults() {
     tasks: d.tasks, hist: d.hist,
     decisions: d.decisions, quests: d.quests, workshop: d.workshop, jobs: d.jobs, hand: [], bin: [],
     pins: ["quest:pApp"],
-    settings: { theme: "auto", dateFormat: "us", coinFormat: "us", blockWord: "Sprint", hideWelcome: false, showSplash: true, animatedBurndown: true, animatedReroll: true, lastBackup: "", since: iso(TODAY), binDays: 30, dustDays: 30, wipLimit: 0, contact: { name: "", company: "", phone: "", email: "", address: "", website: "" }, brandmark: "", audio: true, completionFx: true, hideDoneErrands: false, dialCode: "1", affirmationBucket: [], dismissedUpdateVersion: "", seenVersion: "" }
+    settings: { theme: "auto", dateFormat: "us", coinFormat: "us", blockWord: "Sprint", hideWelcome: false, showSplash: true, animatedBurndown: true, animatedReroll: true, lastBackup: "", since: iso(TODAY), binDays: 30, dustDays: 30, wipLimit: 0, contact: { name: "", company: "", phone: "", email: "", address: "", website: "" }, brandmark: "", audio: true, completionFx: true, hideDoneErrands: false, hideDoneTasks: true, hideBacklog: false, dialCode: "1", affirmationBucket: [], dismissedUpdateVersion: "", seenVersion: "" }
   };
 }
 
@@ -2160,6 +2160,8 @@ function normalize(s) {
     if (typeof s.settings.audio === "boolean") d.settings.audio = s.settings.audio;
     if (typeof s.settings.completionFx === "boolean") d.settings.completionFx = s.settings.completionFx;
     if (typeof s.settings.hideDoneErrands === "boolean") d.settings.hideDoneErrands = s.settings.hideDoneErrands;
+    if (typeof s.settings.hideDoneTasks === "boolean") d.settings.hideDoneTasks = s.settings.hideDoneTasks;
+    if (typeof s.settings.hideBacklog === "boolean") d.settings.hideBacklog = s.settings.hideBacklog;
     if (isDialCode(s.settings.dialCode)) d.settings.dialCode = s.settings.dialCode;
     if (typeof s.settings.dismissedUpdateVersion === "string") d.settings.dismissedUpdateVersion = S(s.settings.dismissedUpdateVersion, 20);
     if (typeof s.settings.seenVersion === "string") d.settings.seenVersion = S(s.settings.seenVersion, 20);
@@ -5366,9 +5368,10 @@ function helpTopics() {
       ">The **Burndown** works the same way as on the **Timeline** page, but counts only this quest’s tasks."
     ]],
     ["Tasks page", [
-      "**Tasks:** This section shows tasks from all open quests, excluding candidate quests. They are listed by start date, earliest first. Tasks with the same start date are ordered by due date, then by the order they were created. Completed tasks appear at the bottom. You can edit tasks here without returning to the **Quests** page.",
+      "**Tasks:** This section shows tasks from all open quests, excluding candidate quests. They are listed by start date, earliest first. Tasks with the same start date are ordered by due date, then by the order they were created. You can edit tasks here without returning to the **Quests** page.",
       ">Issues with due dates appear here with an **Issue** badge. Issues without due dates remain in their quest’s details.",
-      "**Backlog:** This section shows all open tasks without due dates."
+      "**Backlog:** This section shows all open tasks without due dates. **Hide backlog** hides the list, and **Show backlog** restores it.",
+      "**Completed:** This section lists completed tasks and issues, with the most recently completed first. Completed tasks remain in place until you leave the page. **Hide completed** hides the list, and your preference is saved. **Show completed** restores it."
     ]],
     ["Timeline page", [
       "The **Timeline** page shows the schedules of all open quests. It includes a Gantt chart of open quests and milestones, plus the overall burndown and task counts. A red line shows today’s date when it falls within the displayed schedules.",
@@ -7217,28 +7220,58 @@ function emptyList(text) {
   return ul;
 }
 
+// Most recently completed first, then Unpursued issues; ties keep the schedule order.
+function completedTasks(list) {
+  var key = function (t) { return t.status === "Completed" ? (t.doneAt ? parseISO(t.doneAt) : 0) : -1; };
+  return sortTasks(list).sort(function (a, b) { return key(b) - key(a); });
+}
+
+// A Tasks page section heading with a Hide/Show button that carries the count. The choice is saved in settings.
+function toggleHead(h, key, word, what, n) {
+  var hidden = state.settings[key] === true, verb = hidden ? "Show" : "Hide";
+  var hd = el("div", { "class": "sechead wraps" }), hb = el("div", { "class": "sechead-btns" });
+  hb.appendChild(on(el("button", { type: "button", "class": "small", "data-focus": "toggle-" + key, title: verb + " " + what }, verb + " " + word + " (" + n + ")"), "click", function () { state.settings[key] = !hidden; setFocusKey("toggle-" + key); changed(); }));
+  hd.appendChild(h); hd.appendChild(hb);
+  return hd;
+}
+
 function renderSchedule(root) {
   var o = ordered(), bl = backlogTasks();
   if (!o.length && !bl.length) {
     root.appendChild(emptyList(planCounted().length ? "No open tasks. A completed quest’s tasks stay on that quest’s page." : "No tasks yet. Use the + button to add one."));
     return;
   }
+  // Resolved rows go to Completed, except one resolved during this visit, which stays put until the page changes.
+  var inPlace = function (t) { return !isClosed(t) || !!ui.keepShown[t.id]; };
+  var so = o.filter(inPlace), sb = bl.filter(inPlace), done = completedTasks(o.concat(bl).filter(function (t) { return !inPlace(t); }));
+  var hideDone = state.settings.hideDoneTasks === true, hideBl = state.settings.hideBacklog === true;
+  var shown = so.concat(hideBl ? [] : sb, hideDone ? [] : done);
   // A phone starts with every task closed; a wide screen always shows one in the pane.
-  var narrow = isNarrow();
-  if (narrow) { if (ui.sel && !findTask(ui.sel)) ui.sel = null; }
-  else if (!ui.sel || !findTask(ui.sel)) { var nt = nextTask() || o[0] || bl[0]; ui.sel = nt.id; }
+  var narrow = isNarrow(), selShown = shown.some(function (t) { return t.id === ui.sel; });
+  if (narrow) { if (ui.sel && !selShown) { ui.sel = null; ui.detail = false; } }
+  else if (!selShown) { var nt = nextTask() || shown[0] || o[0] || bl[0]; ui.sel = nt.id; }
   var split = el("div", { "class": "split" + (!narrow && ui.detail ? " detail-open" : "") });
   var lp = el("div", { "class": "listpane" });
   var ul = el("ul", { "class": "tlist" });
-  if (!o.length) ul.appendChild(el("li", { "class": "plain" }, "Nothing is scheduled. Choose a " + wl() + " for an item in the Backlog."));
-  o.forEach(function (t) { ul.appendChild(taskRow(t)); });
+  if (!so.length) ul.appendChild(el("li", { "class": "plain" }, sb.length ? "Nothing is scheduled. Choose a " + wl() + " for an item in the Backlog." : "No open tasks."));
+  so.forEach(function (t) { ul.appendChild(taskRow(t)); });
   lp.appendChild(ul);
-  if (bl.length) {
-    lp.appendChild(withHelp(el("h2", null, "Backlog (" + bl.length + ")"), "backlog", "Backlog"));
-    lp.appendChild(el("p", { "class": "hint" }, "All tasks that don’t have a due date yet."));
-    var bul = el("ul", { "class": "tlist", style: "margin-top:10px" });
-    bl.forEach(function (t) { bul.appendChild(taskRow(t)); });
-    lp.appendChild(bul);
+  if (sb.length) {
+    lp.appendChild(toggleHead(withHelp(el("h2", { "class": "sechead-h", id: "h-tasks-backlog" }, "Backlog"), "backlog", "Backlog"), "hideBacklog", "backlog", "tasks without a due date", sb.length));
+    if (!hideBl) {
+      lp.appendChild(el("p", { "class": "hint" }, "All tasks that don’t have a due date yet."));
+      var bul = el("ul", { "class": "tlist", style: "margin-top:10px", "aria-labelledby": "h-tasks-backlog" });
+      sb.forEach(function (t) { bul.appendChild(taskRow(t)); });
+      lp.appendChild(bul);
+    }
+  }
+  if (done.length) {
+    lp.appendChild(toggleHead(el("h2", { "class": "sechead-h", id: "h-tasks-done" }, "Completed"), "hideDoneTasks", "completed", "completed tasks and issues", done.length));
+    if (!hideDone) {
+      var dul = el("ul", { "class": "tlist", style: "margin-top:10px", "aria-labelledby": "h-tasks-done" });
+      done.forEach(function (t) { dul.appendChild(taskRow(t)); });
+      lp.appendChild(dul);
+    }
   }
   split.appendChild(lp); root.appendChild(split);
   if (narrow) return;

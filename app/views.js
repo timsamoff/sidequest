@@ -3,10 +3,10 @@ import { go, openTask, renderView } from "./app.js";
 import { drawChart, drawQuestChart, rangeBlock } from "./chart.js";
 import { DAY, TODAY, fmt, fmtY, iso, parseISO } from "./dates.js";
 import { ideaDialog, questDialog } from "./dialogs.js";
-import { $, el, helpLink, isHosted, isNarrow, notify, on, scrollTop, uid } from "./dom.js";
+import { $, el, helpLink, isHosted, isNarrow, notify, on, scrollTop, setFocusKey, uid } from "./dom.js";
 import { backupControls, backupReminderDue, daysSinceBackup } from "./files.js";
 import { binVaultEntry, deleteFromBin, emptyBin, questStatusSelect, removeToVault, restoreEntry, restoreFromBin, vaultEntries } from "./lifecycle.js";
-import { questNameTaken, activeQuests, backlogTasks, candidateQuests, checkpointStep, checkpoints, counted, dispQuest, findQuest, findTask, fmtHours, globalActual, isClosed, isDusty, isLate, isPinned, lateTasks, live, liveQuests, nextTask, openIssues, ordered, pinPage, planCounted, planned, pset, questMeta, questRemainingUnits, questTotalUnits, remainingUnits, short, taskEnd, taskStart, totalUnits, unpinPage, validPage, wl } from "./model.js";
+import { questNameTaken, activeQuests, backlogTasks, candidateQuests, checkpointStep, checkpoints, counted, dispQuest, findQuest, findTask, fmtHours, globalActual, isClosed, isDusty, isLate, isPinned, lateTasks, live, liveQuests, nextTask, openIssues, ordered, pinPage, planCounted, planned, pset, questMeta, questRemainingUnits, questTotalUnits, remainingUnits, short, sortTasks, taskEnd, taskStart, totalUnits, unpinPage, validPage, wl } from "./model.js";
 import { addRowControls, buildDetail, setRowOpen } from "./quest-page.js";
 import { APP_VERSION, changed, makeQuest, quest, releaseFileUrl, save, state, ui } from "./state.js";
 import { startTutorial } from "./tutorial.js";
@@ -267,28 +267,58 @@ export function emptyList(text) {
   return ul;
 }
 
+// Most recently completed first, then Unpursued issues; ties keep the schedule order.
+function completedTasks(list) {
+  var key = function (t) { return t.status === "Completed" ? (t.doneAt ? parseISO(t.doneAt) : 0) : -1; };
+  return sortTasks(list).sort(function (a, b) { return key(b) - key(a); });
+}
+
+// A Tasks page section heading with a Hide/Show button that carries the count. The choice is saved in settings.
+function toggleHead(h, key, word, what, n) {
+  var hidden = state.settings[key] === true, verb = hidden ? "Show" : "Hide";
+  var hd = el("div", { "class": "sechead wraps" }), hb = el("div", { "class": "sechead-btns" });
+  hb.appendChild(on(el("button", { type: "button", "class": "small", "data-focus": "toggle-" + key, title: verb + " " + what }, verb + " " + word + " (" + n + ")"), "click", function () { state.settings[key] = !hidden; setFocusKey("toggle-" + key); changed(); }));
+  hd.appendChild(h); hd.appendChild(hb);
+  return hd;
+}
+
 export function renderSchedule(root) {
   var o = ordered(), bl = backlogTasks();
   if (!o.length && !bl.length) {
     root.appendChild(emptyList(planCounted().length ? "No open tasks. A completed quest’s tasks stay on that quest’s page." : "No tasks yet. Use the + button to add one."));
     return;
   }
+  // Resolved rows go to Completed, except one resolved during this visit, which stays put until the page changes.
+  var inPlace = function (t) { return !isClosed(t) || !!ui.keepShown[t.id]; };
+  var so = o.filter(inPlace), sb = bl.filter(inPlace), done = completedTasks(o.concat(bl).filter(function (t) { return !inPlace(t); }));
+  var hideDone = state.settings.hideDoneTasks === true, hideBl = state.settings.hideBacklog === true;
+  var shown = so.concat(hideBl ? [] : sb, hideDone ? [] : done);
   // A phone starts with every task closed; a wide screen always shows one in the pane.
-  var narrow = isNarrow();
-  if (narrow) { if (ui.sel && !findTask(ui.sel)) ui.sel = null; }
-  else if (!ui.sel || !findTask(ui.sel)) { var nt = nextTask() || o[0] || bl[0]; ui.sel = nt.id; }
+  var narrow = isNarrow(), selShown = shown.some(function (t) { return t.id === ui.sel; });
+  if (narrow) { if (ui.sel && !selShown) { ui.sel = null; ui.detail = false; } }
+  else if (!selShown) { var nt = nextTask() || shown[0] || o[0] || bl[0]; ui.sel = nt.id; }
   var split = el("div", { "class": "split" + (!narrow && ui.detail ? " detail-open" : "") });
   var lp = el("div", { "class": "listpane" });
   var ul = el("ul", { "class": "tlist" });
-  if (!o.length) ul.appendChild(el("li", { "class": "plain" }, "Nothing is scheduled. Choose a " + wl() + " for an item in the Backlog."));
-  o.forEach(function (t) { ul.appendChild(taskRow(t)); });
+  if (!so.length) ul.appendChild(el("li", { "class": "plain" }, sb.length ? "Nothing is scheduled. Choose a " + wl() + " for an item in the Backlog." : "No open tasks."));
+  so.forEach(function (t) { ul.appendChild(taskRow(t)); });
   lp.appendChild(ul);
-  if (bl.length) {
-    lp.appendChild(withHelp(el("h2", null, "Backlog (" + bl.length + ")"), "backlog", "Backlog"));
-    lp.appendChild(el("p", { "class": "hint" }, "All tasks that don’t have a due date yet."));
-    var bul = el("ul", { "class": "tlist", style: "margin-top:10px" });
-    bl.forEach(function (t) { bul.appendChild(taskRow(t)); });
-    lp.appendChild(bul);
+  if (sb.length) {
+    lp.appendChild(toggleHead(withHelp(el("h2", { "class": "sechead-h", id: "h-tasks-backlog" }, "Backlog"), "backlog", "Backlog"), "hideBacklog", "backlog", "tasks without a due date", sb.length));
+    if (!hideBl) {
+      lp.appendChild(el("p", { "class": "hint" }, "All tasks that don’t have a due date yet."));
+      var bul = el("ul", { "class": "tlist", style: "margin-top:10px", "aria-labelledby": "h-tasks-backlog" });
+      sb.forEach(function (t) { bul.appendChild(taskRow(t)); });
+      lp.appendChild(bul);
+    }
+  }
+  if (done.length) {
+    lp.appendChild(toggleHead(el("h2", { "class": "sechead-h", id: "h-tasks-done" }, "Completed"), "hideDoneTasks", "completed", "completed tasks and issues", done.length));
+    if (!hideDone) {
+      var dul = el("ul", { "class": "tlist", style: "margin-top:10px", "aria-labelledby": "h-tasks-done" });
+      done.forEach(function (t) { dul.appendChild(taskRow(t)); });
+      lp.appendChild(dul);
+    }
   }
   split.appendChild(lp); root.appendChild(split);
   if (narrow) return;
