@@ -9,3 +9,5 @@ Sentinel-Prompts/
 Sentinel-Maintainer-Guide/
 .playwright-mcp/
 x/
+server/site/
+server/.wrangler/

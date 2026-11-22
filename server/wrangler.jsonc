@@ -1,0 +1,33 @@
+// Staging only. Production is deployed from _offware/_deploy and never from this folder.
+{
+  "name": "offware-sidequest-staging",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-17",
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "sidequest-staging.offware.io", "custom_domain": true }
+  ],
+  "assets": {
+    "directory": "./site",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "none",
+    "run_worker_first": ["/api/*"]
+  },
+  "vars": { "ENVIRONMENT": "staging" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sidequest-staging",
+      "database_id": "f6eadca4-2b7f-49f7-a45f-5d7d19464f3a",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "GUILD", "class_name": "Guild" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Guild"] }
+  ],
+  "observability": { "enabled": true }
+}

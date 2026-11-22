@@ -5,11 +5,14 @@
 .jpg
 .js
 .json
+.jsonc
 .md
 .mjs
 .mp3
 .png
 .psd
+.sh
+.sql
 .svg
 .txt
 .webp

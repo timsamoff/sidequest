@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "test": "node tests/run.js",
+    "deploy:staging": "bash scripts/deploy-staging.sh",
     "test:a11y": "node tests/a11y.test.js",
     "sentinel:check": "node .githooks/sentinel-check.js",
     "sentinel:check:full": "node .githooks/sentinel-check.js --full",
