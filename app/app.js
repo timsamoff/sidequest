@@ -1,4 +1,4 @@
-import { state, ui, save, changed, autoVault, purgeOldVault, APP_NAME, APP_VERSION, loadFromDbIfAvailable, checkForAppUpdate, pickAffirmation } from "./state.js";
+import { state, ui, save, changed, autoVault, purgeBin, APP_NAME, APP_VERSION, loadFromDbIfAvailable, checkForAppUpdate, pickAffirmation } from "./state.js";
 import { CORE, BOTTOM, isCore, validPage, pageTitle, findAnyTask, findQuest, isLooseIssue, lateTasks, questNameTaken } from "./model.js";
 import { $, el, on, focusKey, setFocusKey, scrollTop, scrollToRow, notify, editInline, playSfx, inClaude, isStandalone, isNarrow, NARROW_QUERY } from "./dom.js";
 import { TODAY } from "./dates.js";
@@ -6,7 +6,7 @@ import { renderJobs } from "./errands.js";
 import { renderHelp } from "./help.js";
 import { alignStatuses, renderQuestPage } from "./quest-page.js";
 import { renderSettings, setDeferredInstallPrompt, setInstalledThisSession } from "./settings.js";
-import { renderToday, renderSchedule, renderQuests, renderWorkshop, renderVault, renderTimeline, setAvailableUpdateVersion } from "./views.js";
+import { renderToday, renderSchedule, renderQuests, renderWorkshop, renderVault, renderBin, renderTimeline, setAvailableUpdateVersion } from "./views.js";
 import { renderSearch, openSearch, closeSearch, wireSearchInput, focusSearch } from "./search.js";
 import {
   taskDialog, questDialog, ideaDialog, jobDialog, decisionDialog, stepDialog, issueDialog
@@ -79,7 +79,7 @@ export function renderChrome() {
   var nav = $("nav"); nav.innerHTML = ""; var nb = $("navBottom"); nb.innerHTML = "";
   var pinned = state.pins.filter(validPage);
   var isBottom = BOTTOM.some(function (b) { return b[0] === ui.view; });
-  var active = ui.view; if (ui.view === "search") active = ""; else if (!isCore(active) && !isBottom && pinned.indexOf(active) < 0) {
+  var active = ui.view; if (ui.view === "search") active = ""; else if (ui.view === "bin") active = "vault"; else if (!isCore(active) && !isBottom && pinned.indexOf(active) < 0) {
     var shown = active.indexOf("quest:") === 0 ? findQuest(active.slice(6)) : null;
     active = shown && shown.vault ? "vault" : "projects";
   }
@@ -213,6 +213,7 @@ export function renderView() {
   else if (ui.view === "jobs") renderJobs(root);
   else if (ui.view === "search") renderSearch(root);
   else if (ui.view === "vault") renderVault(root);
+  else if (ui.view === "bin") renderBin(root);
   else if (ui.view === "settings") renderSettings(root);
   else if (ui.view === "help") renderHelp(root);
   else if (ui.view.indexOf("quest:") === 0) renderQuestPage(root, ui.view.slice(6));
@@ -279,7 +280,7 @@ Promise.resolve().then(function () {
   applyTheme();
   // A first run records the version without a banner; later runs on a newer version show it (see versionBanner()).
   if (!state.settings.seenVersion) state.settings.seenVersion = APP_VERSION;
-  autoVault(); purgeOldVault(); save();
+  autoVault(); purgeBin(); save();
   renderAll();
 
   // Decorative only -- the app has already rendered above.
@@ -289,7 +290,7 @@ Promise.resolve().then(function () {
   var dbLoaded = loadFromDbIfAvailable();
   dbLoaded.then(function (swapped) {
     if (!swapped) return;
-    autoVault(); purgeOldVault(); save();
+    autoVault(); purgeBin(); save();
     renderAll();
   });
 

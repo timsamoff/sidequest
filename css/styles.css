@@ -316,7 +316,10 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; margin:
 #refreshBtn.spinning svg { animation: spin .6s linear infinite; }
 .toast .toastbtn { background: transparent; border: 1px solid currentColor; color: inherit; min-height: var(--control-small); padding: var(--space-2) var(--space-12); }
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-8); margin-top: var(--space-12); }
-.chipbtn { border-radius: var(--radius-control); min-height: 36px; padding: var(--space-4) var(--space-14); }
+.chipbtn { border-radius: var(--radius-control); min-height: var(--control-min); padding: var(--space-4) var(--space-10); font-size: var(--text-sm); }
+/* The top row of the Vault and the Bin: same position and spacing on both, so nothing shifts between them. */
+.pagebar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-8); margin-bottom: var(--space-12); }
+.pagebar .push { margin-left: auto; }
 .chipbtn[aria-pressed="true"] { background: var(--sel); border-color: var(--planned); color: var(--planned); font-weight: 600; }
 button.dangerfill { background: var(--late); border-color: var(--late); color: var(--bg); font-weight: 600; }
 button:disabled { opacity: .5; cursor: not-allowed; }

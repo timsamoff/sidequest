@@ -5,7 +5,7 @@ import { DAY, TODAY, fmt, fmtY, iso, parseISO } from "./dates.js";
 import { ideaDialog, questDialog } from "./dialogs.js";
 import { $, el, helpLink, isHosted, isNarrow, notify, on, scrollTop, uid } from "./dom.js";
 import { backupControls, backupReminderDue, daysSinceBackup } from "./files.js";
-import { deleteForever, emptyVault, questStatusSelect, removeToVault, restoreEntry, vaultEntries } from "./lifecycle.js";
+import { binVaultEntry, deleteFromBin, emptyBin, questStatusSelect, removeToVault, restoreEntry, restoreFromBin, vaultEntries } from "./lifecycle.js";
 import { questNameTaken, activeQuests, backlogTasks, candidateQuests, checkpointStep, checkpoints, counted, dispQuest, findQuest, findTask, fmtHours, globalActual, isClosed, isDusty, isLate, isPinned, lateTasks, live, liveQuests, nextTask, openIssues, ordered, pinPage, planCounted, planned, pset, questMeta, questRemainingUnits, questTotalUnits, remainingUnits, short, taskEnd, taskStart, totalUnits, unpinPage, validPage, wl } from "./model.js";
 import { addRowControls, buildDetail, setRowOpen } from "./quest-page.js";
 import { APP_VERSION, changed, makeQuest, quest, releaseFileUrl, save, state, ui } from "./state.js";
@@ -529,17 +529,32 @@ export var KIND_LABEL = { quest: "Quest", idea: "Idea" };
 
 export var KIND_FILTERS = [["all", "All"], ["quest", "Quests"], ["idea", "Ideas"]];
 
+// The Bin is reached only from this button on the Vault page.
+function binButton() {
+  var n = state.bin.length;
+  var b = el("button", { type: "button", "class": "small", title: "Open the Bin, where deleted quests and ideas wait before they’re deleted for good" }, "Bin" + (n ? " (" + n + ")" : ""));
+  return on(b, "click", function () { go("bin"); });
+}
+
 export function renderVault(root) {
   var all = vaultEntries(), filter = ui.vaultFilter || "all";
   var counts = { all: all.length }; all.forEach(function (e) { counts[e.kind] = (counts[e.kind] || 0) + 1; });
-  if (!all.length) { root.appendChild(emptyList("The Vault is empty. This is where you can store ideas and quests you’re no longer actively working on but may want to keep.")); return; }
-  var chips = el("div", { "class": "chips", role: "group", "aria-label": "Filter the Vault" });
+  var bar = el("div", { "class": "pagebar" }), bb = binButton();
+  bb.classList.add("push");
+  if (!all.length) {
+    bar.appendChild(bb); root.appendChild(bar);
+    root.appendChild(emptyList("The Vault is empty. This is where you can store ideas and quests you’re no longer actively working on but may want to keep."));
+    return;
+  }
+  // The filters and the Bin button share one row; only the filters are in the group.
+  var chips = el("div", { role: "group", "aria-label": "Filter the Vault", style: "display:flex;flex-wrap:wrap;gap:var(--space-8)" });
   KIND_FILTERS.forEach(function (f) {
     var b = el("button", { type: "button", "class": "chipbtn", "aria-pressed": filter === f[0] ? "true" : "false" }, f[1] + " (" + (counts[f[0]] || 0) + ")");
     on(b, "click", function () { ui.vaultFilter = f[0]; renderView(); });
     chips.appendChild(b);
   });
-  root.appendChild(chips);
+  bar.appendChild(chips); bar.appendChild(bb);
+  root.appendChild(bar);
   var shown = all.filter(function (e) { return filter === "all" || e.kind === filter; });
   if (!shown.length) { root.appendChild(emptyList("Nothing of that kind in the Vault.")); return; }
   var ul = el("ul", { "class": "list" });
@@ -558,11 +573,35 @@ export function renderVault(root) {
     row.appendChild(info);
     var acts = el("div", { "class": "li-actions" });
     acts.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Restore this " + e.kind }, "Restore"), "click", function () { restoreEntry(e); }));
-    acts.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Delete this " + e.kind + " forever (can’t be undone)" }, "Delete forever"), "click", function () { deleteForever(e); }));
+    acts.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Send this " + e.kind + " to the Bin" }, "Send to Bin"), "click", function () { binVaultEntry(e); }));
     row.appendChild(acts); li.appendChild(row); ul.appendChild(li);
   });
   root.appendChild(ul);
-  root.appendChild(on(el("button", { type: "button", "class": "small danger", style: "margin-top:16px" }, "Empty vault"), "click", emptyVault));
+}
+
+/* bin */
+export function renderBin(root) {
+  var days = state.settings.binDays;
+  var bar = el("div", { "class": "pagebar" });
+  bar.appendChild(on(el("button", { type: "button", "class": "small", title: "Back to the Vault" }, "Back to the Vault"), "click", function () { go("vault"); }));
+  root.appendChild(bar);
+  if (!state.bin.length) { root.appendChild(emptyList("The Bin is empty. Quests and ideas removed from the Vault appear here until they’re permanently deleted after the duration set in Options.")); return; }
+  var ul = el("ul", { "class": "list" });
+  state.bin.forEach(function (b) {
+    var li = el("li"), row = el("div", { "class": "crow", style: "align-items:center" });
+    var info = el("div", { style: "flex:1 1 220px" });
+    info.appendChild(el("span", { style: "font-weight:600" }, b.title || "(untitled)"));
+    info.appendChild(el("span", { "class": "chip", style: "margin-left:8px" }, KIND_LABEL[b.kind]));
+    info.appendChild(el("p", { "class": "hint", style: "margin-top:4px" }, "Sent to the Bin " + fmtY(parseISO(b.at)) + ". Permanently deleted after " + fmtY(parseISO(b.at) + days * DAY) + "."));
+    row.appendChild(info);
+    var acts = el("div", { "class": "li-actions" });
+    acts.appendChild(on(el("button", { type: "button", "class": "small primary", title: "Send this " + b.kind + " back to the Vault" }, "Send to Vault"), "click", function () { restoreFromBin(b); }));
+    acts.appendChild(on(el("button", { type: "button", "class": "small danger", title: "Delete this " + b.kind + " forever (can’t be undone)" }, "Delete forever"), "click", function () { deleteFromBin(b); }));
+    row.appendChild(acts); li.appendChild(row); ul.appendChild(li);
+  });
+  root.appendChild(ul);
+  // Kept below the list: the top right is where the Vault's Bin button sits, so a second click would land here.
+  root.appendChild(on(el("button", { type: "button", "class": "small danger", style: "margin-top:16px", title: "Permanently delete everything in the Bin" }, "Empty the Bin"), "click", emptyBin));
 }
 
 // Set by app.js after checkForAppUpdate() resolves; null unless a newer

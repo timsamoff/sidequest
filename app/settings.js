@@ -8,7 +8,7 @@ import { backupControls, backupPanel } from "./files.js";
 import { importPanel } from "./imports.js";
 import { WORDS, wd } from "./model.js";
 import { collapsibleSection } from "./quest-page.js";
-import { APP_NAME, APP_VERSION, changed, defaults, save, setState, state, ui } from "./state.js";
+import { APP_NAME, APP_VERSION, BIN_DAYS, changed, defaults, save, setState, state, ui } from "./state.js";
 import { withHelp } from "./views.js";
 
 /* settings */
@@ -262,17 +262,15 @@ export function renderSettings(page) {
   appearanceBox.appendChild(ag2);
   root.appendChild(appearanceBox);
 
-  root.appendChild(el("h2", null, "Vault"));
-  var vaultBox = el("div", { "class": "box", style: "margin-top:10px" });
-  var pg = el("div", { "class": "setgrid" });
-  var pw = el("div", { "class": "field" }); pw.appendChild(el("label", { "for": "set-purge" }, "Auto-delete vaulted items after"));
-  var ps = el("select", { id: "set-purge", "class": "plain" });
-  [[0, "Never"], [7, "7 days"], [30, "30 days"], [60, "60 days"], [90, "90 days"]].forEach(function (o) { var op = el("option", { value: String(o[0]) }, o[1]); if (o[0] === state.settings.vaultPurgeDays) op.selected = true; ps.appendChild(op); });
-  on(ps, "change", function () { state.settings.vaultPurgeDays = parseInt(ps.value, 10); changed(); });
-  pw.appendChild(ps); pg.appendChild(pw);
-  vaultBox.appendChild(pg);
-  if (state.settings.vaultPurgeDays) vaultBox.appendChild(el("p", { "class": "hint" }, "Checked each time Sidequest opens. An item older than this, counted from when it was vaulted, is deleted permanently with no further warning."));
-  root.appendChild(vaultBox);
+  root.appendChild(el("h2", null, "Bin"));
+  var binBox = el("div", { "class": "box", style: "margin-top:10px" }), bg = el("div", { "class": "setgrid" });
+  var bw = el("div", { "class": "field" }); bw.appendChild(el("label", { "for": "set-bin" }, "Permanently delete items in the Bin after"));
+  var bs = el("select", { id: "set-bin", "class": "plain" });
+  BIN_DAYS.forEach(function (n) { var op = el("option", { value: String(n) }, n + " days"); if (n === state.settings.binDays) op.selected = true; bs.appendChild(op); });
+  on(bs, "change", function () { state.settings.binDays = parseInt(bs.value, 10); changed(); });
+  bw.appendChild(bs); bg.appendChild(bw); binBox.appendChild(bg);
+  root.appendChild(binBox);
+
 
   if (!isHosted()) {
     root.appendChild(el("h2", null, "Install Sidequest"));

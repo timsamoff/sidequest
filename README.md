@@ -64,7 +64,7 @@ Sidequest organizes projects into **quests**, with **tasks** and **steps** to br
 ### Staying organized
 
 - **Pinning:** Pin your current or high-priority quests for quick access.
-- **Vault:** Set aside quests and ideas you no longer need at the moment. You can restore them later or permanently delete them.
+- **Vault:** Set aside quests and ideas you no longer need at the moment. You can restore them later, or delete them to the Bin, which keeps them for 7, 30, 60, or 90 days before they're gone for good.
 
 ## Additional features
 

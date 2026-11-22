@@ -74,15 +74,15 @@ async function main() {
   ok(!!t2 && !!t2.vault && t2.vault.why === "removed", "vaulted task t2 survived with its vault marker intact (" + JSON.stringify(t2 && t2.vault) + ")");
   ok(s.tasks.length === 2, "no tasks were lost in migration");
 
-  ok(s.settings.vaultPurgeDays === 0, "settings.archivePurgeDays migrated to settings.vaultPurgeDays (" + s.settings.vaultPurgeDays + ")");
+  ok(s.settings.binDays === 90 && !("vaultPurgeDays" in s.settings), "an archivePurgeDays of 0 (Never) carries over as a 90-day Bin (" + s.settings.binDays + ")");
   ok(!("archivePurgeDays" in s.settings), "no stale archivePurgeDays left on settings");
 
   // A separate save with no vaulted items and a nonzero purge setting, so the
-  // migrated value itself is checked without purgeOldVault() deleting anything.
+  // migrated value itself is checked on its own.
   const PURGE_SAVE = Object.assign({}, OLD_SAVE, { quests: [OLD_SAVE.quests[0]], tasks: [OLD_SAVE.tasks[0]], parked: [OLD_SAVE.parked[0]], settings: Object.assign({}, OLD_SAVE.settings, { archivePurgeDays: 60 }) });
   await mk(PURGE_SAVE);
   const stateMod2 = await import("../app/state.js?run=" + counter);
-  ok(stateMod2.state.settings.vaultPurgeDays === 60, "a nonzero archivePurgeDays migrates to vaultPurgeDays (" + stateMod2.state.settings.vaultPurgeDays + ")");
+  ok(stateMod2.state.settings.binDays === 60, "a nonzero archivePurgeDays carries over as the Bin duration (" + stateMod2.state.settings.binDays + ")");
 
   console.log("\n" + (fails ? "FAIL" : "PASS") + " workshop-vault-migration.test.js: " + (fails ? fails + " failed" : "all checks passed"));
   process.exit(fails ? 1 : 0);

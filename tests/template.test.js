@@ -80,7 +80,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.4.2"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.4.5"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -714,9 +714,35 @@ ok(!html.includes("project-schedule-v"), "uses its own storage keys");
   ok(!!row && !!row.querySelector(".qinert") && row.textContent.includes("Vaulted") && !row.querySelector(".qlink"), "a live quest lists its vaulted partner as plain text labeled Vaulted");
   k.tab("vault");
   const del = [...k.d.querySelectorAll("#view li")].find(li => li.textContent.includes("Sample App"));
-  k.click(k.btn(del, "Delete forever")); k.click(k.$("confirmYes"));
-  ok(!q("pApp") && q("pSite").linkedQuestIds.indexOf("pApp") < 0, "deleting a vaulted quest forever removes the link from its partner");
-  ok(!k.saved().tasks.some(t => t.questId === "pApp") && !k.saved().decisions.some(d => d.step === "a5z"), "deleting a vaulted quest forever removes its tasks and their decisions");
+  const decs = k.saved().decisions.filter(d => k.saved().tasks.some(t => t.questId === "pApp" && t.steps.some(st => st.id === d.step))).length;
+  k.click(k.btn(del, "Send to Bin"));
+  ok(!q("pApp") && q("pSite").linkedQuestIds.indexOf("pApp") < 0, "deleting a vaulted quest removes the link from its partner");
+  ok(!k.saved().tasks.some(t => t.questId === "pApp") && k.saved().bin[0].kind === "quest" && k.saved().bin[0].data.decisions.length === decs, "deleting a vaulted quest moves it, its tasks, and their decisions to the Bin (" + decs + " decisions)");
+  ok(k.btn(k.$("view"), "Bin (1)") !== undefined, "the Vault's Bin button shows the count");
+  k.click(k.btn(k.$("view"), "Bin (1)"));
+  ok(k.$("viewTitle").textContent === "Bin" && k.d.querySelector('#nav [aria-current="page"], #navBottom [aria-current="page"]').textContent.includes("Vault"), "the Bin page opens with the Vault tab still current");
+  ok(!k.btn(k.d.querySelector("#view .pagebar"), "Empty the Bin") && !!k.btn(k.$("view"), "Empty the Bin"), "Empty the Bin sits below the list, not where the Vault's Bin button was");
+  k.click(k.btn(k.$("view"), "Send to Vault"));
+  ok(!!q("pApp") && !!q("pApp").vault && q("pSite").linkedQuestIds.indexOf("pApp") >= 0 && k.saved().tasks.some(t => t.questId === "pApp") && k.saved().bin.length === 0, "restoring from the Bin puts the quest back in the Vault with its tasks and its partner's link");
+  ok(k.saved().decisions.filter(d => k.saved().tasks.some(t => t.questId === "pApp" && t.steps.some(st => st.id === d.step))).length === decs, "restoring keeps the quest's decisions");
+  k.tab("vault"); k.click(k.btn([...k.d.querySelectorAll("#view li")].find(li => li.textContent.includes("Sample App")), "Send to Bin"));
+  k.click(k.btn(k.$("view"), "Bin (1)")); k.click(k.btn(k.$("view"), "Delete forever")); k.click(k.$("confirmYes"));
+  ok(!q("pApp") && k.saved().bin.length === 0 && !k.saved().tasks.some(t => t.questId === "pApp"), "Delete forever in the Bin removes it for good");
+  ok(k.$("view").textContent.includes("The Bin is empty.") && !k.$("bin-days"), "an empty Bin shows its message, and the duration is not on the Bin page");
+  k.tab("vault");
+  const bar = k.btn(k.$("view"), "Bin").parentElement;
+  ok(bar.classList.contains("pagebar") && !!bar.querySelector("[role=group] .chipbtn"), "the Bin button shares the row with the Vault's filters, outside their group");
+  k.tab("settings"); k.$("set-bin").value = "60"; k.fire(k.$("set-bin"));
+  ok(k.saved().settings.binDays === 60, "the Bin duration is set in Options");
+}
+{
+  // A vaulted quest keeps its decisions across a reload
+  const k = kit(await mk());
+  const count = () => k.saved().decisions.length;
+  const n = count();
+  k.tab("projects"); k.click(k.btn(k.d.querySelector("#nav"), "Sample App")); setState(k, "Vault");
+  const k2 = kit(await mk(k.saved()));
+  ok(k2.saved().decisions.length === n && n > 0, "decisions on a vaulted quest survive a reload (" + n + ")");
 }
 {
   // Saves from before this change kept a demoted quest's links in savedLinkIds; they load as real links
@@ -1815,36 +1841,31 @@ async function exportClick(k, projectName) {
   ok(/^full-notes-co-\d{4}-\d{2}-\d{2}\.html$/.test(downloadName), "the filename is the project's name, slugged, plus today's date (" + downloadName + ")");
 }
 {
-  // Vault auto-purge: Never leaves everything, a threshold deletes only
-  // what's older than it, and a project's tasks go with it.
+  // The Vault never purges; the old auto-delete setting carries over as the Bin's, and the Bin purges.
   const d = new Date(), n = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()), iso = k => new Date(n + k * 86400000).toISOString().slice(0, 10);
+  const binOf = (id, at) => ({ id: "b" + id, at: at, kind: "idea", title: id, data: { workshop: [{ id: id, text: id, vault: { at: at, why: "removed" } }] } });
   const saved = {
     settings: { archivePurgeDays: 30 },
     projects: [
       { id: "pOld", name: "Old Project", status: "active", arch: { at: iso(-40), why: "removed" } },
       { id: "pNew", name: "New Project", status: "active", arch: { at: iso(-10), why: "removed" } }
     ],
-    parked: [
-      { id: "iOld", text: "Old Idea", arch: { at: iso(-31), why: "removed" } },
-      { id: "iNew", text: "New Idea", arch: { at: iso(-5), why: "removed" } }
-    ],
-    tasks: [{ id: "tOld", block: 0, projectId: "pOld", what: "orphaned by purge", done: "d", status: "Not started", steps: [] }]
+    parked: [{ id: "iOld", text: "Old Idea", arch: { at: iso(-31), why: "removed" } }],
+    tasks: [{ id: "tOld", block: 0, projectId: "pOld", what: "kept with its quest", done: "d", status: "Not started", steps: [] }],
+    bin: [binOf("gone", iso(-31)), binOf("kept", iso(-29))]
   };
   const k = kit(await mk(saved));
   const ids = xs => xs.map(x => x.id);
-  ok(!ids(k.saved().quests).includes("pOld") && ids(k.saved().quests).includes("pNew"), "a 30-day threshold purges only the project vaulted more than 30 days ago");
-  ok(!ids(k.saved().workshop).includes("iOld") && ids(k.saved().workshop).includes("iNew"), "and the idea vaulted more than 30 days ago, leaving the newer one");
-  ok(!ids(k.saved().tasks).includes("tOld"), "the purged project's tasks go with it");
+  ok(ids(k.saved().quests).includes("pOld") && ids(k.saved().workshop).includes("iOld") && ids(k.saved().tasks).includes("tOld"), "the Vault keeps old items and their tasks; it never purges");
+  ok(k.saved().settings.binDays === 30 && !("vaultPurgeDays" in k.saved().settings), "a 30-day Vault setting carries over as a 30-day Bin");
+  ok(k.saved().bin.length === 1 && k.saved().bin[0].title === "kept", "the Bin drops entries older than its setting at boot and keeps newer ones");
 }
 {
-  const d = new Date(), n = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()), iso = k => new Date(n + k * 86400000).toISOString().slice(0, 10);
-  const saved = {
-    settings: { archivePurgeDays: 0 },
-    projects: [{ id: "pOld", name: "Old Project", status: "active", arch: { at: iso(-400), why: "removed" } }],
-    tasks: []
-  };
+  const saved = { settings: { vaultPurgeDays: 0 }, tasks: [] };
   const k = kit(await mk(saved));
-  ok(k.saved().quests.some(p => p.id === "pOld"), "Never (0) leaves even a very old archived project in place");
+  ok(k.saved().settings.binDays === 90, "a Vault set to Never carries over as a 90-day Bin");
+  const fresh = kit(await mk());
+  ok(fresh.saved().settings.binDays === 30, "a new Sidequest starts with a 30-day Bin");
 }
 {
   // Contact info in Settings: saves, round-trips, and only prints on an
@@ -2698,8 +2719,8 @@ async function exportClick(k, projectName) {
   raw.tasks = []; raw.quests = []; raw.workshop = []; raw.decisions = [];
   const k2 = kit(await mk(raw));
   k2.tab("schedule"); ok(!!k2.d.querySelector("#view ul.list li.hint") && k2.$("view").textContent.includes("No tasks yet."), "an empty Tasks page shows its message in a card");
-  k2.tab("vault"); ok(!!k2.d.querySelector("#view ul.list li.hint") && k2.$("view").textContent.includes("The Vault is empty.") && !k2.d.querySelector("#view .chips"), "an empty Vault shows its message in a card with no filter buttons");
-  const k3 = kit(await mk()); k3.tab("vault"); ok(!!k3.d.querySelector("#view .chips"), "the Vault filters appear once it holds items");
+  k2.tab("vault"); ok(!!k2.d.querySelector("#view ul.list li.hint") && k2.$("view").textContent.includes("The Vault is empty.") && !k2.d.querySelector("#view .chipbtn"), "an empty Vault shows its message in a card with no filter buttons");
+  const k3 = kit(await mk()); k3.tab("vault"); ok(!!k3.d.querySelector("#view .pagebar .chipbtn"), "the Vault filters appear once it holds items");
 }
 {
   // Welcome wording follows what is in the app; pin wording follows where pinned quests live
@@ -2756,7 +2777,7 @@ async function exportClick(k, projectName) {
   const { helpTopics } = await import("../app/help.js?run=" + counter);
   const topics = helpTopics(), titles = topics.map(t => t[0]);
   const termLines = topics.find(t => t[0] === "Terms")[1];
-  ok(termLines.length === 39 && termLines.every(l => /^\{#[a-z-]+\}\*\*[^*]+(\*\* and \*\*[^*]+)?:\*\* .+ See “[^”]+”\.$/.test(l)), "all 39 Terms entries read as a bold term, a definition, and a pointer");
+  ok(termLines.length === 40 && termLines.every(l => /^\{#[a-z-]+\}\*\*[^*]+(\*\* and \*\*[^*]+)?:\*\* .+ See “[^”]+”\.$/.test(l)), "all 40 Terms entries read as a bold term, a definition, and a pointer");
   ok(termLines.every(l => titles.includes(l.match(/See “([^”]+)”\.$/)[1])), "every Terms pointer names a topic that exists");
   f.value = "decision"; k.fire(f, "input");
   ok(titlesOf()[0] === "Terms" && items()[0].open, "a word that is a term puts the Terms topic first and opens it");

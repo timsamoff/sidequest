@@ -306,6 +306,7 @@ export function validPage(key) {
 }
 export function pageTitle(key) {
   if (key === "search") return "Search";
+  if (key === "bin") return "Bin";
   if (typeof key === "string" && key.indexOf("quest:") === 0) { var p = findQuest(key.slice(6)); return p ? p.name : ""; }
   for (var i = 0; i < CORE.length; i++) if (CORE[i][0] === key) return CORE[i][1];
   for (var j = 0; j < BOTTOM.length; j++) if (BOTTOM[j][0] === key) return BOTTOM[j][1];

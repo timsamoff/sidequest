@@ -55,6 +55,7 @@ export function helpTopics() {
       "{#adventurer}**Adventurer:** Your contact information and brandmark, used on exports. See “Options page”.",
       "{#backlog}**Backlog:** Open tasks without a due date. See “Tasks page”.",
       "{#before-you-launch}**Before you launch:** The section that lists a quest’s **Launch critical** tasks. These tasks must be completed before launch. See “Inside a quest”.",
+      "{#bin}**Bin:** Holds quests and ideas deleted from the **Vault** for a set number of days before they’re deleted for good. See “Vault page”.",
       "{#bounty}**Bounty:** The amount a quest pays. This does not appear on exports. See “Quest giver and Quest links”.",
       "{#candidate-quest}**Candidate quest:** A quest you’re considering but haven’t started. See “Quests page”.",
       "{#complete}**Complete:** A quest you’ve finished. See “The quest lifecycle”.",
@@ -103,7 +104,7 @@ export function helpTopics() {
       "If you already know what you want to pursue, you can create a candidate quest directly with the **+** button.",
       "Finishing the last step of a task completes the task, and completing the last task of a quest (including its backlog tasks) completes the quest. You can also mark a task or quest complete manually. To complete a quest, choose **Complete** in its status dropdown. To reopen it, choose **In progress**.",
       ">An open issue doesn’t prevent a quest from being completed unless it’s launch critical or has a due date.",
-      "The **Vault** stores old ideas and quests, either permanently or for a specified period of time (see the **Options** section for more)."
+      "The **Vault** stores old ideas and quests until you restore or delete them."
     ]],
     ["Today page", [
       "The **Today** page shows your most pressing task, and any overdue tasks. The **Burndown** chart shows how many tasks remain in all open quests (see the **Timeline** page for more). The **Stats** section displays all remaining and backlogged tasks."
@@ -177,7 +178,8 @@ export function helpTopics() {
       "All ideas are stored here. Use them to think through new quests or prospects. You can either select **Make quest** to turn an idea into a candidate quest or **Vault** it."
     ]],
     ["Vault page", [
-      "The **Vault** is a place to send ideas and quests you’re no longer actively working with but may want to keep. You can use **Restore** or **Delete forever** on vaulted items. You can also choose to have the **Vault** automatically delete old items after a set period."
+      "The **Vault** is a place to store ideas and quests you’re no longer actively working with but may want to keep. Use **Restore** to bring an item back, or **Send to Bin** to move it to the **Bin**.",
+      "**Bin:** Select **Bin** beside the filters in the **Vault** to see quests and ideas you’ve sent there. **Send to Vault** returns an item to the **Vault**. **Delete forever** removes one item right away, and **Empty the Bin** removes everything in it. Items are permanently deleted after the duration set in **Options**."
     ]],
     ["Options page", [
       "**Adventurer:** This is where you can add your contact information and brandmark or logo. You can choose whether or not to include it when creating a **Quest giver export**.",
@@ -186,7 +188,7 @@ export function helpTopics() {
       ">**Warn when quests in progress exceed:** Set the maximum number of quests you want to have in progress at a time. If you try to move another quest to **In progress** beyond that number, Sidequest warns you. You can still proceed.",
       ">**Quests begin gathering dust after:** Set how long a quest in progress can go without progress before it displays a **Gathering dust** badge.",
       "**Appearance and formats:** These settings include **Date format**, **Coin format** (1,234.56 or 1.234,56), **Splash screen on open** (on/off), **Theme** (light and dark mode), **Animated burndown** (on/off), **Animated reroll** (on/off), **Completion effects** (on/off), and **Sound effects** (on/off).",
-      "**Vault:** Set how long the **Vault** keeps items before it deletes them: never, or after 7, 30, 60, or 90 days.",
+      "**Bin:** Set how long the **Bin** keeps quests and ideas before it permanently deletes them: 7, 30, 60, or 90 days.",
       "**Install Sidequest:** If you’re using Sidequest on the web, you can install it to your device. iPhones and iPads don’t show this button: in Safari, Chrome, or Firefox, tap **Share**, then **Add to Home Screen**. The installed version works offline and displays a **Refresh** button in the top bar.",
       ">On an iPhone or iPad, the installed app and browser store data separately and don’t sync. Choose one and stick with it. To switch between them, save a backup in one and restore it in the other.",
       ">iOS can clear a website’s saved data after a long time without a visit. Save a backup now and then.",

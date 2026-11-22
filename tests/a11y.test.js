@@ -73,6 +73,16 @@ async function main() {
   const candResults = await new AxeBuilder({ page }).include("#view").analyze();
   ok(candResults.violations.length === 0, "a candidate's page has no axe violations" + (candResults.violations.length ? ":\n     " + candResults.violations.map(v => v.id + " (" + v.nodes.length + ")").join(", ") : ""));
 
+  // The Bin, with the sample vaulted idea deleted into it so a row and its buttons are checked too
+  await page.click('.tab[data-view="vault"]');
+  await page.waitForTimeout(150);
+  await page.click('#view .list li button:has-text("Send to Bin") >> nth=0');
+  await page.waitForTimeout(150);
+  await page.locator("#view button", { hasText: /^Bin/ }).click();
+  await page.waitForTimeout(150);
+  const binResults = await new AxeBuilder({ page }).include("#view").analyze();
+  ok(binResults.violations.length === 0 && (await page.locator("#view .list li").count()) === 1, "the Bin page has no axe violations" + (binResults.violations.length ? ":\n     " + binResults.violations.map(v => v.id + " (" + v.nodes.length + ")").join(", ") : ""));
+
   // Landing site pages (static; the script-built nav toggle and splash need no fixture)
   for (const f of fs.readdirSync(ROOT).filter((n) => n.endsWith(".html")).sort()) {
     await page.goto("http://localhost:" + port + "/" + f);

@@ -10,7 +10,7 @@ export var STATUSES = ["Not started", "In progress", "Completed"];
 // An extra status only an issue can have: closed without being fixed.
 export var UNPURSUED = "Unpursued";
 export var CHECKPOINTS = 7;
-export var APP_VERSION = "1.4.2";
+export var APP_VERSION = "1.4.5";
 export var APP_NAME = "Sidequest";
 
 export function S(v, max) { return typeof v === "string" ? v.slice(0, max || 500) : ""; }
@@ -149,10 +149,26 @@ export function defaults() {
   return {
     v: 5, start: d.start, days: 7,
     tasks: d.tasks, hist: d.hist,
-    decisions: d.decisions, quests: d.quests, workshop: d.workshop, jobs: d.jobs, hand: [],
+    decisions: d.decisions, quests: d.quests, workshop: d.workshop, jobs: d.jobs, hand: [], bin: [],
     pins: ["quest:pApp"],
-    settings: { theme: "auto", dateFormat: "us", coinFormat: "us", blockWord: "Sprint", hideWelcome: false, showSplash: true, animatedBurndown: true, animatedReroll: true, lastBackup: "", since: iso(TODAY), vaultPurgeDays: 0, dustDays: 30, wipLimit: 0, contact: { name: "", company: "", phone: "", email: "", address: "", website: "" }, brandmark: "", audio: true, completionFx: true, hideDoneErrands: false, dialCode: "1", affirmationBucket: [], dismissedUpdateVersion: "", seenVersion: "" }
+    settings: { theme: "auto", dateFormat: "us", coinFormat: "us", blockWord: "Sprint", hideWelcome: false, showSplash: true, animatedBurndown: true, animatedReroll: true, lastBackup: "", since: iso(TODAY), binDays: 30, dustDays: 30, wipLimit: 0, contact: { name: "", company: "", phone: "", email: "", address: "", website: "" }, brandmark: "", audio: true, completionFx: true, hideDoneErrands: false, dialCode: "1", affirmationBucket: [], dismissedUpdateVersion: "", seenVersion: "" }
   };
+}
+
+export var BIN_KINDS = ["quest", "idea"];
+export var BIN_DAYS = [7, 30, 60, 90];
+// Bin entries keep the removed records as saved; restoring re-runs normalize() on the whole state,
+// so an entry from an older version is brought up to date then. Here only the shape is checked.
+export function cleanBin(raw) {
+  if (!Array.isArray(raw)) return [];
+  var need = { quest: "quests", idea: "workshop" };
+  return raw.filter(function (e) {
+    if (!e || typeof e.id !== "string" || !isISO(e.at) || BIN_KINDS.indexOf(e.kind) < 0 || !e.data || typeof e.data !== "object") return false;
+    var list = e.data[need[e.kind]];
+    return Array.isArray(list) && list.length && list[0] && typeof list[0].id === "string";
+  }).slice(0, 1000).map(function (e) {
+    return { id: S(e.id, 40), at: e.at, kind: e.kind, title: S(e.title, 300), data: e.data };
+  });
 }
 
 export function cleanHand(ids, jobs) {
@@ -278,10 +294,10 @@ export function normalize(s) {
     d.tasks = ts;
   }
   d.hist = cleanHist(s.hist);
-  // A step id belonging to any live (not in the Vault) task, across every quest --
-  // used below to require a decision's step link points at something real.
+  // Every step id, vaulted tasks included, so a decision's step link must point at something real.
+  // Vaulted steps count, or a vaulted quest loses its decisions on reload.
   var liveStepIds = {};
-  d.tasks.forEach(function (t) { if (!t.vault) t.steps.forEach(function (x) { liveStepIds[x.id] = true; }); });
+  d.tasks.forEach(function (t) { t.steps.forEach(function (x) { liveStepIds[x.id] = true; }); });
   // Decisions require a real step link; one with no step, or a step that
   // doesn't exist, is dropped rather than kept unrenderable.
   if (Array.isArray(s.decisions)) {
@@ -296,6 +312,7 @@ export function normalize(s) {
   d.jobs = Array.isArray(s.jobs) ? s.jobs.filter(function (x) { return x && typeof x.id === "string"; }).slice(0, 2000).map(function (x) { return { id: S(x.id, 40), text: S(x.text, 200), done: x.done === true, due: isISO(x.due) ? x.due : "" }; }) : [];
   // The errands hand: ids of open errands, no duplicates, at most three, in display order.
   d.hand = cleanHand(s.hand, d.jobs);
+  d.bin = cleanBin(s.bin);
   if (s.settings && typeof s.settings === "object") {
     if (["auto", "light", "dark"].indexOf(s.settings.theme) >= 0) d.settings.theme = s.settings.theme;
     if (["us", "intl", "mdy", "dmy", "iso"].indexOf(s.settings.dateFormat) >= 0) d.settings.dateFormat = s.settings.dateFormat;
@@ -307,9 +324,13 @@ export function normalize(s) {
     if (typeof s.settings.animatedReroll === "boolean") d.settings.animatedReroll = s.settings.animatedReroll;
     if (isISO(s.settings.lastBackup)) d.settings.lastBackup = s.settings.lastBackup;
     if (isISO(s.settings.since)) d.settings.since = s.settings.since;
-    // vaultPurgeDays used to be called archivePurgeDays; read whichever is present.
-    var rawPurge = [0, 7, 30, 60, 90].indexOf(s.settings.vaultPurgeDays) >= 0 ? s.settings.vaultPurgeDays : s.settings.archivePurgeDays;
-    if ([0, 7, 30, 60, 90].indexOf(rawPurge) >= 0) d.settings.vaultPurgeDays = rawPurge;
+    // The Vault's old auto-delete (vaultPurgeDays, earlier archivePurgeDays) carries over as the Bin's; Never becomes 90.
+    if (BIN_DAYS.indexOf(s.settings.binDays) >= 0) d.settings.binDays = s.settings.binDays;
+    else {
+      var rawPurge = typeof s.settings.vaultPurgeDays === "number" ? s.settings.vaultPurgeDays : s.settings.archivePurgeDays;
+      if (rawPurge === 0) d.settings.binDays = 90;
+      else if (BIN_DAYS.indexOf(rawPurge) >= 0) d.settings.binDays = rawPurge;
+    }
     if (s.settings.contact && typeof s.settings.contact === "object") {
       var c = s.settings.contact;
       d.settings.contact = { name: S(c.name, 200), company: S(c.company, 200), phone: S(c.phone, 200), email: S(c.email, 200), address: S(c.address, 500), website: S(c.website, 200) };
@@ -461,7 +482,7 @@ export function loadFromDbIfAvailable() {
       return true;
     }).catch(function () {
       // Could not read it, so what it holds is unknown: stay local-only and try again shortly.
-      if (dbLoadTries++ < 3) setTimeout(function () { loadFromDbIfAvailable().then(function (swapped) { if (swapped) { autoVault(); purgeOldVault(); save(); renderAll(); } }); }, 2500 * dbLoadTries);
+      if (dbLoadTries++ < 3) setTimeout(function () { loadFromDbIfAvailable().then(function (swapped) { if (swapped) { autoVault(); purgeBin(); save(); renderAll(); } }); }, 2500 * dbLoadTries);
       return false;
     });
   });
@@ -523,7 +544,6 @@ export function autoVault() {
   });
   return fresh;
 }
-// Deletes Vault entries older than settings.vaultPurgeDays, checked once at boot (0 = Never, no confirmation). Also removes links to quests that no longer exist.
 export function removeLinksTo(ids) {
   state.quests.forEach(function (q) { q.linkedQuestIds = q.linkedQuestIds.filter(function (id) { return ids.indexOf(id) < 0; }); });
 }
@@ -534,16 +554,10 @@ export function removeQuestTasks(ids) {
   state.tasks = state.tasks.filter(function (t) { return ids.indexOf(t.questId) < 0; });
   state.decisions = state.decisions.filter(function (d) { return !steps[d.step]; });
 }
-export function purgeOldVault() {
-  var days = state.settings.vaultPurgeDays;
-  if (!days) return;
-  var cutoff = TODAY - days * DAY;
-  var old = function (item) { return item.vault && parseISO(item.vault.at) < cutoff; };
-  var goneIds = state.quests.filter(old).map(function (p) { return p.id; });
-  removeQuestTasks(goneIds);
-  state.quests = state.quests.filter(function (p) { return !old(p); });
-  removeLinksTo(goneIds);
-  state.workshop = state.workshop.filter(function (p) { return !old(p); });
+// Removes Bin entries older than settings.binDays, checked at boot. The Vault itself never purges.
+export function purgeBin() {
+  var cutoff = TODAY - state.settings.binDays * DAY;
+  state.bin = state.bin.filter(function (e) { return parseISO(e.at) >= cutoff; });
 }
 // Shuffled-bucket picker: no quote repeats until every one has shown. `count` is the live AFFIRMATIONS.length.
 export function nextAffirmationIndex(count) {

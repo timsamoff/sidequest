@@ -1,11 +1,11 @@
-/* quest lifecycle: history, completion, promote and demote, the Vault's entries */
+/* quest lifecycle: history, completion, promote and demote, the Vault's entries, the Bin */
 import { renderAll } from "./app.js";
 import { playConfetti } from "./confetti.js";
 import { TODAY, iso } from "./dates.js";
 import { closeModal, confirmDialog, openModal } from "./dialogs.js";
-import { el, notify, on, playSfx, setFocusKey } from "./dom.js";
+import { el, notify, on, playSfx, setFocusKey, uid } from "./dom.js";
 import { activeQuests, questNameTaken, findQuest, isPinned, liveQuests, openIssues, questRemainingUnits, questState, questTasksAllDone, questTotalUnits, recordHist, remainingUnits, short, totalUnits } from "./model.js";
-import { changed, removeLinksTo, removeQuestTasks, save, state } from "./state.js";
+import { changed, normalize, removeLinksTo, removeQuestTasks, save, setState, state } from "./state.js";
 import { KIND_LABEL } from "./views.js";
 
 // Records the main burndown's and each quest's task counts on every change
@@ -181,15 +181,53 @@ export function restoreEntry(e) {
   changed(); notify(KIND_LABEL[e.kind] + " restored to " + where + ".");
 }
 
-export function deleteForever(e) {
-  confirmDialog("Delete forever?", "“" + short(e.title, 80) + "” will be permanently deleted. This cannot be undone.", "Delete forever", function () {
-    dropEntry(e); save(); renderAll(); notify("Deleted.");
+// The Bin holds only quests and ideas deleted from the Vault. An entry keeps a copy of the removed
+// records: for a quest, its tasks, their decisions, and which quests linked to it.
+function addToBin(kind, title, data) {
+  state.bin.unshift({ id: uid(), at: iso(TODAY), kind: kind, title: String(title || "").slice(0, 300), data: JSON.parse(JSON.stringify(data)) });
+}
+
+export function binVaultEntry(e) {
+  var data = {};
+  if (e.kind === "quest") {
+    var id = e.item.id, tasks = state.tasks.filter(function (t) { return t.questId === id; }), steps = {};
+    tasks.forEach(function (t) { t.steps.forEach(function (s) { steps[s.id] = true; }); });
+    data.quests = [e.item]; data.tasks = tasks;
+    data.decisions = state.decisions.filter(function (d) { return steps[d.step]; });
+    data.linkedFrom = state.quests.filter(function (q) { return q.id !== id && q.linkedQuestIds.indexOf(id) >= 0; }).map(function (q) { return q.id; });
+    state.pins = state.pins.filter(function (k) { return k !== "quest:" + id; });
+  } else data.workshop = [e.item];
+  addToBin(e.kind, e.title, data);
+  dropEntry(e);
+  changed(); notify(KIND_LABEL[e.kind] + " sent to the Bin.");
+}
+
+// Puts a quest or idea back in the Vault, then re-runs normalize() so an older entry is brought up to date.
+export function restoreFromBin(b) {
+  var d = b.data;
+  if (b.kind === "quest") {
+    var q = d.quests[0];
+    if (questNameTaken(q.name, q.id)) { notify("A quest named “" + q.name + "” already exists. Rename that one first, then restore this one.", null, "problem"); return; }
+    state.quests.push(q);
+    state.tasks = state.tasks.concat(d.tasks || []);
+    state.decisions = state.decisions.concat(d.decisions || []);
+    (d.linkedFrom || []).forEach(function (id) { var o = findQuest(id); if (o && o.linkedQuestIds.indexOf(q.id) < 0) o.linkedQuestIds.push(q.id); });
+  } else state.workshop.push(d.workshop[0]);
+  state.bin = state.bin.filter(function (x) { return x !== b; });
+  setState(normalize(JSON.parse(JSON.stringify(state))));
+  save(); renderAll();
+  notify(KIND_LABEL[b.kind] + " sent to the Vault.");
+}
+
+export function deleteFromBin(b) {
+  confirmDialog("Delete forever?", "“" + short(b.title, 80) + "” will be permanently deleted. This cannot be undone.", "Delete forever", function () {
+    state.bin = state.bin.filter(function (x) { return x !== b; }); save(); renderAll(); notify("Deleted.");
   });
 }
 
-export function emptyVault() {
-  var all = vaultEntries();
-  confirmDialog("Empty the Vault?", all.length + (all.length === 1 ? " item" : " items") + " will be permanently deleted. This cannot be undone.", "Delete everything in the Vault", function () {
-    all.forEach(dropEntry); save(); renderAll(); notify("Vault emptied.");
+export function emptyBin() {
+  var n = state.bin.length;
+  confirmDialog("Empty the Bin?", n + (n === 1 ? " item" : " items") + " will be permanently deleted. This cannot be undone.", "Delete everything in the Bin", function () {
+    state.bin = []; save(); renderAll(); notify("Bin emptied.");
   });
 }
