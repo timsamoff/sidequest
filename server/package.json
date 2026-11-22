@@ -1,0 +1,10 @@
+{
+  "name": "sidequest-server",
+  "private": true,
+  "type": "module",
+  "description": "Staging Worker and the merge prototype for the sync branch. The app itself has no runtime dependencies.",
+  "dependencies": {
+    "@automerge/automerge": "3.5.0",
+    "yjs": "13.6.33"
+  }
+}

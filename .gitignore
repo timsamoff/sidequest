@@ -11,3 +11,4 @@ Sentinel-Maintainer-Guide/
 x/
 server/site/
 server/.wrangler/
+server/node_modules/

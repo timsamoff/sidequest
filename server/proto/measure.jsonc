@@ -1,0 +1,2 @@
+// Bare config for measuring the merge prototype bundles. Never deployed.
+{ "name": "sidequest-proto-measure", "compatibility_date": "2026-11-17" }

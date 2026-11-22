@@ -1,0 +1,210 @@
+{
+ "fixture": {
+  "quests": 8,
+  "tasks": 28
+ },
+ "scenarios": [
+  {
+   "title": "Two devices edit different fields of one task offline",
+   "Yjs": {
+    "ok": true,
+    "note": "both kept"
+   },
+   "Automerge": {
+    "ok": true,
+    "note": "both kept"
+   },
+   "Change log": {
+    "ok": true,
+    "note": "both kept"
+   }
+  },
+  {
+   "title": "Both change the same field offline",
+   "Yjs": {
+    "ok": true,
+    "note": "kept: Member's title"
+   },
+   "Automerge": {
+    "ok": true,
+    "note": "kept: Member's title"
+   },
+   "Change log": {
+    "ok": true,
+    "note": "kept: Member's title"
+   }
+  },
+  {
+   "title": "Both type into the same quest's notes offline",
+   "Yjs": {
+    "ok": true,
+    "both": true,
+    "note": "both edits kept"
+   },
+   "Automerge": {
+    "ok": true,
+    "both": true,
+    "note": "both edits kept"
+   },
+   "Change log": {
+    "ok": true,
+    "both": false,
+    "note": "one edit lost: later save wins"
+   }
+  },
+  {
+   "title": "Both add tasks offline",
+   "Yjs": {
+    "ok": true,
+    "note": "both added"
+   },
+   "Automerge": {
+    "ok": true,
+    "note": "both added"
+   },
+   "Change log": {
+    "ok": true,
+    "note": "both added"
+   }
+  },
+  {
+   "title": "Guildmaster vaults a quest while a member edits it offline",
+   "Yjs": {
+    "ok": true,
+    "note": "vaulted, edit kept"
+   },
+   "Automerge": {
+    "ok": true,
+    "note": "vaulted, edit kept"
+   },
+   "Change log": {
+    "ok": true,
+    "note": "vaulted, edit kept"
+   }
+  },
+  {
+   "title": "A member tries to delete a quest",
+   "Yjs": {
+    "ok": true,
+    "note": "refused; the quest stays for everyone"
+   },
+   "Automerge": {
+    "ok": true,
+    "note": "refused; the quest stays for everyone"
+   },
+   "Change log": {
+    "ok": true,
+    "note": "refused; the quest stays for everyone"
+   }
+  },
+  {
+   "title": "A member deletes a quest while the Guildmaster edits it offline",
+   "Yjs": {
+    "ok": true,
+    "kept": false,
+    "note": "quest restored, but the Guildmaster's edit was lost"
+   },
+   "Automerge": {
+    "ok": true,
+    "kept": false,
+    "note": "quest restored, but the Guildmaster's edit was lost"
+   },
+   "Change log": {
+    "ok": true,
+    "kept": true,
+    "note": "quest restored and the Guildmaster's edit kept"
+   }
+  },
+  {
+   "title": "Guildmaster deletes a quest while a member edits it offline",
+   "Yjs": {
+    "ok": true,
+    "note": "gone for everyone; the edit reached the Bin copy"
+   },
+   "Automerge": {
+    "ok": true,
+    "note": "gone for everyone; the edit reached the Bin copy"
+   },
+   "Change log": {
+    "ok": true,
+    "note": "gone for everyone; the edit reached the Bin copy"
+   }
+  },
+  {
+   "title": "Long offline stretch: 200 edits on each device",
+   "Yjs": {
+    "ok": true,
+    "note": "5575 bytes up"
+   },
+   "Automerge": {
+    "ok": true,
+    "note": "47944 bytes up"
+   },
+   "Change log": {
+    "ok": true,
+    "note": "31076 bytes up"
+   }
+  }
+ ],
+ "sizes": {
+  "Yjs": {
+   "sample": {
+    "build": 2,
+    "joinMs": 3,
+    "joinBytes": 18663,
+    "oneEditBytes": 39,
+    "msPerEditSync": 0.15,
+    "storageBytes": 38654
+   },
+   "large": {
+    "build": 58,
+    "joinMs": 40,
+    "joinBytes": 487556,
+    "oneEditBytes": 40,
+    "msPerEditSync": 2.94,
+    "storageBytes": 976446
+   }
+  },
+  "Automerge": {
+   "sample": {
+    "build": 16,
+    "joinMs": 7,
+    "joinBytes": 7137,
+    "oneEditBytes": 145,
+    "msPerEditSync": 1.19,
+    "storageBytes": 14584
+   },
+   "large": {
+    "build": 443,
+    "joinMs": 166,
+    "joinBytes": 106228,
+    "oneEditBytes": 149,
+    "msPerEditSync": 12.54,
+    "storageBytes": 212844
+   }
+  },
+  "Change log": {
+   "sample": {
+    "build": 0,
+    "joinMs": 0,
+    "joinBytes": 15480,
+    "oneEditBytes": 86,
+    "msPerEditSync": 0,
+    "storageBytes": 42651
+   },
+   "large": {
+    "build": 4,
+    "joinMs": 7,
+    "joinBytes": 396897,
+    "oneEditBytes": 88,
+    "msPerEditSync": 0,
+    "storageBytes": 424670
+   }
+  }
+ },
+ "bigFixture": {
+  "quests": 200,
+  "tasks": 700,
+  "jsonBytes": 388374
+ }
+}

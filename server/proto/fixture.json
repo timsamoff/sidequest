@@ -1,0 +1,1180 @@
+{
+ "quests": [
+  {
+   "id": "pApp",
+   "name": "Sample App",
+   "status": "active",
+   "start": "",
+   "days": 7,
+   "due": "",
+   "notes": "A simple habit tracker. Keep the first version small and add features after the beta.",
+   "vault": null,
+   "linkedQuestIds": [
+    "pSite"
+   ],
+   "hist": {
+    "2026-11-02": [
+     5,
+     5
+    ],
+    "2026-11-07": [
+     5,
+     4
+    ],
+    "2026-11-11": [
+     6,
+     5
+    ]
+   },
+   "lastSlip": null,
+   "wasPinned": false,
+   "justReopened": false,
+   "hideDone": {
+    "tasks": false,
+    "issues": false
+   },
+   "touched": "",
+   "sig": "",
+   "client": {
+    "org": "",
+    "poc": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "website": "",
+    "coin": "",
+    "per": "Hour"
+   }
+  },
+  {
+   "id": "pSite",
+   "name": "Sample Website",
+   "status": "active",
+   "start": "2026-11-16",
+   "days": 7,
+   "due": "",
+   "notes": "",
+   "vault": null,
+   "linkedQuestIds": [
+    "pApp"
+   ],
+   "hist": {},
+   "lastSlip": null,
+   "wasPinned": false,
+   "justReopened": false,
+   "hideDone": {
+    "tasks": false,
+    "issues": false
+   },
+   "touched": "",
+   "sig": "",
+   "client": {
+    "org": "",
+    "poc": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "website": "",
+    "coin": "",
+    "per": "Hour"
+   }
+  },
+  {
+   "id": "pGame",
+   "name": "Sample Game",
+   "status": "active",
+   "start": "2026-11-23",
+   "days": 14,
+   "due": "2027-03-25",
+   "notes": "",
+   "vault": null,
+   "linkedQuestIds": [],
+   "hist": {},
+   "lastSlip": null,
+   "wasPinned": false,
+   "justReopened": false,
+   "hideDone": {
+    "tasks": false,
+    "issues": false
+   },
+   "touched": "",
+   "sig": "",
+   "client": {
+    "org": "",
+    "poc": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "website": "",
+    "coin": "",
+    "per": "Hour"
+   }
+  },
+  {
+   "id": "pNews",
+   "name": "Sample Newsletter",
+   "status": "active",
+   "start": "2026-11-02",
+   "days": 7,
+   "due": "",
+   "notes": "A monthly note to readers. Three issues are out and the next two are scheduled.",
+   "vault": null,
+   "linkedQuestIds": [],
+   "hist": {
+    "2026-11-02": [
+     5,
+     5
+    ],
+    "2026-11-08": [
+     5,
+     4
+    ],
+    "2026-11-13": [
+     5,
+     3
+    ],
+    "2026-11-15": [
+     5,
+     2
+    ]
+   },
+   "lastSlip": null,
+   "wasPinned": false,
+   "justReopened": false,
+   "hideDone": {
+    "tasks": false,
+    "issues": false
+   },
+   "touched": "",
+   "sig": "",
+   "client": {
+    "org": "",
+    "poc": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "website": "",
+    "coin": "",
+    "per": "Hour"
+   }
+  },
+  {
+   "id": "pExt",
+   "name": "Sample Browser Extension",
+   "status": "candidate",
+   "start": "2026-11-30",
+   "days": 7,
+   "due": "",
+   "notes": "A small tool that could ship in a month",
+   "vault": null,
+   "linkedQuestIds": [],
+   "hist": {},
+   "lastSlip": null,
+   "wasPinned": false,
+   "justReopened": false,
+   "hideDone": {
+    "tasks": false,
+    "issues": false
+   },
+   "touched": "",
+   "sig": "",
+   "client": {
+    "org": "",
+    "poc": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "website": "",
+    "coin": "",
+    "per": "Hour"
+   }
+  },
+  {
+   "id": "pCli",
+   "name": "Sample Command-Line Tool",
+   "status": "candidate",
+   "start": "",
+   "days": 7,
+   "due": "",
+   "notes": "Would save time on your own quests",
+   "vault": null,
+   "linkedQuestIds": [],
+   "hist": {},
+   "lastSlip": null,
+   "wasPinned": false,
+   "justReopened": false,
+   "hideDone": {
+    "tasks": false,
+    "issues": false
+   },
+   "touched": "",
+   "sig": "",
+   "client": {
+    "org": "",
+    "poc": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "website": "",
+    "coin": "",
+    "per": "Hour"
+   }
+  },
+  {
+   "id": "pDone",
+   "name": "Sample Finished Quest",
+   "status": "complete",
+   "start": "2026-10-05",
+   "days": 7,
+   "due": "",
+   "notes": "Shipped and wrapped up.",
+   "vault": null,
+   "linkedQuestIds": [],
+   "hist": {
+    "2026-10-05": [
+     4,
+     4
+    ],
+    "2026-10-13": [
+     4,
+     3
+    ],
+    "2026-10-18": [
+     4,
+     2
+    ],
+    "2026-10-21": [
+     4,
+     1
+    ],
+    "2026-11-01": [
+     4,
+     0
+    ]
+   },
+   "lastSlip": null,
+   "wasPinned": false,
+   "justReopened": false,
+   "hideDone": {
+    "tasks": false,
+    "issues": false
+   },
+   "touched": "",
+   "sig": "",
+   "client": {
+    "org": "",
+    "poc": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "website": "",
+    "coin": "",
+    "per": "Hour"
+   }
+  },
+  {
+   "id": "pNext",
+   "name": "Sample Next Quest",
+   "status": "active",
+   "start": "",
+   "days": 7,
+   "due": "",
+   "notes": "Chosen, but nothing scheduled yet.",
+   "vault": null,
+   "linkedQuestIds": [],
+   "hist": {},
+   "lastSlip": null,
+   "wasPinned": false,
+   "justReopened": false,
+   "hideDone": {
+    "tasks": false,
+    "issues": false
+   },
+   "touched": "2026-10-08",
+   "sig": "",
+   "client": {
+    "org": "",
+    "poc": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "website": "",
+    "coin": "",
+    "per": "Hour"
+   }
+  }
+ ],
+ "tasks": [
+  {
+   "id": "a1",
+   "block": 1,
+   "questId": "pApp",
+   "what": "Sketch the main screens",
+   "done": "Sketches for every screen",
+   "status": "Completed",
+   "notes": "",
+   "steps": [
+    {
+     "id": "a1a",
+     "text": "Sketch the home screen",
+     "done": true
+    },
+    {
+     "id": "a1b",
+     "text": "Sketch the sign-in screen",
+     "done": true
+    },
+    {
+     "id": "a1c",
+     "text": "Sketch the settings screen",
+     "done": true
+    }
+   ],
+   "custom": false,
+   "start": "2026-11-04",
+   "due": "2026-11-06",
+   "est": 3,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": "2026-11-07"
+  },
+  {
+   "id": "a2",
+   "block": 2,
+   "questId": "pApp",
+   "what": "Build the sign-in flow",
+   "done": "People can sign up and log in",
+   "status": "In progress",
+   "notes": "",
+   "steps": [
+    {
+     "id": "a2a",
+     "text": "Build the sign-up form",
+     "done": true
+    },
+    {
+     "id": "a2b",
+     "text": "Connect to a login service",
+     "done": false
+    },
+    {
+     "id": "a2c",
+     "text": "Handle wrong passwords",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "2026-11-11",
+   "due": "2026-11-14",
+   "est": 6,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "a3",
+   "block": 3,
+   "questId": "pApp",
+   "what": "Build the home screen",
+   "done": "The list loads quickly and scrolls smoothly",
+   "status": "In progress",
+   "notes": "Ask a friend to try this on an older phone before moving on.",
+   "steps": [
+    {
+     "id": "a3a",
+     "text": "Show the list of items",
+     "done": true
+    },
+    {
+     "id": "a3b",
+     "text": "Add pull to refresh",
+     "done": false
+    },
+    {
+     "id": "a3c",
+     "text": "Handle an empty list",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "2026-11-20",
+   "due": "2026-11-22",
+   "est": 8,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "a4",
+   "block": 4,
+   "questId": "pApp",
+   "what": "Run a beta with five friends",
+   "done": "Five people have tried it and sent notes",
+   "status": "Not started",
+   "notes": "",
+   "steps": [
+    {
+     "id": "a4a",
+     "text": "Pick five testers",
+     "done": false
+    },
+    {
+     "id": "a4b",
+     "text": "Send the beta link",
+     "done": false
+    },
+    {
+     "id": "a4c",
+     "text": "Collect and sort the feedback",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "2026-11-27",
+   "due": "2026-11-29",
+   "est": 4,
+   "added": "",
+   "launch": false,
+   "milestone": true,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "a5",
+   "block": 5,
+   "questId": "pApp",
+   "what": "Submit to the app store",
+   "done": "The app is live",
+   "status": "Not started",
+   "notes": "",
+   "steps": [
+    {
+     "id": "a5z",
+     "text": "Choose the first app store",
+     "done": true
+    },
+    {
+     "id": "a5a",
+     "text": "Write the store description",
+     "done": false
+    },
+    {
+     "id": "a5b",
+     "text": "Prepare screenshots",
+     "done": false
+    },
+    {
+     "id": "a5c",
+     "text": "Submit for review",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "2026-12-03",
+   "due": "2026-12-06",
+   "est": 5,
+   "added": "2026-11-11",
+   "launch": true,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "a6",
+   "block": 0,
+   "questId": "pApp",
+   "what": "Add a dark mode",
+   "done": "Every screen passes a contrast check in dark mode",
+   "status": "Not started",
+   "notes": "",
+   "steps": [],
+   "custom": false,
+   "start": "",
+   "due": "",
+   "est": 4,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "i1",
+   "block": 0,
+   "questId": "pApp",
+   "what": "Sign-in button misses taps on small phones",
+   "done": "",
+   "status": "Not started",
+   "notes": "Seen on two older phones. Check the button’s tap area.",
+   "steps": [],
+   "custom": false,
+   "start": "",
+   "due": "",
+   "est": 0,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": true,
+   "doneAt": ""
+  },
+  {
+   "id": "i2",
+   "block": 3,
+   "questId": "pApp",
+   "what": "Home screen flickers when it first loads",
+   "done": "",
+   "status": "Not started",
+   "notes": "",
+   "steps": [],
+   "custom": false,
+   "start": "2026-11-18",
+   "due": "2026-11-21",
+   "est": 2,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": true,
+   "doneAt": ""
+  },
+  {
+   "id": "i3",
+   "block": 0,
+   "questId": "pApp",
+   "what": "Wrong icon on the settings screen",
+   "done": "",
+   "status": "Completed",
+   "notes": "",
+   "steps": [],
+   "custom": false,
+   "start": "",
+   "due": "",
+   "est": 0,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": true,
+   "doneAt": "2026-11-12"
+  },
+  {
+   "id": "w1",
+   "block": 1,
+   "questId": "pSite",
+   "what": "Write the page copy",
+   "done": "Every page has final text",
+   "status": "In progress",
+   "notes": "",
+   "steps": [
+    {
+     "id": "w1a",
+     "text": "Write the home page",
+     "done": true
+    },
+    {
+     "id": "w1b",
+     "text": "Write the about page",
+     "done": false
+    },
+    {
+     "id": "w1c",
+     "text": "Write the contact page",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "2026-11-21",
+   "due": "2026-11-22",
+   "est": 3,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "w2",
+   "block": 2,
+   "questId": "pSite",
+   "what": "Build the layout",
+   "done": "Pages look right on a phone and a laptop",
+   "status": "Not started",
+   "notes": "",
+   "steps": [
+    {
+     "id": "w2a",
+     "text": "Build the header and footer",
+     "done": false
+    },
+    {
+     "id": "w2b",
+     "text": "Make the layout work on phones",
+     "done": false
+    },
+    {
+     "id": "w2c",
+     "text": "Compress the images",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "2026-11-24",
+   "due": "2026-11-29",
+   "est": 10,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "w3",
+   "block": 3,
+   "questId": "pSite",
+   "what": "Launch the site",
+   "done": "The site is live and checked",
+   "status": "Not started",
+   "notes": "",
+   "steps": [
+    {
+     "id": "w3a",
+     "text": "Point the domain at the site",
+     "done": false
+    },
+    {
+     "id": "w3b",
+     "text": "Check every page on a phone",
+     "done": false
+    },
+    {
+     "id": "w3c",
+     "text": "Announce it",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "",
+   "due": "2026-12-06",
+   "est": 2,
+   "added": "",
+   "launch": true,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "i4",
+   "block": 0,
+   "questId": "pSite",
+   "what": "Contact link opens a blank page on phones",
+   "done": "",
+   "status": "In progress",
+   "notes": "",
+   "steps": [],
+   "custom": false,
+   "start": "",
+   "due": "",
+   "est": 0,
+   "added": "",
+   "launch": true,
+   "milestone": false,
+   "issue": true,
+   "doneAt": ""
+  },
+  {
+   "id": "n1",
+   "block": 1,
+   "questId": "pNews",
+   "what": "Pick a name and a format",
+   "done": "A name and a one-page outline",
+   "status": "Completed",
+   "notes": "",
+   "steps": [
+    {
+     "id": "n1a",
+     "text": "Choose a name",
+     "done": true
+    },
+    {
+     "id": "n1b",
+     "text": "Outline the format",
+     "done": true
+    }
+   ],
+   "custom": false,
+   "start": "",
+   "due": "2026-11-07",
+   "est": 0,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": "2026-11-08"
+  },
+  {
+   "id": "n2",
+   "block": 2,
+   "questId": "pNews",
+   "what": "Write the first issue",
+   "done": "A finished issue ready to send",
+   "status": "Completed",
+   "notes": "",
+   "steps": [
+    {
+     "id": "n2a",
+     "text": "Draft the issue",
+     "done": true
+    },
+    {
+     "id": "n2b",
+     "text": "Proofread it",
+     "done": true
+    }
+   ],
+   "custom": false,
+   "start": "",
+   "due": "2026-11-14",
+   "est": 0,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": "2026-11-13"
+  },
+  {
+   "id": "n3",
+   "block": 3,
+   "questId": "pNews",
+   "what": "Set up the mailing list",
+   "done": "Readers can sign up and receive an issue",
+   "status": "Completed",
+   "notes": "",
+   "steps": [
+    {
+     "id": "n3a",
+     "text": "Pick a mailing tool",
+     "done": true
+    },
+    {
+     "id": "n3b",
+     "text": "Add a sign-up form",
+     "done": true
+    }
+   ],
+   "custom": false,
+   "start": "",
+   "due": "2026-11-21",
+   "est": 0,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": "2026-11-15"
+  },
+  {
+   "id": "n4",
+   "block": 4,
+   "questId": "pNews",
+   "what": "Write the second issue",
+   "done": "A finished issue ready to send",
+   "status": "In progress",
+   "notes": "",
+   "steps": [
+    {
+     "id": "n4a",
+     "text": "Draft the issue",
+     "done": false
+    },
+    {
+     "id": "n4b",
+     "text": "Proofread it",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "",
+   "due": "2026-11-28",
+   "est": 0,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "n5",
+   "block": 5,
+   "questId": "pNews",
+   "what": "Send to the first fifty readers",
+   "done": "Fifty readers have the first issue",
+   "status": "Not started",
+   "notes": "",
+   "steps": [
+    {
+     "id": "n5a",
+     "text": "Collect fifty addresses",
+     "done": false
+    },
+    {
+     "id": "n5b",
+     "text": "Send the issue",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "",
+   "due": "2026-12-05",
+   "est": 0,
+   "added": "",
+   "launch": true,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "g1",
+   "block": 1,
+   "questId": "pGame",
+   "what": "Prototype the core mechanic",
+   "done": "Someone can play for one minute",
+   "status": "Not started",
+   "notes": "",
+   "steps": [
+    {
+     "id": "g1a",
+     "text": "Make the player move",
+     "done": false
+    },
+    {
+     "id": "g1b",
+     "text": "Add one obstacle",
+     "done": false
+    },
+    {
+     "id": "g1c",
+     "text": "Add a win and a lose state",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "2026-11-25",
+   "due": "2026-12-02",
+   "est": 12,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "g2",
+   "block": 2,
+   "questId": "pGame",
+   "what": "Make the first ten levels",
+   "done": "Ten levels load and can be finished start to end",
+   "status": "Not started",
+   "notes": "",
+   "steps": [],
+   "custom": false,
+   "start": "2026-12-09",
+   "due": "2026-12-19",
+   "est": 20,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "g3",
+   "block": 3,
+   "questId": "pGame",
+   "what": "Playtest and polish",
+   "done": "Three playtests done and the top problems fixed",
+   "status": "Not started",
+   "notes": "",
+   "steps": [
+    {
+     "id": "g3a",
+     "text": "Run three playtests",
+     "done": false
+    },
+    {
+     "id": "g3b",
+     "text": "Fix the top five problems",
+     "done": false
+    },
+    {
+     "id": "g3d",
+     "text": "Decide free or paid",
+     "done": false
+    },
+    {
+     "id": "g3c",
+     "text": "Record a trailer",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "2026-12-27",
+   "due": "2026-12-30",
+   "est": 8,
+   "added": "",
+   "launch": false,
+   "milestone": true,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "g4",
+   "block": 0,
+   "questId": "pGame",
+   "what": "Add a level editor",
+   "done": "Players can build, save, and share a level",
+   "status": "Not started",
+   "notes": "",
+   "steps": [],
+   "custom": false,
+   "start": "2026-12-12",
+   "due": "",
+   "est": 16,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "e1",
+   "block": 1,
+   "questId": "pExt",
+   "what": "Sketch the toolbar button",
+   "done": "A mockup you would be happy to click",
+   "status": "Not started",
+   "notes": "",
+   "steps": [
+    {
+     "id": "e1a",
+     "text": "Pick an icon style",
+     "done": false
+    },
+    {
+     "id": "e1b",
+     "text": "Mock up the popup",
+     "done": false
+    }
+   ],
+   "custom": false,
+   "start": "2026-12-01",
+   "due": "2026-12-04",
+   "est": 4,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "e2",
+   "block": 0,
+   "questId": "pExt",
+   "what": "Decide which browsers to support",
+   "done": "A short list of browsers",
+   "status": "Not started",
+   "notes": "",
+   "steps": [],
+   "custom": false,
+   "start": "",
+   "due": "",
+   "est": 1,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": ""
+  },
+  {
+   "id": "d1",
+   "block": 1,
+   "questId": "pDone",
+   "what": "Design the feature",
+   "done": "The design is agreed",
+   "status": "Completed",
+   "notes": "",
+   "steps": [
+    {
+     "id": "d1a",
+     "text": "Sketch the approach",
+     "done": true
+    },
+    {
+     "id": "d1b",
+     "text": "Get sign-off",
+     "done": true
+    }
+   ],
+   "custom": false,
+   "start": "",
+   "due": "2026-10-08",
+   "est": 6,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": "2026-10-13"
+  },
+  {
+   "id": "d2",
+   "block": 2,
+   "questId": "pDone",
+   "what": "Build the core feature",
+   "done": "It works end to end",
+   "status": "Completed",
+   "notes": "",
+   "steps": [
+    {
+     "id": "d2a",
+     "text": "Build the happy path",
+     "done": true
+    },
+    {
+     "id": "d2b",
+     "text": "Handle errors",
+     "done": true
+    }
+   ],
+   "custom": false,
+   "start": "",
+   "due": "2026-10-15",
+   "est": 12,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": "2026-10-18"
+  },
+  {
+   "id": "d3",
+   "block": 3,
+   "questId": "pDone",
+   "what": "Test it",
+   "done": "The top bugs are fixed",
+   "status": "Completed",
+   "notes": "",
+   "steps": [
+    {
+     "id": "d3a",
+     "text": "Run through every screen",
+     "done": true
+    },
+    {
+     "id": "d3b",
+     "text": "Fix what’s broken",
+     "done": true
+    }
+   ],
+   "custom": false,
+   "start": "",
+   "due": "2026-10-22",
+   "est": 8,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": "2026-10-21"
+  },
+  {
+   "id": "d4",
+   "block": 4,
+   "questId": "pDone",
+   "what": "Ship it",
+   "done": "It’s live",
+   "status": "Completed",
+   "notes": "",
+   "steps": [
+    {
+     "id": "d4a",
+     "text": "Write the release notes",
+     "done": true
+    },
+    {
+     "id": "d4b",
+     "text": "Announce it",
+     "done": true
+    }
+   ],
+   "custom": false,
+   "start": "",
+   "due": "2026-10-29",
+   "est": 3,
+   "added": "",
+   "launch": false,
+   "milestone": false,
+   "issue": false,
+   "doneAt": "2026-11-01"
+  }
+ ],
+ "decisions": [
+  {
+   "id": "d1",
+   "q": "Which app store should you launch on first?",
+   "a": "Start with one store, then add the other.",
+   "step": "a5z"
+  },
+  {
+   "id": "d2",
+   "q": "Will the game be free, paid, or free with a paid upgrade?",
+   "a": "",
+   "step": "g3d"
+  },
+  {
+   "id": "d3",
+   "q": "Should the site use a page builder?",
+   "a": "No, plain pages are enough.",
+   "step": "w3a"
+  }
+ ],
+ "workshop": [
+  {
+   "id": "p1",
+   "text": "Try a new game engine",
+   "note": "Not urgent, but worth trying someday",
+   "created": "2026-10-21",
+   "pin": {
+    "x": 0.14,
+    "y": 0.24,
+    "bend": 52
+   }
+  },
+  {
+   "id": "p2",
+   "text": "Write up lessons learned",
+   "note": "After the website launches",
+   "created": "2026-10-28",
+   "pin": {
+    "x": 0.8,
+    "y": -0.68,
+    "bend": 56
+   }
+  },
+  {
+   "id": "p3",
+   "text": "Redesign the logo",
+   "note": "",
+   "created": "2026-10-13",
+   "pin": {
+    "x": -0.67,
+    "y": -0.75,
+    "bend": 40
+   },
+   "vault": {
+    "at": "2026-11-20",
+    "why": "removed"
+   }
+  }
+ ]
+}

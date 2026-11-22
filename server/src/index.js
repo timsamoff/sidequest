@@ -1,6 +1,10 @@
 // Staging Worker for the sync branch: serves the app from the branch the same way production does,
 // plus the sync API under /api/. Only the health check exists until the merge prototype picks a design.
 import { Guild } from "./guild.js";
+import { runCase } from "./proto.js";
+import * as PROTO_YJS from "../proto/yjs.mjs";
+import * as PROTO_AM from "../proto/am.mjs";
+import * as PROTO_LOG from "../proto/log.mjs";
 
 export { Guild };
 
@@ -20,6 +24,9 @@ async function api(request, env, url) {
     const guild = await (await stub.fetch("https://guild/ping")).json();
     return json({ ok: true, environment: env.ENVIRONMENT, api: API_VERSION, d1Schema: row ? row.value : null, durableObject: guild });
   }
+  // Merge prototype: one case per approach, run inside the Worker. Removed once an approach is chosen.
+  const proto = { "/api/proto/yjs": PROTO_YJS, "/api/proto/automerge": PROTO_AM, "/api/proto/log": PROTO_LOG }[url.pathname];
+  if (proto) return json(runCase(proto));
   return json({ error: "Not found" }, 404);
 }
 
