@@ -107,10 +107,16 @@ function build() {
   if (leatherCss.indexOf('url("../assets/header-800.jpg")') === -1) throw new Error("build-artifact: leather.css no longer references header-800.jpg, so the texture cannot be inlined.");
   leatherCss = leatherCss.split('url("../assets/header-800.jpg")').join('url("' + leatherJpg + '")');
 
-  var scriptParts = [];
+  var scriptParts = [], declaredIn = {};
   MODULE_ORDER.forEach(function (name) {
     var full = path.join(APP_DIR, name);
     var src = fs.readFileSync(full, "utf8");
+    // One scope means a second top-level declaration of a name silently replaces the first for every caller.
+    (src.match(/^(?:export\s+)?(?:function|var)\s+[A-Za-z_$][\w$]*/gm) || []).forEach(function (d) {
+      var id = d.replace(/^(?:export\s+)?(?:function|var)\s+/, "");
+      if (declaredIn[id] && declaredIn[id] !== name) throw new Error("build-artifact: \"" + id + "\" is declared in both " + declaredIn[id] + " and " + name + "; the single-file build shares one scope, so rename one.");
+      declaredIn[id] = name;
+    });
     scriptParts.push("// ---- " + name + " ----\n" + stripModuleSyntax(src, name));
   });
   var sfxDataUris = buildSfxDataUris();

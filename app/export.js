@@ -62,7 +62,7 @@ function snapshotCharts(p) {
     lanes: lanes.lanes, laneMilestones: lanes.milestones, rangeStart: lanes.rangeStart, rangeEnd: lanes.rangeEnd, today: fmtY(TODAY)
   };
 }
-function nameList(ts) {
+function exportNameList(ts) {
   var names = ts.slice(0, 6).map(function (t) { return t.what; });
   return names.join(", ") + (ts.length > 6 ? ", and " + (ts.length - 6) + " more" : "");
 }
@@ -75,9 +75,9 @@ function chartTip(bd, i, ms) {
   for (var j = i - 1; j >= 0 && prev === null; j--) if (bd.scope[j] !== null) prev = bd.scope[j];
   if (bd.scope[i] !== null && prev !== null && bd.scope[i] !== prev) lines.push(bd.scope[i] > prev ? "Scope grew from " + prev + " to " + bd.scope[i] : "Scope fell from " + prev + " to " + bd.scope[i]);
   var fin = bd.tasks.filter(function (t) { var e = taskEnd(t); return e <= ms && (i === 0 || e > cps[i - 1]); });
-  if (fin.length) lines.push("Finishing: " + nameList(fin));
+  if (fin.length) lines.push("Finishing: " + exportNameList(fin));
   var done = bd.tasks.filter(function (t) { if (!t.doneAt) return false; var d = parseISO(t.doneAt); return d >= ms && d < ms + span; });
-  if (done.length) lines.push((days === 1 ? "Completed that day: " : "Completed this " + unit + ": ") + nameList(done));
+  if (done.length) lines.push((days === 1 ? "Completed that day: " : "Completed this " + unit + ": ") + exportNameList(done));
   return lines.join("\n");
 }
 // One lane per scheduled task, as percentages of the lane's date range, so the export draws numbers directly. Each lane also carries a pale "blk" band for the task's block(s), matching questRangeBlock() in app/chart.js.

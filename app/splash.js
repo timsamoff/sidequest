@@ -223,7 +223,7 @@ export var AFFIRMATIONS = [
 "Now onward to greater things."
 ];
 
-function svgEl(tag, attrs) {
+function splashSvg(tag, attrs) {
   var e = document.createElementNS(SVG_NS, tag);
   if (attrs) Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); });
   return e;
@@ -253,11 +253,11 @@ function buildTree() {
 // Same shapes/colors as the real icon, rotated to match its own angles.
 function buildNodeShape(n) {
   if (n.kind === "circle") {
-    return svgEl("circle", { cx: n.x, cy: n.y, r: n.r, fill: "var(--logo-surface)", stroke: "var(--logo-planned)", "stroke-width": "16" });
+    return splashSvg("circle", { cx: n.x, cy: n.y, r: n.r, fill: "var(--logo-surface)", stroke: "var(--logo-planned)", "stroke-width": "16" });
   }
   var half = n.size / 2;
   var color = n.kind === "diamond" ? "var(--logo-burn)" : "var(--logo-planned)";
-  return svgEl("rect", { x: n.x - half, y: n.y - half, width: n.size, height: n.size, rx: n.kind === "diamond" ? 9 : 8, fill: color, transform: "rotate(" + n.rotate + " " + n.x + " " + n.y + ")" });
+  return splashSvg("rect", { x: n.x - half, y: n.y - half, width: n.size, height: n.size, rx: n.kind === "diamond" ? 9 : 8, fill: color, transform: "rotate(" + n.rotate + " " + n.x + " " + n.y + ")" });
 }
 
 // Returns {path, node} pairs in draw order, so line i and node i always match.
@@ -271,7 +271,7 @@ function renderTree(root, tree) {
     // Set as real attributes at creation, not a CSS var fallback -- avoids a
     // real flash-of-wrong-dash-pattern bug seen before.
     var len = p.len.toFixed(1);
-    var path = svgEl("path", { d: p.d, "stroke-dasharray": len, "stroke-dashoffset": len });
+    var path = splashSvg("path", { d: p.d, "stroke-dasharray": len, "stroke-dashoffset": len });
     linesGroup.appendChild(path);
 
     var node = buildNodeShape(p.node);
