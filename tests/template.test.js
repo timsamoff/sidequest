@@ -80,7 +80,7 @@ ok(!/—/.test(html), "no em dashes");
 ok(!html.includes("project-schedule-v"), "uses its own storage keys");
 {
   const stateJs = fs.readFileSync(path.join(__dirname, "..", "app", "state.js"), "utf8");
-  ok(stateJs.includes('APP_VERSION = "1.4.7"'), "version kept in state.js");
+  ok(stateJs.includes('APP_VERSION = "1.4.8"'), "version kept in state.js");
   const v = (stateJs.match(/APP_VERSION = "([0-9.]+)"/) || [])[1];
   ok(html.includes("../css/tokens.css?v=" + v) && html.includes("../css/styles.css?v=" + v) && html.includes("../css/splash.css?v=" + v) && html.includes("../css/leather.css?v=" + v), "index.html's stylesheet links carry the app version, so a normal reload cannot reuse stale CSS");
   const viewsJs = fs.readFileSync(path.join(__dirname, "..", "app", "settings.js"), "utf8");
@@ -3267,7 +3267,7 @@ async function exportClick(k, projectName) {
 
 
   ok(a.locked && a.k.d.body.style.position === "", "the page is frozen while a dialog is open and freed when it closes");
-  ok(a.hit[a.hit.length - 1] === 420, "a task added from its quest page scrolls to 20px below the header (" + a.hit.join() + ")");
+  ok(a.hit[a.hit.length - 1] === 430, "a task added from its quest page scrolls to 10px below its sticky section heading (" + a.hit.join() + ")");
   const k = kit(await mk(saved));
   k.tab("projects"); k.click(k.btn(k.$("view"), "Dialog Quest")); k.click(k.d.querySelector("#ptask-tQ button.item"));
   ok(k.d.querySelector("#ptask-tQ button.item").getAttribute("aria-expanded") === "true", "a task opens on its quest page");
