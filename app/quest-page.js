@@ -263,7 +263,7 @@ export function buildDetail(t, inline, readOnly) {
     box.appendChild(el("p", { "class": "hint notetext" }, t.notes || "No notes."));
   } else {
     var ta = autosize(el("textarea", { "aria-label": "Notes", style: "margin-top:8px" })); ta.value = t.notes;
-    on(ta, "input", function () { t.notes = ta.value.slice(0, 5000); save(true); });
+    on(ta, "input", function () { t.notes = ta.value.slice(0, 10000); save(true); });
     box.appendChild(ta);
   }
   if (inline || !readOnly) {
@@ -537,7 +537,7 @@ export function renderQuestPage(root, id) {
     root.appendChild(el("p", { "class": "hint notetext" }, p.notes || "No notes."));
   } else {
     var ta = autosize(el("textarea", { "aria-label": "Notes for " + p.name, style: "margin-top:8px" })); ta.value = p.notes;
-    on(ta, "input", function () { p.notes = ta.value.slice(0, 5000); save(true); });
+    on(ta, "input", function () { p.notes = ta.value.slice(0, 10000); save(true); });
     root.appendChild(ta);
   }
 

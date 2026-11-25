@@ -221,7 +221,7 @@ export function taskDialog(prefillQuestId) {
     if (fixedQuest) v.quest = startId;
     if (!v.quest) return "Choose a quest.";
     if (!v.what) return { field: "what", error: "Enter a title for the task." };
-    var t = task("c" + uid(), 0, v.quest, v.what.slice(0, 400), "", [], { custom: true, start: "", due: "", est: 0, added: "", notes: v.notes.slice(0, 5000) });
+    var t = task("c" + uid(), 0, v.quest, v.what.slice(0, 400), "", [], { custom: true, start: "", due: "", est: 0, added: "", notes: v.notes.slice(0, 10000) });
     state.tasks.push(t); ui.sel = t.id; changed();
     // After the dialog closes and the page unlocks, so the scroll is not undone.
     setTimeout(function () { scrollToTask(t.id); }, 0);
@@ -244,7 +244,7 @@ export function issueDialog(prefillQuestId) {
     if (fixedQuest) v.quest = startId;
     if (!v.quest) return "Choose a quest.";
     if (!v.what) return { field: "what", error: "Enter a title for the issue." };
-    var t = task("c" + uid(), 0, v.quest, v.what.slice(0, 400), "", [], { custom: true, issue: true, notes: v.notes.slice(0, 5000) });
+    var t = task("c" + uid(), 0, v.quest, v.what.slice(0, 400), "", [], { custom: true, issue: true, notes: v.notes.slice(0, 10000) });
     state.tasks.push(t); changed();
     setTimeout(function () { scrollToTask(t.id); }, 0);
     return { msg: "“" + t.what + "” added as an issue to " + dispQuest(t) + "." };
@@ -269,7 +269,7 @@ export function questDialog() {
     if (v.giverEmail && !isEmail(v.giverEmail)) return { field: "giverEmail", error: "The Quest giver email isn’t an address. Enter one like name@example.com, or leave it empty." };
     var coin = parseMoney(v.giverCoin, state.settings.coinFormat);
     var client = { org: v.giverOrg.slice(0, 200), poc: v.giverPoc.slice(0, 200), phone: v.giverPhone.slice(0, 200), email: v.giverEmail.slice(0, 200), address: v.giverAddress.slice(0, 500), website: v.giverWebsite.slice(0, 200), coin: coin, per: v.giverPer === "Quest" ? "Quest" : "Hour" };
-    state.quests.push(makeQuest(uid(), v.name.slice(0, 120), "candidate", { notes: v.notes.slice(0, 5000), client: client, start: iso(TODAY) })); changed();
+    state.quests.push(makeQuest(uid(), v.name.slice(0, 120), "candidate", { notes: v.notes.slice(0, 10000), client: client, start: iso(TODAY) })); changed();
     return { msg: "“" + v.name + "” has been added as a candidate quest to Quests." };
   }, "New quests appear in the Candidate quests section on the Quests page. The quest name is the only required field.");
 }
@@ -292,8 +292,8 @@ export function ideaDialog(idea) {
     { key: "note", label: "Note (optional)", type: "textarea", rows: 5, value: idea ? idea.note : undefined }
   ], idea ? "Save idea" : "Workshop it", function (v) {
     if (!v.text) return { field: "text", error: "Enter a title for the idea." };
-    if (idea) { idea.text = v.text.slice(0, 200); idea.note = v.note.slice(0, 5000); changed(); return { msg: "Idea saved." }; }
-    state.workshop.push({ id: uid(), text: v.text.slice(0, 200), note: v.note.slice(0, 5000), created: iso(TODAY), pin: newPin() }); changed();
+    if (idea) { idea.text = v.text.slice(0, 200); idea.note = v.note.slice(0, 10000); changed(); return { msg: "Idea saved." }; }
+    state.workshop.push({ id: uid(), text: v.text.slice(0, 200), note: v.note.slice(0, 10000), created: iso(TODAY), pin: newPin() }); changed();
     return { msg: "“" + v.text + "” added to the Workshop." };
   }, idea ? undefined : "New ideas live in the Workshop. When ready, ideas can be made into candidate quests.");
 }

@@ -6,7 +6,7 @@ import { el, notify, on, uid } from "./dom.js";
 import { uniqueQuestName } from "./model.js";
 import { changed, isISO, makeQuest, st, state, task } from "./state.js";
 
-export var IMPORT_LIMITS = { name: 120, org: 200, notes: 5000, what: 400, done: 200, step: 300, steps: 60, decision: 300, decided: 1000, tasks: 300, est: 9999 };
+export var IMPORT_LIMITS = { name: 120, org: 200, notes: 10000, what: 400, done: 200, step: 300, steps: 60, decision: 300, decided: 1000, tasks: 300, est: 9999 };
 
 // The prompt a user pastes into any AI chat. {{TODAY}} is filled in when it is copied.
 var PROMPT_TEMPLATE = [

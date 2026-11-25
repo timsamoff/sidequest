@@ -216,7 +216,7 @@ export function normalize(s) {
   if (Array.isArray(rawQuests)) {
     d.quests = rawQuests.filter(function (x) { return x && typeof x.id === "string"; }).map(function (x) {
       // `note` and `notes` used to be separate fields; fold a saved `note` into the front of `notes`.
-      var oldNote = S(x.note, 5000), body = S(x.notes, 5000);
+      var oldNote = S(x.note, 10000), body = S(x.notes, 10000);
       // Old saved data may have `mult` (a multiplier on the global block length) instead of its own day count.
       var days = (typeof x.days === "number" && x.days >= 1 && x.days <= 90) ? Math.round(x.days)
         : (typeof x.mult === "number" && x.mult >= 0.25 && x.mult <= 5) ? Math.max(1, Math.round(d.days * x.mult)) : d.days;
@@ -230,7 +230,7 @@ export function normalize(s) {
         status: x.status === "active" && x.started === false ? "candidate" : (x.status === "active" || x.status === "candidate" || x.status === "complete") ? x.status : "candidate",
         start: isISO(x.start) ? x.start : "", days: days,
         due: isISO(x.due) ? x.due : "",
-        notes: (oldNote && body ? oldNote + "\n\n" + body : oldNote || body).slice(0, 5000), vault: validVault(x.vault || x.arch), hist: cleanHist(x.hist),
+        notes: (oldNote && body ? oldNote + "\n\n" + body : oldNote || body).slice(0, 10000), vault: validVault(x.vault || x.arch), hist: cleanHist(x.hist),
         lastSlip: cleanSlip(x.lastSlip),
         // Set aside by completionDialog()'s auto-unpin so Reopen can restore it.
         wasPinned: x.wasPinned === true,
@@ -283,7 +283,7 @@ export function normalize(s) {
       var wasStepLaunch = Array.isArray(t.steps) && t.steps.some(function (x) { return x && x.launch === true; });
       ts.push({
         id: S(t.id, 40), block: b, questId: pid, what: S(t.what, 400), done: S(t.done, 200) === "It’s finished" ? "" : S(t.done, 200), start: tstart, due: tdue, est: test, added: b > 0 && isISO(t.added) ? t.added : "",
-        status: STATUSES.indexOf(t.status) >= 0 || (t.status === UNPURSUED && t.issue === true) ? t.status : "Not started", notes: S(t.notes, 5000), steps: steps,
+        status: STATUSES.indexOf(t.status) >= 0 || (t.status === UNPURSUED && t.issue === true) ? t.status : "Not started", notes: S(t.notes, 10000), steps: steps,
         custom: t.custom === true, launch: t.launch === true || wasStepLaunch, issue: t.issue === true,
         // A milestone needs a real due date to plot on the chart -- a Backlog
         // task (block 0) can never be one, even if saved data says otherwise.
@@ -307,7 +307,7 @@ export function normalize(s) {
   }
   // The Workshop array used to be called `parked`; read whichever is present.
   var rawWorkshop = Array.isArray(s.workshop) ? s.workshop : s.parked;
-  if (Array.isArray(rawWorkshop)) d.workshop = rawWorkshop.filter(function (x) { return x && typeof x.id === "string"; }).map(function (x) { return { id: S(x.id, 40), text: S(x.text, 200), note: S(x.note, 5000), created: isISO(x.created) ? x.created : "", pin: validPin(x.pin) ? { x: x.pin.x, y: x.pin.y, bend: Math.round(x.pin.bend) } : newPin(), vault: validVault(x.vault || x.arch) }; });
+  if (Array.isArray(rawWorkshop)) d.workshop = rawWorkshop.filter(function (x) { return x && typeof x.id === "string"; }).map(function (x) { return { id: S(x.id, 40), text: S(x.text, 200), note: S(x.note, 10000), created: isISO(x.created) ? x.created : "", pin: validPin(x.pin) ? { x: x.pin.x, y: x.pin.y, bend: Math.round(x.pin.bend) } : newPin(), vault: validVault(x.vault || x.arch) }; });
   // A save from before Odd jobs existed gets an empty list, not the sample jobs.
   d.jobs = Array.isArray(s.jobs) ? s.jobs.filter(function (x) { return x && typeof x.id === "string"; }).slice(0, 2000).map(function (x) { return { id: S(x.id, 40), text: S(x.text, 200), done: x.done === true, due: isISO(x.due) ? x.due : "" }; }) : [];
   // The errands hand: ids of open errands, no duplicates, at most three, in display order.

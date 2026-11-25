@@ -2034,7 +2034,7 @@ function normalize(s) {
   if (Array.isArray(rawQuests)) {
     d.quests = rawQuests.filter(function (x) { return x && typeof x.id === "string"; }).map(function (x) {
       // `note` and `notes` used to be separate fields; fold a saved `note` into the front of `notes`.
-      var oldNote = S(x.note, 5000), body = S(x.notes, 5000);
+      var oldNote = S(x.note, 10000), body = S(x.notes, 10000);
       // Old saved data may have `mult` (a multiplier on the global block length) instead of its own day count.
       var days = (typeof x.days === "number" && x.days >= 1 && x.days <= 90) ? Math.round(x.days)
         : (typeof x.mult === "number" && x.mult >= 0.25 && x.mult <= 5) ? Math.max(1, Math.round(d.days * x.mult)) : d.days;
@@ -2048,7 +2048,7 @@ function normalize(s) {
         status: x.status === "active" && x.started === false ? "candidate" : (x.status === "active" || x.status === "candidate" || x.status === "complete") ? x.status : "candidate",
         start: isISO(x.start) ? x.start : "", days: days,
         due: isISO(x.due) ? x.due : "",
-        notes: (oldNote && body ? oldNote + "\n\n" + body : oldNote || body).slice(0, 5000), vault: validVault(x.vault || x.arch), hist: cleanHist(x.hist),
+        notes: (oldNote && body ? oldNote + "\n\n" + body : oldNote || body).slice(0, 10000), vault: validVault(x.vault || x.arch), hist: cleanHist(x.hist),
         lastSlip: cleanSlip(x.lastSlip),
         // Set aside by completionDialog()'s auto-unpin so Reopen can restore it.
         wasPinned: x.wasPinned === true,
@@ -2101,7 +2101,7 @@ function normalize(s) {
       var wasStepLaunch = Array.isArray(t.steps) && t.steps.some(function (x) { return x && x.launch === true; });
       ts.push({
         id: S(t.id, 40), block: b, questId: pid, what: S(t.what, 400), done: S(t.done, 200) === "It’s finished" ? "" : S(t.done, 200), start: tstart, due: tdue, est: test, added: b > 0 && isISO(t.added) ? t.added : "",
-        status: STATUSES.indexOf(t.status) >= 0 || (t.status === UNPURSUED && t.issue === true) ? t.status : "Not started", notes: S(t.notes, 5000), steps: steps,
+        status: STATUSES.indexOf(t.status) >= 0 || (t.status === UNPURSUED && t.issue === true) ? t.status : "Not started", notes: S(t.notes, 10000), steps: steps,
         custom: t.custom === true, launch: t.launch === true || wasStepLaunch, issue: t.issue === true,
         // A milestone needs a real due date to plot on the chart -- a Backlog
         // task (block 0) can never be one, even if saved data says otherwise.
@@ -2125,7 +2125,7 @@ function normalize(s) {
   }
   // The Workshop array used to be called `parked`; read whichever is present.
   var rawWorkshop = Array.isArray(s.workshop) ? s.workshop : s.parked;
-  if (Array.isArray(rawWorkshop)) d.workshop = rawWorkshop.filter(function (x) { return x && typeof x.id === "string"; }).map(function (x) { return { id: S(x.id, 40), text: S(x.text, 200), note: S(x.note, 5000), created: isISO(x.created) ? x.created : "", pin: validPin(x.pin) ? { x: x.pin.x, y: x.pin.y, bend: Math.round(x.pin.bend) } : newPin(), vault: validVault(x.vault || x.arch) }; });
+  if (Array.isArray(rawWorkshop)) d.workshop = rawWorkshop.filter(function (x) { return x && typeof x.id === "string"; }).map(function (x) { return { id: S(x.id, 40), text: S(x.text, 200), note: S(x.note, 10000), created: isISO(x.created) ? x.created : "", pin: validPin(x.pin) ? { x: x.pin.x, y: x.pin.y, bend: Math.round(x.pin.bend) } : newPin(), vault: validVault(x.vault || x.arch) }; });
   // A save from before Odd jobs existed gets an empty list, not the sample jobs.
   d.jobs = Array.isArray(s.jobs) ? s.jobs.filter(function (x) { return x && typeof x.id === "string"; }).slice(0, 2000).map(function (x) { return { id: S(x.id, 40), text: S(x.text, 200), done: x.done === true, due: isISO(x.due) ? x.due : "" }; }) : [];
   // The errands hand: ids of open errands, no duplicates, at most three, in display order.
@@ -3763,7 +3763,7 @@ function taskDialog(prefillQuestId) {
     if (fixedQuest) v.quest = startId;
     if (!v.quest) return "Choose a quest.";
     if (!v.what) return { field: "what", error: "Enter a title for the task." };
-    var t = task("c" + uid(), 0, v.quest, v.what.slice(0, 400), "", [], { custom: true, start: "", due: "", est: 0, added: "", notes: v.notes.slice(0, 5000) });
+    var t = task("c" + uid(), 0, v.quest, v.what.slice(0, 400), "", [], { custom: true, start: "", due: "", est: 0, added: "", notes: v.notes.slice(0, 10000) });
     state.tasks.push(t); ui.sel = t.id; changed();
     // After the dialog closes and the page unlocks, so the scroll is not undone.
     setTimeout(function () { scrollToTask(t.id); }, 0);
@@ -3786,7 +3786,7 @@ function issueDialog(prefillQuestId) {
     if (fixedQuest) v.quest = startId;
     if (!v.quest) return "Choose a quest.";
     if (!v.what) return { field: "what", error: "Enter a title for the issue." };
-    var t = task("c" + uid(), 0, v.quest, v.what.slice(0, 400), "", [], { custom: true, issue: true, notes: v.notes.slice(0, 5000) });
+    var t = task("c" + uid(), 0, v.quest, v.what.slice(0, 400), "", [], { custom: true, issue: true, notes: v.notes.slice(0, 10000) });
     state.tasks.push(t); changed();
     setTimeout(function () { scrollToTask(t.id); }, 0);
     return { msg: "“" + t.what + "” added as an issue to " + dispQuest(t) + "." };
@@ -3811,7 +3811,7 @@ function questDialog() {
     if (v.giverEmail && !isEmail(v.giverEmail)) return { field: "giverEmail", error: "The Quest giver email isn’t an address. Enter one like name@example.com, or leave it empty." };
     var coin = parseMoney(v.giverCoin, state.settings.coinFormat);
     var client = { org: v.giverOrg.slice(0, 200), poc: v.giverPoc.slice(0, 200), phone: v.giverPhone.slice(0, 200), email: v.giverEmail.slice(0, 200), address: v.giverAddress.slice(0, 500), website: v.giverWebsite.slice(0, 200), coin: coin, per: v.giverPer === "Quest" ? "Quest" : "Hour" };
-    state.quests.push(makeQuest(uid(), v.name.slice(0, 120), "candidate", { notes: v.notes.slice(0, 5000), client: client, start: iso(TODAY) })); changed();
+    state.quests.push(makeQuest(uid(), v.name.slice(0, 120), "candidate", { notes: v.notes.slice(0, 10000), client: client, start: iso(TODAY) })); changed();
     return { msg: "“" + v.name + "” has been added as a candidate quest to Quests." };
   }, "New quests appear in the Candidate quests section on the Quests page. The quest name is the only required field.");
 }
@@ -3834,8 +3834,8 @@ function ideaDialog(idea) {
     { key: "note", label: "Note (optional)", type: "textarea", rows: 5, value: idea ? idea.note : undefined }
   ], idea ? "Save idea" : "Workshop it", function (v) {
     if (!v.text) return { field: "text", error: "Enter a title for the idea." };
-    if (idea) { idea.text = v.text.slice(0, 200); idea.note = v.note.slice(0, 5000); changed(); return { msg: "Idea saved." }; }
-    state.workshop.push({ id: uid(), text: v.text.slice(0, 200), note: v.note.slice(0, 5000), created: iso(TODAY), pin: newPin() }); changed();
+    if (idea) { idea.text = v.text.slice(0, 200); idea.note = v.note.slice(0, 10000); changed(); return { msg: "Idea saved." }; }
+    state.workshop.push({ id: uid(), text: v.text.slice(0, 200), note: v.note.slice(0, 10000), created: iso(TODAY), pin: newPin() }); changed();
     return { msg: "“" + v.text + "” added to the Workshop." };
   }, idea ? undefined : "New ideas live in the Workshop. When ready, ideas can be made into candidate quests.");
 }
@@ -4700,7 +4700,7 @@ function parseTrelloExport(obj) {
     });
     if (Array.isArray(c.idLabels) && c.idLabels.length) dropped++;
     if (Array.isArray(c.idMembers) && c.idMembers.length) dropped++;
-    return { name: S(c.name, 300) || "Untitled card", desc: S(c.desc, 5000), due: isISOInstant(c.due) ? c.due.slice(0, 10) : "", steps: steps };
+    return { name: S(c.name, 300) || "Untitled card", desc: S(c.desc, 10000), due: isISOInstant(c.due) ? c.due.slice(0, 10) : "", steps: steps };
   });
   return { boardName: boardName, cards: cards, droppedCount: dropped };
 }
@@ -4903,7 +4903,7 @@ function importPanel(root) {
 
 
 
-var IMPORT_LIMITS = { name: 120, org: 200, notes: 5000, what: 400, done: 200, step: 300, steps: 60, decision: 300, decided: 1000, tasks: 300, est: 9999 };
+var IMPORT_LIMITS = { name: 120, org: 200, notes: 10000, what: 400, done: 200, step: 300, steps: 60, decision: 300, decided: 1000, tasks: 300, est: 9999 };
 
 // The prompt a user pastes into any AI chat. {{TODAY}} is filled in when it is copied.
 var PROMPT_TEMPLATE = [
@@ -6151,7 +6151,7 @@ function buildDetail(t, inline, readOnly) {
     box.appendChild(el("p", { "class": "hint notetext" }, t.notes || "No notes."));
   } else {
     var ta = autosize(el("textarea", { "aria-label": "Notes", style: "margin-top:8px" })); ta.value = t.notes;
-    on(ta, "input", function () { t.notes = ta.value.slice(0, 5000); save(true); });
+    on(ta, "input", function () { t.notes = ta.value.slice(0, 10000); save(true); });
     box.appendChild(ta);
   }
   if (inline || !readOnly) {
@@ -6425,7 +6425,7 @@ function renderQuestPage(root, id) {
     root.appendChild(el("p", { "class": "hint notetext" }, p.notes || "No notes."));
   } else {
     var ta = autosize(el("textarea", { "aria-label": "Notes for " + p.name, style: "margin-top:8px" })); ta.value = p.notes;
-    on(ta, "input", function () { p.notes = ta.value.slice(0, 5000); save(true); });
+    on(ta, "input", function () { p.notes = ta.value.slice(0, 10000); save(true); });
     root.appendChild(ta);
   }
 

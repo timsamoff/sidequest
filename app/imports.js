@@ -27,7 +27,7 @@ export function parseTrelloExport(obj) {
     });
     if (Array.isArray(c.idLabels) && c.idLabels.length) dropped++;
     if (Array.isArray(c.idMembers) && c.idMembers.length) dropped++;
-    return { name: S(c.name, 300) || "Untitled card", desc: S(c.desc, 5000), due: isISOInstant(c.due) ? c.due.slice(0, 10) : "", steps: steps };
+    return { name: S(c.name, 300) || "Untitled card", desc: S(c.desc, 10000), due: isISOInstant(c.due) ? c.due.slice(0, 10) : "", steps: steps };
   });
   return { boardName: boardName, cards: cards, droppedCount: dropped };
 }
